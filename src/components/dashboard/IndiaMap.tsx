@@ -48,7 +48,7 @@ export function IndiaMap() {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: "metric" }), "bottom-left");
     map.on("load", () => {
-      map.addSource("demo", { type: "geojson", data: DEMO_POINTS as GeoJSON.FeatureCollection });
+      map.addSource("demo", { type: "geojson", data: DEMO_POINTS as maplibregl.GeoJSONSourceSpecification["data"] });
       map.addLayer({ id: "demo-heat", type: "circle", source: "demo", paint: {
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 20, 8, 45],
         "circle-color": ["match", ["get", "kind"], "forest", "#28785d", "water", "#3b82a0", "agriculture", "#d9a62e", "disputes", "#b95842", "climate", "#df7e3d", "#5f8f62"],
