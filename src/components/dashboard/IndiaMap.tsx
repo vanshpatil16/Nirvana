@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { type Map as MapInstance } from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
+import type { Map as MapInstance } from "maplibre-gl";
 import { Bot, Check, ChevronRight, Layers3, LocateFixed, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { mapLayers } from "@/data/dashboard";
 
 const INDIA_CENTER: [number, number] = [79.1, 22.8];
-const DEMO_POINTS: GeoJSON.FeatureCollection = {
+const DEMO_POINTS = {
   type: "FeatureCollection",
   features: [
     [73.85, 18.52, "Pune", "agriculture"], [77.59, 12.97, "Bengaluru", "land"],
@@ -22,7 +23,7 @@ const DEMO_POINTS: GeoJSON.FeatureCollection = {
 export function IndiaMap() {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
-  const [activeLayers, setActiveLayers] = useState(() => new Set(mapLayers.filter((l) => l.default).map((l) => l.id)));
+  const [activeLayers, setActiveLayers] = useState<Set<string>>(() => new Set(mapLayers.filter((l) => l.default).map((l) => l.id)));
   const [mapMode, setMapMode] = useState("Map");
   const [query, setQuery] = useState("");
   const [layerOpen, setLayerOpen] = useState(true);
@@ -47,7 +48,7 @@ export function IndiaMap() {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: "metric" }), "bottom-left");
     map.on("load", () => {
-      map.addSource("demo", { type: "geojson", data: DEMO_POINTS });
+      map.addSource("demo", { type: "geojson", data: DEMO_POINTS as GeoJSON.FeatureCollection });
       map.addLayer({ id: "demo-heat", type: "circle", source: "demo", paint: {
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 20, 8, 45],
         "circle-color": ["match", ["get", "kind"], "forest", "#28785d", "water", "#3b82a0", "agriculture", "#d9a62e", "disputes", "#b95842", "climate", "#df7e3d", "#5f8f62"],
