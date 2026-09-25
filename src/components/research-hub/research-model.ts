@@ -7,7 +7,6 @@ export const STAGE_OF_VIEW: Record<HubView, number> = {
   overview: -1,
   discover: 0,
   "my-research": 1,
-  copilot: 1,
   workspaces: 2,
   network: 2,
   gis: 3,

@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
+  type CSSProperties,
 } from "react";
 import {
   ArrowLeft,
@@ -58,7 +59,6 @@ import { useHub } from "./hub-context";
 import {
   Avatar,
   BriefBuilder,
-  Copilot,
   DatasetCard,
   Empty,
   Modal,
@@ -95,7 +95,6 @@ const TABS = [
   { id: "datasets", label: "Datasets", icon: Database },
   { id: "gis", label: "GIS", icon: MapIcon },
   { id: "analysis", label: "Analysis", icon: Network },
-  { id: "copilot", label: "AI Copilot", icon: Bot },
   { id: "experiments", label: "Policy Experiments", icon: FlaskConical },
   { id: "tasks", label: "Tasks", icon: KanbanSquare },
   { id: "discussion", label: "Discussion", icon: MessageSquare },
@@ -182,16 +181,6 @@ export function WorkspaceView({ ws, onBack }: { ws: Workspace; onBack: () => voi
         {tab === "datasets" && <WsDatasets ws={ws} />}
         {tab === "gis" && <ResearchMap initialRegion={ws.state} />}
         {tab === "analysis" && <Analysis ws={ws} />}
-        {tab === "copilot" && (
-          <Copilot
-            scope={ws}
-            examples={[
-              `What drives ${ws.topics[0]?.toLowerCase() ?? "land-use"} change in ${ws.state}?`,
-              `Which datasets support this question?`,
-              `Summarize the evidence for this workspace.`,
-            ]}
-          />
-        )}
         {tab === "experiments" && <PolicyExperiment state={ws.state} />}
         {tab === "tasks" && <TaskBoard ws={ws} />}
         {tab === "discussion" && (
@@ -621,7 +610,7 @@ function Documents({ ws }: { ws: Workspace }) {
   ).slice(0, 4);
   return (
     <div className="rh-two">
-      <div className="rh-mini-list">
+      <div className="rh-mini-list rh-scroll" style={{ "--rh-scroll-h": "720px" } as CSSProperties}>
         <h4
           className="rh-muted"
           style={{ margin: 0, fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase" }}
@@ -892,32 +881,34 @@ function Analysis({ ws }: { ws: Workspace }) {
       <div>
         <div className="rh-card rh-panel">
           <h4>Transitions 2018 → 2024</h4>
-          <table className="rh-matrix-tbl">
-            <thead>
-              <tr>
-                <th>From → To</th>
-                <th>% of area</th>
-                <th>≈ km²</th>
-              </tr>
-            </thead>
-            <tbody>
-              {flows
-                .sort((a, b) => b.pp - a.pp)
-                .map((f) => (
-                  <tr key={`${f.from}-${f.to}`}>
-                    <td>
-                      {label(f.from)} → {label(f.to)}
-                    </td>
-                    <td>{f.pp.toFixed(2)}</td>
-                    <td>
-                      {Math.round((f.pp / 100) * (STATE_AREA_KM2[ws.state] ?? 0)).toLocaleString(
-                        "en-IN",
-                      )}
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+          <div className="rh-scroll" style={{ "--rh-scroll-h": "300px" } as CSSProperties}>
+            <table className="rh-matrix-tbl">
+              <thead>
+                <tr>
+                  <th>From → To</th>
+                  <th>% of area</th>
+                  <th>≈ km²</th>
+                </tr>
+              </thead>
+              <tbody>
+                {flows
+                  .sort((a, b) => b.pp - a.pp)
+                  .map((f) => (
+                    <tr key={`${f.from}-${f.to}`}>
+                      <td>
+                        {label(f.from)} → {label(f.to)}
+                      </td>
+                      <td>{f.pp.toFixed(2)}</td>
+                      <td>
+                        {Math.round((f.pp / 100) * (STATE_AREA_KM2[ws.state] ?? 0)).toLocaleString(
+                          "en-IN",
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
           <p className="rh-muted" style={{ margin: "8px 0 0", fontSize: 11 }}>
             From Bhumi-Niti's demonstration land-use model; km² from the state boundary area.
           </p>
@@ -1132,7 +1123,10 @@ function Discussion({
               ))}
           </div>
         </div>
-        <div style={{ marginTop: 16 }}>
+        <div
+          className="rh-scroll"
+          style={{ marginTop: 16, "--rh-scroll-h": "680px" } as CSSProperties}
+        >
           {comments.map((c) => (
             <div key={c.id} className="rh-thread">
               {c.anchor && (
@@ -1257,7 +1251,7 @@ function Versions({ ws }: { ws: Workspace }) {
     <div className="rh-two">
       <div className="rh-card rh-panel">
         <h4>Version history</h4>
-        <ul className="rh-versions">
+        <ul className="rh-versions rh-scroll" style={{ "--rh-scroll-h": "520px" } as CSSProperties}>
           {versions.map((v, i) => (
             <li key={v.id} className={i === 0 ? "current" : ""}>
               <b>{v.label}</b>

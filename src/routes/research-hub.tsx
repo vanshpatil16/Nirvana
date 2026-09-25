@@ -11,7 +11,6 @@ const VIEWS: HubView[] = [
   "datasets",
   "publications",
   "policy-evidence",
-  "copilot",
   "experiments",
   "network",
   "gaps",

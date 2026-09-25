@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -29,7 +29,6 @@ import {
 import {
   CASE_STUDIES,
   COLLABORATIONS,
-  COPILOT_EXAMPLES,
   DATASETS,
   FILTER_TOPICS,
   FOCUS_STATES,
@@ -42,7 +41,6 @@ import {
   RESEARCHERS,
   SNAPSHOT,
   WORKSPACE_STAGES,
-  answerQuestion,
   datasetById,
   literatureReview,
   paperById,
@@ -50,8 +48,8 @@ import {
   researcher,
   searchCatalogue,
   type CaseStudy,
+  type Institution,
   type Claim,
-  type CopilotAnswer,
   type Dataset,
   type LiteratureReview,
   type Paper,
@@ -61,6 +59,8 @@ import {
 import { useHub, type HubView } from "./hub-context";
 import { PRESERVATION_ZONE, experimentOutcome, type ExperimentVars } from "./research-model";
 import satImage from "@/assets/sat_2024.jpg";
+import heroVideo from "@/assets/research_home.mp4";
+import heroPoster from "@/assets/research_home_poster.jpg";
 
 // ---------------------------------------------------------------------------
 // Shared bits
@@ -170,7 +170,7 @@ export function SourceChips({ claim }: { claim: Claim }) {
 
 const LIFECYCLE: { label: string; view: HubView; icon: typeof Search }[] = [
   { label: "Discover", view: "discover", icon: Search },
-  { label: "Research", view: "copilot", icon: BookOpen },
+  { label: "Research", view: "my-research", icon: BookOpen },
   { label: "Collaborate", view: "workspaces", icon: Users },
   { label: "Analyze", view: "gis", icon: MapIcon },
   { label: "Simulate", view: "experiments", icon: FlaskConical },
@@ -197,112 +197,42 @@ export function LifecycleStrip({ stage }: { stage: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Hero evidence graph
+// Hero video — decorative, muted loop feathered into the hero background
 // ---------------------------------------------------------------------------
 
-const GRAPH_NODES = [
-  { id: "paper", x: 40, y: 30, label: "Research paper", sub: "12,480 studies", color: "#3B82F6" },
-  { id: "dataset", x: 20, y: 150, label: "Dataset", sub: "Sentinel-2 · DILRMP", color: "#7C5CFC" },
-  { id: "gis", x: 205, y: 150, label: "GIS layer", sub: "Land use 2018→2024", color: "#0B7A4B" },
-  {
-    id: "climate",
-    x: 205,
-    y: 30,
-    label: "Climate model",
-    sub: "IMD gridded data",
-    color: "#F59E0B",
-  },
-  { id: "sim", x: 385, y: 90, label: "Simulation", sub: "Preservation scenario", color: "#E34D4D" },
-  {
-    id: "policy",
-    x: 305,
-    y: 250,
-    label: "Policy insight",
-    sub: "Evidence-backed brief",
-    color: "#fff",
-    final: true,
-  },
-  {
-    id: "law",
-    x: 40,
-    y: 270,
-    label: "Policy document",
-    sub: "Land Revenue Code",
-    color: "#F59E0B",
-  },
-];
-const GRAPH_EDGES: [string, string][] = [
-  ["paper", "dataset"],
-  ["paper", "climate"],
-  ["dataset", "gis"],
-  ["climate", "gis"],
-  ["gis", "sim"],
-  ["climate", "sim"],
-  ["sim", "policy"],
-  ["gis", "policy"],
-  ["law", "policy"],
-  ["dataset", "law"],
-];
-
-export function EvidenceGraph() {
-  const w = 150,
-    h = 46;
-  const node = (id: string) => GRAPH_NODES.find((n) => n.id === id)!;
-  const path = (a: string, b: string) => {
-    const p = node(a),
-      q = node(b);
-    const x1 = p.x + w / 2,
-      y1 = p.y + h / 2,
-      x2 = q.x + w / 2,
-      y2 = q.y + h / 2;
-    const mx = (x1 + x2) / 2;
-    return `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
-  };
+export function HeroVideo() {
+  const ref = useRef<HTMLVideoElement>(null);
+  // Respect reduced-motion: show the still poster instead of playing
+  const [still, setStill] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => {
+      setStill(mq.matches);
+      const v = ref.current;
+      if (!v) return;
+      if (mq.matches) v.pause();
+      else void v.play().catch(() => undefined);
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
   return (
-    <svg
-      className="rh-graph"
-      viewBox="0 0 560 330"
-      role="img"
-      aria-label="Evidence ecosystem: research papers, datasets, climate models and GIS layers feed simulations that produce policy insight"
-    >
-      {GRAPH_EDGES.map(([a, b]) => (
-        <path key={`${a}-${b}`} d={path(a, b)} className="edge" />
-      ))}
-      {GRAPH_EDGES.map(([a, b], i) => (
-        <path
-          key={`f-${a}-${b}`}
-          d={path(a, b)}
-          className="flow"
-          style={{ animationDelay: `${i * -0.35}s` }}
-        />
-      ))}
-      {GRAPH_NODES.map((n, i) => (
-        <g
-          key={n.id}
-          className={`node${n.final ? " final" : ""}`}
-          transform={`translate(${n.x},${n.y})`}
-        >
-          <rect
-            className="halo"
-            x={-3}
-            y={-3}
-            width={w + 6}
-            height={h + 6}
-            rx={13}
-            stroke={n.final ? "#0B7A4B" : n.color}
-            style={{ animationDelay: `${i * 0.7}s`, transformOrigin: `${w / 2}px ${h / 2}px` }}
-          />
-          <rect width={w} height={h} rx={11} />
-          <circle className="dot" cx={16} cy={h / 2} r={6} fill={n.final ? "#DDF4E7" : n.color} />
-          <text x={30} y={20}>
-            {n.label}
-          </text>
-          <text x={30} y={35} className="sub">
-            {n.sub}
-          </text>
-        </g>
-      ))}
-    </svg>
+    <div className="rh-hero-media" aria-hidden="true">
+      <video
+        ref={ref}
+        className="rh-hero-video"
+        src={heroVideo}
+        poster={heroPoster}
+        autoPlay={!still}
+        muted
+        loop
+        playsInline
+        preload="auto"
+        disablePictureInPicture
+        tabIndex={-1}
+      />
+    </div>
   );
 }
 
@@ -397,7 +327,7 @@ export function DiscoverSearch({
 
       {active && (
         <div className="rh-results" aria-live="polite">
-          <div>
+          <div className="rh-scroll" style={{ "--rh-scroll-h": "760px" } as CSSProperties}>
             <h3>
               Research{" "}
               <span>
@@ -436,7 +366,10 @@ export function DiscoverSearch({
               </article>
             ))}
           </div>
-          <div className="rh-mini-list">
+          <div
+            className="rh-mini-list rh-scroll"
+            style={{ "--rh-scroll-h": "760px" } as CSSProperties}
+          >
             <h3>
               Datasets <span>{results.datasets.length}</span>
             </h3>
@@ -490,310 +423,6 @@ export function DiscoverSearch({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Copilot
-// ---------------------------------------------------------------------------
-
-const THINKING = [
-  "Parsing question: places, themes, time range",
-  "Searching 16 studies and 10 datasets",
-  "Linking policy documents and GIS layers",
-  "Assembling claims — each tied to a source",
-];
-
-export function Copilot({
-  scope,
-  examples = COPILOT_EXAMPLES,
-}: {
-  scope?: Workspace;
-  examples?: string[];
-}) {
-  const hub = useHub();
-  const [q, setQ] = useState("");
-  const [phase, setPhase] = useState<"idle" | "thinking" | "done">("idle");
-  const [step, setStep] = useState(0);
-  const [answer, setAnswer] = useState<CopilotAnswer | null>(null);
-  const [evidenceOpen, setEvidenceOpen] = useState(false);
-
-  const ask = (question: string) => {
-    if (!question.trim()) return;
-    setQ(question);
-    setPhase("thinking");
-    setStep(0);
-    const full = scope ? `${question} ${scope.state}` : question;
-    const result = answerQuestion(full);
-    result.query = question;
-    let i = 0;
-    const timer = window.setInterval(() => {
-      i += 1;
-      setStep(i);
-      if (i >= THINKING.length) {
-        window.clearInterval(timer);
-        setAnswer(result);
-        setPhase("done");
-      }
-    }, 320);
-  };
-
-  return (
-    <section className="rh-copilot" aria-label="Bhumi Research Copilot">
-      <div className="rh-copilot-head">
-        <div>
-          <h3>
-            <span className="rh-copilot-mark">
-              <Bot />
-            </span>{" "}
-            Bhumi Research Copilot
-          </h3>
-          <p>
-            Ask questions across research papers, datasets, policies and geospatial evidence
-            {scope ? ` — scoped to ${scope.state}` : ""}.
-          </p>
-        </div>
-        <span className="rh-demo">Answers only quote catalogue evidence · demo catalogue</span>
-      </div>
-      <div className="rh-copilot-body">
-        <form
-          className="rh-search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            ask(q);
-          }}
-        >
-          <Sparkles />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Ask a research question…"
-            aria-label="Ask the Research Copilot"
-          />
-          <button className="rh-btn primary" type="submit" disabled={phase === "thinking"}>
-            Ask
-          </button>
-        </form>
-        {phase === "idle" && (
-          <div className="rh-suggest">
-            {examples.map((e) => (
-              <button key={e} onClick={() => ask(e)}>
-                {e}
-              </button>
-            ))}
-          </div>
-        )}
-        {phase === "thinking" && (
-          <div className="rh-thinking" aria-live="polite">
-            {THINKING.slice(0, step + 1).map((t, i) => (
-              <div key={t}>
-                {i < step ? <CheckCircle2 /> : <Loader2 className="rh-spin" />} {t}
-              </div>
-            ))}
-          </div>
-        )}
-        {phase === "done" && answer && (
-          <CopilotAnswerView
-            answer={answer}
-            onEvidence={() => setEvidenceOpen(true)}
-            onAgain={() => {
-              setPhase("idle");
-              setAnswer(null);
-              setQ("");
-            }}
-          />
-        )}
-      </div>
-      {evidenceOpen && answer && (
-        <Modal
-          title="Evidence behind this answer"
-          eyebrow={answer.query}
-          onClose={() => setEvidenceOpen(false)}
-          wide
-        >
-          <EvidenceList
-            answer={answer}
-            onAdd={(kind, id) => hub.addToWorkspace(kind, id, scope?.id)}
-          />
-        </Modal>
-      )}
-    </section>
-  );
-}
-
-function CopilotAnswerView({
-  answer,
-  onEvidence,
-  onAgain,
-}: {
-  answer: CopilotAnswer;
-  onEvidence: () => void;
-  onAgain: () => void;
-}) {
-  const ev = answer.evidence;
-  const counts = [
-    { n: Math.min(5, ev.papers.length), label: "research papers" },
-    { n: Math.min(4, ev.datasets.length), label: "datasets" },
-    { n: Math.min(3, ev.policies.length), label: "policy documents" },
-    { n: Math.min(3, ev.layers.length), label: "geospatial layers" },
-  ];
-  return (
-    <div className="rh-answer" aria-live="polite">
-      <div className="rh-card rh-insight">
-        <span className="rh-insight-label">Insight</span>
-        {answer.insight ? (
-          <>
-            <blockquote>{answer.insight.text}</blockquote>
-            <div style={{ marginTop: 10 }}>
-              <SourceChips claim={answer.insight} />
-            </div>
-          </>
-        ) : (
-          <blockquote>The catalogue has no evidence that directly answers this yet.</blockquote>
-        )}
-        {answer.comparison && (
-          <div className="rh-compare">
-            {answer.comparison.map((c) => (
-              <div key={c.state}>
-                <h5>
-                  {c.state} · {c.papers.length} studies
-                </h5>
-                {c.claim ? (
-                  <>
-                    {c.claim.text}
-                    <div style={{ marginTop: 8 }}>
-                      <SourceChips claim={c.claim} />
-                    </div>
-                  </>
-                ) : (
-                  <span className="rh-muted">No matching studies — a candidate research gap.</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-        {answer.claims.length > 0 && (
-          <div className="rh-claims">
-            <span className="rh-insight-label" style={{ color: "#66736C" }}>
-              Supporting evidence
-            </span>
-            {answer.claims.map((c, i) => (
-              <div key={i} className="rh-claim" style={{ animationDelay: `${150 + i * 120}ms` }}>
-                {c.text}
-                <SourceChips claim={c} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      <div className="rh-card rh-evidence">
-        <h4>Evidence</h4>
-        <div className="rh-ev-grid">
-          {counts.map((c) => (
-            <div key={c.label}>
-              <strong>{c.n}</strong>
-              <span>{c.label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="rh-coverage">
-          <div className="rh-ws-row">
-            <b>Evidence coverage · {answer.coverage.label}</b>
-            <span>{answer.coverage.score}%</span>
-          </div>
-          <div className="rh-coverage-bar">
-            <span style={{ width: `${answer.coverage.score}%` }} />
-          </div>
-          <p>{answer.coverage.note}</p>
-        </div>
-        {ev.layers.length > 0 && (
-          <>
-            <h4 style={{ marginTop: 16 }}>Relevant GIS layers</h4>
-            <div className="rh-tags">
-              {ev.layers.slice(0, 3).map((l) => (
-                <span key={l.id} className="rh-tag">
-                  {l.name}
-                </span>
-              ))}
-            </div>
-          </>
-        )}
-        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-          <button className="rh-btn primary sm" onClick={onEvidence}>
-            View evidence <ArrowRight />
-          </button>
-          <button className="rh-btn sm" onClick={onAgain}>
-            Ask another
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EvidenceList({
-  answer,
-  onAdd,
-}: {
-  answer: CopilotAnswer;
-  onAdd: (kind: "paper" | "dataset" | "policy" | "layer", id: string) => void;
-}) {
-  const ev = answer.evidence;
-  const row = (key: string, icon: ReactNode, title: string, meta: string, add: () => void) => (
-    <div key={key} className="rh-card rh-mini">
-      {icon}
-      <div style={{ flex: 1 }}>
-        <strong style={{ whiteSpace: "normal" }}>{title}</strong>
-        <small>{meta}</small>
-      </div>
-      <button className="rh-btn sm" onClick={add}>
-        <Plus /> Add
-      </button>
-    </div>
-  );
-  return (
-    <div className="rh-mini-list">
-      {ev.papers
-        .slice(0, 5)
-        .map((p) =>
-          row(
-            p.id,
-            <FileText style={{ color: "#3B82F6" }} />,
-            p.title,
-            `${p.institution} · ${p.year} · ${p.citations} citations`,
-            () => onAdd("paper", p.id),
-          ),
-        )}
-      {ev.datasets
-        .slice(0, 4)
-        .map((d) =>
-          row(
-            d.id,
-            <Database style={{ color: "#7C5CFC" }} />,
-            d.name,
-            `${d.source} · ${d.temporal}`,
-            () => onAdd("dataset", d.id),
-          ),
-        )}
-      {ev.policies
-        .slice(0, 3)
-        .map((g) =>
-          row(
-            g.id,
-            <Landmark style={{ color: "#F59E0B" }} />,
-            g.title,
-            `${g.issuer} · ${g.year}`,
-            () => onAdd("policy", g.id),
-          ),
-        )}
-      {ev.layers
-        .slice(0, 3)
-        .map((l) =>
-          row(l.id, <Layers style={{ color: "#0B7A4B" }} />, l.name, l.source, () =>
-            onAdd("layer", l.id),
-          ),
-        )}
     </div>
   );
 }
@@ -1530,10 +1159,230 @@ export function ProposalForm({
 // ---------------------------------------------------------------------------
 
 const INST_COLOR: Record<string, string> = {
-  Academic: "#3B82F6",
   Government: "#075B3A",
+  Academic: "#3B82F6",
   "Research institute": "#F59E0B",
 };
+
+// Ring order: grouped by type, ordered within groups to keep chords short
+const RING_ORDER = [
+  "dolr",
+  "soi",
+  "gom",
+  "gog",
+  "iitb",
+  "tiss",
+  "cept",
+  "iitd",
+  "iisc",
+  "iitm",
+  "nalsar",
+  "nirdpr",
+  "cpr",
+  "wii",
+];
+const RING_R = 128;
+const GROUP_GAP = 0.32; // radians between type groups
+
+const RING = (() => {
+  const insts = RING_ORDER.map((id) => INSTITUTIONS.find((i) => i.id === id)).filter(
+    (i): i is Institution => !!i,
+  );
+  const groups = insts.reduce(
+    (n, inst, k) => n + (k > 0 && insts[k - 1]!.type !== inst.type ? 1 : 0),
+    1,
+  );
+  const step = (Math.PI * 2 - groups * GROUP_GAP) / insts.length;
+  let angle = -Math.PI / 2 + GROUP_GAP / 2;
+  const nodes = insts.map((inst, k) => {
+    if (k > 0 && insts[k - 1]!.type !== inst.type) angle += GROUP_GAP;
+    const a = angle + step / 2;
+    angle += step;
+    const links = COLLABORATIONS.filter(([x, y]) => x === inst.id || y === inst.id);
+    return {
+      inst,
+      a,
+      x: Math.cos(a) * RING_R,
+      y: Math.sin(a) * RING_R,
+      degree: links.length,
+      joint: links.reduce((s, c) => s + c[2], 0),
+    };
+  });
+  // Arc extent per type, drawn as a thin band outside the ring
+  const bands = Object.keys(INST_COLOR).map((type) => {
+    const members = nodes.filter((n) => n.inst.type === type);
+    return {
+      type,
+      from: members[0]!.a - step / 2 + 0.03,
+      to: members[members.length - 1]!.a + step / 2 - 0.03,
+    };
+  });
+  return { nodes, bands };
+})();
+
+const ringNode = (id: string) => RING.nodes.find((n) => n.inst.id === id)!;
+
+const arcPath = (r: number, from: number, to: number) => {
+  const p = (a: number) => `${(Math.cos(a) * r).toFixed(1)},${(Math.sin(a) * r).toFixed(1)}`;
+  return `M${p(from)} A${r},${r} 0 ${to - from > Math.PI ? 1 : 0} 1 ${p(to)}`;
+};
+
+// Chord bent toward the centre of the ring
+const chordPath = (a: string, b: string) => {
+  const p = ringNode(a);
+  const q = ringNode(b);
+  const pull = 0.18;
+  return `M${p.x.toFixed(1)},${p.y.toFixed(1)} Q${((p.x + q.x) * pull).toFixed(1)},${((p.y + q.y) * pull).toFixed(1)} ${q.x.toFixed(1)},${q.y.toFixed(1)}`;
+};
+
+const MAX_JOINT = Math.max(...COLLABORATIONS.map((c) => c[2]));
+
+function NetworkGraph({
+  focus,
+  setFocus,
+  onPick,
+}: {
+  focus: string | null;
+  setFocus: (id: string | null) => void;
+  onPick: (name: string) => void;
+}) {
+  const partners = focus
+    ? COLLABORATIONS.filter(([a, b]) => a === focus || b === focus)
+        .map(([a, b, w]) => ({ id: a === focus ? b : a, w }))
+        .sort((x, y) => y.w - x.w)
+    : [];
+  const partnerIds = new Set(partners.map((p) => p.id));
+  const focused = focus ? ringNode(focus) : null;
+  const top = [...RING.nodes].sort((a, b) => b.joint - a.joint).slice(0, 4);
+
+  return (
+    <div className="rh-net">
+      <svg
+        className="rh-net-svg"
+        viewBox="-235 -190 470 380"
+        role="img"
+        aria-label="Institution collaboration network grouped by institution type"
+        onMouseLeave={() => setFocus(null)}
+      >
+        {RING.bands.map((b) => {
+          const mid = (b.from + b.to) / 2;
+          const c = Math.cos(mid);
+          return (
+            <g key={b.type}>
+              <path
+                d={arcPath(RING_R + 8, b.from, b.to)}
+                className="band"
+                stroke={INST_COLOR[b.type]}
+              />
+              <text
+                x={c * (RING_R + 66)}
+                y={Math.sin(mid) * (RING_R + 48)}
+                className="band-label"
+                textAnchor={Math.abs(c) < 0.3 ? "middle" : c > 0 ? "start" : "end"}
+                fill={INST_COLOR[b.type]}
+              >
+                {b.type === "Research institute" ? "RESEARCH INSTITUTES" : b.type.toUpperCase()}
+              </text>
+            </g>
+          );
+        })}
+        {COLLABORATIONS.map(([a, b, w]) => {
+          const on = !!focus && (a === focus || b === focus);
+          return (
+            <path
+              key={`${a}-${b}`}
+              d={chordPath(a, b)}
+              className={`chord${focus ? (on ? " on" : " off") : ""}`}
+              strokeWidth={0.8 + (w / MAX_JOINT) * 3.2}
+            />
+          );
+        })}
+        {RING.nodes.map((n) => {
+          const right = Math.cos(n.a) >= 0;
+          const state = !focus
+            ? ""
+            : n.inst.id === focus
+              ? " focus"
+              : partnerIds.has(n.inst.id)
+                ? " partner"
+                : " off";
+          return (
+            <g
+              key={n.inst.id}
+              className={`node${state}`}
+              tabIndex={0}
+              role="button"
+              aria-label={`${n.inst.name}: ${n.degree} partner institutions, ${n.joint} joint projects`}
+              onMouseEnter={() => setFocus(n.inst.id)}
+              onFocus={() => setFocus(n.inst.id)}
+              onClick={() => onPick(n.inst.name)}
+            >
+              <circle
+                cx={n.x}
+                cy={n.y}
+                r={4 + n.inst.publications / 16}
+                fill={INST_COLOR[n.inst.type]}
+              />
+              <text
+                x={Math.cos(n.a) * (RING_R + 18)}
+                y={Math.sin(n.a) * (RING_R + 18) + 4}
+                textAnchor={right ? "start" : "end"}
+              >
+                {n.inst.short}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      <div className="rh-net-detail" aria-live="polite">
+        {focused ? (
+          <>
+            <div className="rh-net-detail-head">
+              <span className="dot" style={{ background: INST_COLOR[focused.inst.type] }} />
+              <div>
+                <strong>{focused.inst.name}</strong>
+                <small>
+                  {focused.inst.type} · {focused.inst.state} · {focused.inst.publications}{" "}
+                  publications
+                </small>
+              </div>
+            </div>
+            <h5>
+              {partners.length} partner institutions · {focused.joint} joint projects
+            </h5>
+            <ul>
+              {partners.map((p) => (
+                <li key={p.id}>
+                  <span>{ringNode(p.id).inst.name}</span>
+                  <i style={{ width: `${(p.w / MAX_JOINT) * 100}%` }} />
+                  <b>{p.w}</b>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <>
+            <h5>Most connected institutions · joint projects</h5>
+            <ul>
+              {top.map((n) => (
+                <li key={n.inst.id}>
+                  <span>{n.inst.name}</span>
+                  <i style={{ width: `${(n.joint / top[0]!.joint) * 100}%` }} />
+                  <b>{n.joint}</b>
+                </li>
+              ))}
+            </ul>
+            <p>
+              Hover an institution to see its partners; click to filter researchers. Line weight =
+              joint projects, circle size = publications (demo data).
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function ResearchNetwork({ limit }: { limit?: number } = {}) {
   const hub = useHub();
@@ -1543,19 +1392,6 @@ export function ResearchNetwork({ limit }: { limit?: number } = {}) {
   const [area, setArea] = useState("All");
   const [q, setQ] = useState("");
   const [invite, setInvite] = useState<string | null>(null);
-  const neighbours = useMemo(
-    () =>
-      new Set(
-        focus
-          ? COLLABORATIONS.filter(([a, b]) => a === focus || b === focus).flatMap(([a, b]) => [
-              a,
-              b,
-            ])
-          : [],
-      ),
-    [focus],
-  );
-  const pos = (id: string) => INSTITUTIONS.find((i) => i.id === id)!;
   const people = RESEARCHERS.filter(
     (r) =>
       (instFilter === "All" || r.institution.includes(instFilter)) &&
@@ -1568,81 +1404,18 @@ export function ResearchNetwork({ limit }: { limit?: number } = {}) {
   const insts = ["All", ...Array.from(new Set(RESEARCHERS.map((r) => r.institution)))];
   return (
     <div className="rh-network">
-      <div className="rh-card" style={{ padding: 16 }}>
-        <div className="rh-ws-row" style={{ marginBottom: 6 }}>
+      <div className="rh-card" style={{ padding: 18 }}>
+        <div className="rh-ws-row" style={{ marginBottom: 4 }}>
           <b style={{ fontSize: 13 }}>
             {INSTITUTIONS.length} institutions · {COLLABORATIONS.length} active collaborations
           </b>
-          <div className="rh-legend" style={{ marginTop: 0 }}>
-            {Object.entries(INST_COLOR).map(([k, c]) => (
-              <span key={k}>
-                <i style={{ background: c, borderRadius: "50%" }} />
-                {k}
-              </span>
-            ))}
-          </div>
+          <span className="rh-demo">Demo data</span>
         </div>
-        <svg
-          className="rh-net-svg"
-          viewBox="0 0 100 100"
-          role="img"
-          aria-label="Institution collaboration network"
-          onMouseLeave={() => setFocus(null)}
-        >
-          {COLLABORATIONS.map(([a, b, w]) => {
-            const p = pos(a),
-              q2 = pos(b);
-            const on = focus && (a === focus || b === focus);
-            return (
-              <line
-                key={`${a}-${b}`}
-                x1={p.x}
-                y1={p.y}
-                x2={q2.x}
-                y2={q2.y}
-                strokeWidth={0.25 + w * 0.12}
-                className={focus ? (on ? "hi" : "dim") : ""}
-              />
-            );
-          })}
-          {INSTITUTIONS.map((inst, i) => {
-            const r = 2.2 + inst.publications / 22;
-            return (
-              <g
-                key={inst.id}
-                className={`inst${focus && !neighbours.has(inst.id) ? " dim" : ""}`}
-                onMouseEnter={() => setFocus(inst.id)}
-                onClick={() => setInstFilter(inst.name.split(" —")[0]!)}
-                tabIndex={0}
-                role="button"
-                aria-label={`${inst.name}, ${inst.publications} publications`}
-              >
-                <circle
-                  className="pulse"
-                  cx={inst.x}
-                  cy={inst.y}
-                  r={r + 1.2}
-                  stroke={INST_COLOR[inst.type]}
-                  style={{ animationDelay: `${i * 0.4}s` }}
-                />
-                <circle
-                  className="core"
-                  cx={inst.x}
-                  cy={inst.y}
-                  r={r}
-                  fill={INST_COLOR[inst.type]}
-                />
-                <text x={inst.x} y={inst.y + r + 3.6}>
-                  {inst.short}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-        <p className="rh-muted" style={{ margin: 0, fontSize: 11 }}>
-          Hover an institution to highlight its collaborators; click to filter researchers. Node
-          size = publications (demo).
-        </p>
+        <NetworkGraph
+          focus={focus}
+          setFocus={setFocus}
+          onPick={(name) => setInstFilter(name.split(" —")[0]!)}
+        />
       </div>
       <div>
         <div className="rh-filters">
@@ -1685,7 +1458,10 @@ export function ResearchNetwork({ limit }: { limit?: number } = {}) {
             View all {people.length} researchers <ArrowRight />
           </button>
         )}
-        <div className="rh-profiles">
+        <div
+          className="rh-profiles rh-scroll"
+          style={{ "--rh-scroll-h": "720px" } as CSSProperties}
+        >
           {people.length ? (
             (limit ? people.slice(0, limit) : people).map((r) => (
               <article key={r.id} className="rh-card rh-profile rh-lift">
@@ -2365,7 +2141,7 @@ export function TranslateFlow({ ws, onBrief }: { ws: Workspace; onBrief: () => v
 
 export function PolicyEvidenceList() {
   return (
-    <div className="rh-mini-list">
+    <div className="rh-mini-list rh-scroll" style={{ "--rh-scroll-h": "760px" } as CSSProperties}>
       {POLICIES.map((g) => {
         const linked = PAPERS.filter(
           (p) =>

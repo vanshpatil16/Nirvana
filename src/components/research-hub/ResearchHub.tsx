@@ -46,25 +46,24 @@ import logo from "@/assets/logo.png";
 import sidenavBottom from "@/assets/sidenav-bottom.png";
 import { HubContext, useHub, type EvidenceKind, type HubApi, type HubView } from "./hub-context";
 import {
-  CaseStudies,
-  Copilot,
   DatasetExplorer,
   DatasetPreview,
   DiscoverSearch,
   Empty,
-  EvidenceGraph,
+  HeroVideo,
   GapExplorer,
+  CaseStudies,
   LifecycleStrip,
+  NationalPipeline,
+  SnapshotMetrics,
   LiteratureReviewPanel,
   Modal,
-  NationalPipeline,
   PaperCard,
   PaperDetail,
   PolicyEvidenceList,
   PolicyExperiment,
   ProposalForm,
   ResearchNetwork,
-  SnapshotMetrics,
   TranslateFlow,
   BriefBuilder,
   WorkspaceCard,
@@ -95,7 +94,6 @@ const RAIL: { view: HubView; label: string; icon: typeof Home }[] = [
   { view: "datasets", label: "Datasets", icon: BarChart3 },
   { view: "publications", label: "Publications", icon: BookOpen },
   { view: "policy-evidence", label: "Policy Evidence", icon: Landmark },
-  { view: "copilot", label: "Research Copilot", icon: Bot },
   { view: "experiments", label: "Policy Experiments", icon: FlaskConical },
   { view: "network", label: "Research Network", icon: Globe2 },
   { view: "gaps", label: "Research Gaps", icon: Lightbulb },
@@ -661,7 +659,7 @@ function View({
     case "overview":
       return (
         <>
-          <section className="rh-hero" aria-label="Research Hub introduction">
+          <section className="rh-hero rh-hero-home" aria-label="Research Hub introduction">
             <div>
               <span className="rh-eyebrow">
                 <Sparkles /> Bhumi-Niti Research Hub
@@ -693,113 +691,7 @@ function View({
                 </span>
               </div>
             </div>
-            <EvidenceGraph />
-          </section>
-
-          <section
-            className="rh-section"
-            style={{ marginTop: 18 }}
-            aria-label="National research snapshot"
-          >
-            <SnapshotMetrics />
-          </section>
-
-          <section className="rh-section">
-            <SectionHead
-              eyebrow="Discover"
-              icon={Compass}
-              title="Explore the Land Governance Knowledge Graph"
-            >
-              Search in plain language across research, datasets, policies, case studies and laws —
-              by place, institution, author, year or theme.
-            </SectionHead>
-            <DiscoverSearch compact />
-          </section>
-
-          <section className="rh-section">
-            <Copilot />
-          </section>
-
-          <section className="rh-section">
-            <SectionHead
-              eyebrow="Featured research"
-              icon={BookOpen}
-              title="Evidence shaping land governance"
-              action={
-                <button className="rh-btn" onClick={() => hub.go("publications")}>
-                  All publications <ArrowRight />
-                </button>
-              }
-            />
-            <div className="rh-grid">
-              {featured.map((p) => (
-                <PaperCard key={p.id} paper={p} />
-              ))}
-            </div>
-          </section>
-
-          <section className="rh-section">
-            <SectionHead
-              eyebrow="Collaborate"
-              icon={Users}
-              title="Collaborative Research Workspaces"
-              action={
-                <button className="rh-btn primary" onClick={onCreate}>
-                  <Plus /> New workspace
-                </button>
-              }
-            >
-              Move from reading evidence to building research together.
-            </SectionHead>
-            <div className="rh-ws-grid">
-              {hub.workspaces.slice(0, 3).map((w) => (
-                <WorkspaceCard key={w.id} ws={w} />
-              ))}
-            </div>
-          </section>
-
-          <section className="rh-section">
-            <SectionHead
-              eyebrow="Research gaps"
-              icon={Lightbulb}
-              title="Where India needs new evidence"
-            >
-              Coverage of land-governance themes across six states. Select a cell to see why it is a
-              gap and turn it into a proposal.
-            </SectionHead>
-            <GapExplorer onPropose={onPropose} />
-          </section>
-
-          <section className="rh-section">
-            <SectionHead eyebrow="Case studies" icon={MapIcon} title="Land Governance Case Studies">
-              Places where land-use transitions, policy, climate risk and disputes meet.
-            </SectionHead>
-            <CaseStudies />
-          </section>
-
-          <section className="rh-section">
-            <SectionHead
-              eyebrow="Research network"
-              icon={Network}
-              title="National Research Network"
-              action={
-                <button className="rh-btn" onClick={() => hub.go("network")}>
-                  Open network <ArrowRight />
-                </button>
-              }
-            >
-              Institutions, researchers and collaborations across states.
-            </SectionHead>
-            <ResearchNetwork limit={4} />
-          </section>
-
-          <section className="rh-section" style={{ marginBottom: 12 }}>
-            <SectionHead
-              eyebrow="The platform's purpose"
-              icon={Landmark}
-              title="From research question to national policy"
-            />
-            <NationalPipeline />
+            <HeroVideo />
           </section>
         </>
       );
@@ -814,10 +706,19 @@ function View({
           >
             Natural-language search across studies, datasets, policies and GIS layers.
           </SectionHead>
-          <DiscoverSearch initialQuery="How has urban expansion affected agricultural land in Maharashtra?" />
+          <SnapshotMetrics />
+          <div className="rh-section" style={{ marginTop: 24 }}>
+            <DiscoverSearch initialQuery="How has urban expansion affected agricultural land in Maharashtra?" />
+          </div>
           <div className="rh-section">
             <LiteratureReviewPanel />
           </div>
+          <section className="rh-section">
+            <SectionHead eyebrow="Case studies" icon={MapIcon} title="Land Governance Case Studies">
+              Places where land-use transitions, policy, climate risk and disputes meet.
+            </SectionHead>
+            <CaseStudies />
+          </section>
         </>
       );
 
@@ -1051,16 +952,14 @@ function View({
               <PolicyEvidenceList />
             </div>
           </div>
-        </>
-      );
-
-    case "copilot":
-      return (
-        <>
-          <Copilot />
-          <div className="rh-section">
-            <LiteratureReviewPanel />
-          </div>
+          <section className="rh-section">
+            <SectionHead
+              eyebrow="The platform’s purpose"
+              icon={Landmark}
+              title="From research question to national policy"
+            />
+            <NationalPipeline />
+          </section>
         </>
       );
 

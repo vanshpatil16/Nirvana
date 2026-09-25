@@ -10,7 +10,6 @@ export type HubView =
   | "datasets"
   | "publications"
   | "policy-evidence"
-  | "copilot"
   | "experiments"
   | "network"
   | "gaps";
