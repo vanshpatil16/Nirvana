@@ -11,6 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as GisExplorerRouteImport } from './routes/gis-explorer'
+import { Route as InnovationPortalRouteImport } from './routes/innovation-portal'
+import { Route as LanddifferenceRouteImport } from './routes/landdifference'
+import { Route as RecordVsRealityRouteImport } from './routes/record-vs-reality'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +26,86 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GisExplorerRoute = GisExplorerRouteImport.update({
+  id: '/gis-explorer',
+  path: '/gis-explorer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InnovationPortalRoute = InnovationPortalRouteImport.update({
+  id: '/innovation-portal',
+  path: '/innovation-portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LanddifferenceRoute = LanddifferenceRouteImport.update({
+  id: '/landdifference',
+  path: '/landdifference',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecordVsRealityRoute = RecordVsRealityRouteImport.update({
+  id: '/record-vs-reality',
+  path: '/record-vs-reality',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/gis-explorer': typeof GisExplorerRoute
+  '/innovation-portal': typeof InnovationPortalRoute
+  '/landdifference': typeof LanddifferenceRoute
+  '/record-vs-reality': typeof RecordVsRealityRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/gis-explorer': typeof GisExplorerRoute
+  '/innovation-portal': typeof InnovationPortalRoute
+  '/landdifference': typeof LanddifferenceRoute
+  '/record-vs-reality': typeof RecordVsRealityRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/gis-explorer': typeof GisExplorerRoute
+  '/innovation-portal': typeof InnovationPortalRoute
+  '/landdifference': typeof LanddifferenceRoute
+  '/record-vs-reality': typeof RecordVsRealityRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/gis-explorer'
+    | '/innovation-portal'
+    | '/landdifference'
+    | '/record-vs-reality'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard'
-  id: '__root__' | '/' | '/dashboard'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/gis-explorer'
+    | '/innovation-portal'
+    | '/landdifference'
+    | '/record-vs-reality'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/gis-explorer'
+    | '/innovation-portal'
+    | '/landdifference'
+    | '/record-vs-reality'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  GisExplorerRoute: typeof GisExplorerRoute
+  InnovationPortalRoute: typeof InnovationPortalRoute
+  LanddifferenceRoute: typeof LanddifferenceRoute
+  RecordVsRealityRoute: typeof RecordVsRealityRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +124,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/gis-explorer': {
+      id: '/gis-explorer'
+      path: '/gis-explorer'
+      fullPath: '/gis-explorer'
+      preLoaderRoute: typeof GisExplorerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/innovation-portal': {
+      id: '/innovation-portal'
+      path: '/innovation-portal'
+      fullPath: '/innovation-portal'
+      preLoaderRoute: typeof InnovationPortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landdifference': {
+      id: '/landdifference'
+      path: '/landdifference'
+      fullPath: '/landdifference'
+      preLoaderRoute: typeof LanddifferenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/record-vs-reality': {
+      id: '/record-vs-reality'
+      path: '/record-vs-reality'
+      fullPath: '/record-vs-reality'
+      preLoaderRoute: typeof RecordVsRealityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  GisExplorerRoute: GisExplorerRoute,
+  InnovationPortalRoute: InnovationPortalRoute,
+  LanddifferenceRoute: LanddifferenceRoute,
+  RecordVsRealityRoute: RecordVsRealityRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

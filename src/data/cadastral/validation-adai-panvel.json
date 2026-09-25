@@ -1,0 +1,19 @@
+{
+  "slug": "adai-panvel",
+  "source": "OpenStreetMap",
+  "crs": "EPSG:4326",
+  "importedAt": "2026-09-24T05:49:13.810767+00:00",
+  "totalFeatures": 9,
+  "validPolygons": 9,
+  "invalidPolygons": 0,
+  "ringsRepairedByClosure": 0,
+  "duplicateIds": 0,
+  "missingParcelIdsGenerated": 0,
+  "missingSurveyNumbers": 9,
+  "admin": {
+    "village": "Adai",
+    "taluka": "Panvel",
+    "district": "Raigad",
+    "state": "Maharashtra"
+  }
+}

@@ -2,6 +2,9 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { handleAiApi } from "./server/ai-agent";
+import { handleParcelsApi } from "./server/parcel-store";
+import { handleWeatherApi } from "./server/weather-india";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -47,6 +50,19 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Cadastral bbox API (framework-agnostic, works on the edge runtime).
+      const url = new URL(request.url);
+      if (url.pathname === "/api/parcels" && request.method === "GET") {
+        return handleParcelsApi(request);
+      }
+      // Live IMD weather proxy (station list / per-station / national summary).
+      if (url.pathname.startsWith("/api/weather")) {
+        return handleWeatherApi(request);
+      }
+      // Land-intelligence agent (OpenRouter tool loop; needs OPENROUTER_API_KEY).
+      if (url.pathname === "/api/ai") {
+        return handleAiApi(request, env);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

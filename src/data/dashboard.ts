@@ -6,6 +6,7 @@ import {
   Building2,
   Database,
   FlaskConical,
+  Layers,
   Leaf,
   Map,
   MapPinned,
@@ -16,14 +17,15 @@ import {
 } from "lucide-react";
 
 export const navItems = [
-  { label: "Dashboard", icon: BarChart3, active: true },
-  { label: "GIS Explorer", icon: Map },
-  { label: "Record vs Reality", icon: MapPinned },
+  { label: "Dashboard", icon: BarChart3, href: "/dashboard" },
+  { label: "GIS Explorer", icon: Map, href: "/gis-explorer" },
+  { label: "Record vs Reality", icon: MapPinned, href: "/record-vs-reality" },
+  { label: "Land Difference", icon: Layers, href: "/landdifference" },
   { label: "Disputes & Conflicts", icon: Scale },
   { label: "Policy Lab", icon: FlaskConical },
   { label: "Research Hub", icon: BookOpen },
   { label: "AI Research Copilot", icon: Beaker },
-  { label: "Innovation Portal", icon: Sprout },
+  { label: "Innovation Portal", icon: Sprout, href: "/innovation-portal" },
   { label: "Collaborative Workspaces", icon: Users },
   { label: "Data & APIs", icon: Database },
   { label: "Impact & Monitoring", icon: Network },
@@ -33,9 +35,6 @@ export const kpis = [
   { value: "684,832", label: "Villages Mapped", trend: "↑ 2.4%", tone: "sage", icon: Building2 },
   { value: "421,309", label: "Land-Use Changes", trend: "↑ 12.6%", tone: "violet", icon: MapPinned },
   { value: "14,203", label: "Active Land Disputes", trend: "↓ 8.1%", tone: "terra", icon: AlertTriangle },
-  { value: "1,284", label: "Research Publications", trend: "↑ 23.4%", tone: "blue", icon: BookOpen },
-  { value: "47", label: "Policies Evaluated", trend: "↑ 14.2%", tone: "amber", icon: Scale },
-  { value: "82", label: "Pilot Projects", trend: "↑ 36.5%", tone: "teal", icon: FlaskConical },
   { value: "231", label: "High-Risk Districts", trend: "↑ 9.3%", tone: "leaf", icon: Leaf },
 ] as const;
 
