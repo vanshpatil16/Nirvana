@@ -10,7 +10,14 @@ import statesGeoJSON from "@/data/india-states.json";
 import { STATE_STATS } from "@/data/state-intelligence";
 
 export type LandClass = "agri" | "forest" | "built" | "water" | "barren" | "other";
-export const LAND_CLASS_ORDER: LandClass[] = ["agri", "forest", "built", "water", "barren", "other"];
+export const LAND_CLASS_ORDER: LandClass[] = [
+  "agri",
+  "forest",
+  "built",
+  "water",
+  "barren",
+  "other",
+];
 
 /** % of the region's area per class; sums to 100. */
 export type Shares = Record<LandClass, number>;
@@ -62,26 +69,62 @@ const RAW_SHARES: Record<string, [number, number, number, number, number]> = {
 
 // Water-stress index 0–100 (demo; shaped on groundwater extraction pressure).
 const WATER_STRESS: Record<string, number> = {
-  Punjab: 95, Haryana: 88, Rajasthan: 86, Delhi: 84, Chandigarh: 60, "Tamil Nadu": 70,
-  "Uttar Pradesh": 62, Karnataka: 60, Pondicherry: 58, Gujarat: 55, "Daman and Diu": 55,
-  Maharashtra: 52, Telangana: 50, "Madhya Pradesh": 50, "Andhra Pradesh": 46, Lakshadweep: 45,
-  Bihar: 40, "West Bengal": 38, Jharkhand: 36, "Dadra and Nagar Haveli": 35, Chhattisgarh: 34,
-  Kerala: 32, Odisha: 30, "Himachal Pradesh": 30, Uttarakhand: 30, "Jammu and Kashmir": 30,
-  Goa: 28, Assam: 22, Tripura: 20, "Andaman and Nicobar Islands": 20, Manipur: 18,
-  Meghalaya: 16, Nagaland: 16, Mizoram: 14, Sikkim: 12,
+  Punjab: 95,
+  Haryana: 88,
+  Rajasthan: 86,
+  Delhi: 84,
+  Chandigarh: 60,
+  "Tamil Nadu": 70,
+  "Uttar Pradesh": 62,
+  Karnataka: 60,
+  Pondicherry: 58,
+  Gujarat: 55,
+  "Daman and Diu": 55,
+  Maharashtra: 52,
+  Telangana: 50,
+  "Madhya Pradesh": 50,
+  "Andhra Pradesh": 46,
+  Lakshadweep: 45,
+  Bihar: 40,
+  "West Bengal": 38,
+  Jharkhand: 36,
+  "Dadra and Nagar Haveli": 35,
+  Chhattisgarh: 34,
+  Kerala: 32,
+  Odisha: 30,
+  "Himachal Pradesh": 30,
+  Uttarakhand: 30,
+  "Jammu and Kashmir": 30,
+  Goa: 28,
+  Assam: 22,
+  Tripura: 20,
+  "Andaman and Nicobar Islands": 20,
+  Manipur: 18,
+  Meghalaya: 16,
+  Nagaland: 16,
+  Mizoram: 14,
+  Sikkim: 12,
 };
 
 export const STATE_NAMES = Object.keys(RAW_SHARES).sort();
 export const REGION_OPTIONS = [ALL_INDIA, ...STATE_NAMES];
 
 /** States that make up a region ("All India" = every state). */
-export const regionStates = (region: string): string[] => (region === ALL_INDIA ? STATE_NAMES : [region]);
+export const regionStates = (region: string): string[] =>
+  region === ALL_INDIA ? STATE_NAMES : [region];
 
 const clamp = (v: number, lo = 0, hi = 100) => Math.min(hi, Math.max(lo, v));
 
 export function baselineShares(state: string): Shares {
   const [agri, forest, built, water, barren] = RAW_SHARES[state] ?? [50, 20, 3, 2, 10];
-  return { agri, forest, built, water, barren, other: Math.max(0, 100 - agri - forest - built - water - barren) };
+  return {
+    agri,
+    forest,
+    built,
+    water,
+    barren,
+    other: Math.max(0, 100 - agri - forest - built - water - barren),
+  };
 }
 
 // Approximate state areas (km²) from the boundary polygons, used to weight "All India" aggregates
@@ -98,8 +141,13 @@ const ringArea = (ring: number[][]) => {
 
 export const STATE_AREA_KM2: Record<string, number> = Object.fromEntries(
   (statesGeoJSON as any).features.map((f: any) => {
-    const polys: number[][][][] = f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
-    const area = polys.reduce((sum, rings) => sum + rings.reduce((s, ring, k) => s + (k === 0 ? 1 : -1) * ringArea(ring), 0), 0);
+    const polys: number[][][][] =
+      f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
+    const area = polys.reduce(
+      (sum, rings) =>
+        sum + rings.reduce((s, ring, k) => s + (k === 0 ? 1 : -1) * ringArea(ring), 0),
+      0,
+    );
     return [f.properties.name, area];
   }),
 );
@@ -127,7 +175,16 @@ const LOSS_RECIPIENTS: Record<Driver, Partial<Record<LandClass, number>>> = {
 /** A conversion of `pp` percentage points of area from one class to another. */
 export type Flow = { from: LandClass; to: LandClass; pp: number };
 
-function transfer(shares: Shares, target: Driver, amount: number, flows?: Flow[]): Shares {
+/** Options for a scenario run. protectForest: forest is never a donor when other classes grow. */
+export type ScenarioOptions = { protectForest?: boolean };
+
+function transfer(
+  shares: Shares,
+  target: Driver,
+  amount: number,
+  flows?: Flow[],
+  opts?: ScenarioOptions,
+): Shares {
   const next = { ...shares };
   const record = (from: LandClass, to: LandClass, pp: number) => {
     if (!flows || pp <= 1e-6) return;
@@ -139,7 +196,9 @@ function transfer(shares: Shares, target: Driver, amount: number, flows?: Flow[]
     let remaining = amount;
     // A few passes so land that one donor can't supply is taken from the others
     for (let pass = 0; pass < 4 && remaining > 1e-6; pass++) {
-      const weights = Object.entries(GAIN_DONORS[target]).map(([c, p]) => [c as LandClass, next[c as LandClass] * (p ?? 0)] as const);
+      const weights = Object.entries(GAIN_DONORS[target])
+        .filter(([c]) => !(opts?.protectForest && c === "forest"))
+        .map(([c, p]) => [c as LandClass, next[c as LandClass] * (p ?? 0)] as const);
       const total = weights.reduce((s, [, w]) => s + w, 0);
       if (total <= 1e-9) break;
       let moved = 0;
@@ -164,11 +223,16 @@ function transfer(shares: Shares, target: Driver, amount: number, flows?: Flow[]
 }
 
 /** Applies scenario drivers in a fixed order; optionally records every class-to-class conversion. */
-export function applyDeltas(base: Shares, d: ScenarioDeltas, flows?: Flow[]): Shares {
-  let s = transfer(base, "built", d.built, flows);
-  s = transfer(s, "water", d.water, flows);
-  s = transfer(s, "forest", d.forest, flows);
-  return transfer(s, "agri", d.agri, flows);
+export function applyDeltas(
+  base: Shares,
+  d: ScenarioDeltas,
+  flows?: Flow[],
+  opts?: ScenarioOptions,
+): Shares {
+  let s = transfer(base, "built", d.built, flows, opts);
+  s = transfer(s, "water", d.water, flows, opts);
+  s = transfer(s, "forest", d.forest, flows, opts);
+  return transfer(s, "agri", d.agri, flows, opts);
 }
 
 export function scenarioFlows(base: Shares, d: ScenarioDeltas): Flow[] {
@@ -181,7 +245,12 @@ export function scenarioFlows(base: Shares, d: ScenarioDeltas): Flow[] {
 export function yearShares(state: string, year: string): Shares {
   const base = baselineShares(state);
   const t = clamp((Number(year) - 2018) / 6, 0, 1);
-  return applyDeltas(base, { built: base.built * 0.4 * t, forest: -base.forest * 0.05 * t, water: 0.15 * t, agri: 0 });
+  return applyDeltas(base, {
+    built: base.built * 0.4 * t,
+    forest: -base.forest * 0.05 * t,
+    water: 0.15 * t,
+    agri: 0,
+  });
 }
 
 // --- Indicators -----------------------------------------------------------------
@@ -200,7 +269,9 @@ export interface Indicators {
 
 function startIndicators(state: string): Omit<Indicators, "shares"> {
   const stat = STATE_STATS[state];
-  const riskBase = stat ? { High: 70, Moderate: 50, Low: 30 }[stat.risk] + Math.min(12, stat.highRiskDistricts * 0.4) : 45;
+  const riskBase = stat
+    ? { High: 70, Moderate: 50, Low: 30 }[stat.risk] + Math.min(12, stat.highRiskDistricts * 0.4)
+    : 45;
   return {
     waterStress: WATER_STRESS[state] ?? 35,
     climateRisk: riskBase,
@@ -220,15 +291,26 @@ function evolve(start: Omit<Indicators, "shares">, before: Shares, after: Shares
 
   // Already-stressed aquifers deteriorate faster under irrigation expansion
   const irrigation = 0.6 + start.waterStress / 100;
-  const waterStress = clamp(start.waterStress + 1.1 * dAgri * irrigation + 0.5 * dBuilt - 1.6 * dWater + 0.25 * forestLoss);
+  const waterStress = clamp(
+    start.waterStress + 1.1 * dAgri * irrigation + 0.5 * dBuilt - 1.6 * dWater + 0.25 * forestLoss,
+  );
   const climateRisk = clamp(
-    start.climateRisk + 1.2 * forestLoss + 0.6 * Math.max(0, dBuilt) + 0.3 * (waterStress - start.waterStress) - 0.8 * forestGain - 0.3 * dWater,
+    start.climateRisk +
+      1.2 * forestLoss +
+      0.6 * Math.max(0, dBuilt) +
+      0.3 * (waterStress - start.waterStress) -
+      0.8 * forestGain -
+      0.3 * dWater,
   );
   // More conversion → more title/boundary disputes, amplified where households are vulnerable
   const disputes = start.disputes * (1 + 0.02 * converted * (1 + start.socio / 40));
   const forestDependence = before.forest / 30;
   const socio = clamp(
-    start.socio - 0.18 * dAgri + 0.35 * forestLoss * forestDependence + 0.12 * Math.max(0, waterStress - start.waterStress) - 0.06 * dBuilt,
+    start.socio -
+      0.18 * dAgri +
+      0.35 * forestLoss * forestDependence +
+      0.12 * Math.max(0, waterStress - start.waterStress) -
+      0.06 * dBuilt,
   );
   return { shares: after, waterStress, climateRisk, disputes, socio };
 }
@@ -248,11 +330,16 @@ export interface RegionOutcome {
   states: StateOutcome[];
 }
 
-function stateOutcome(state: string, year: string, deltas: ScenarioDeltas): StateOutcome {
+function stateOutcome(
+  state: string,
+  year: string,
+  deltas: ScenarioDeltas,
+  opts?: ScenarioOptions,
+): StateOutcome {
   const base2018 = baselineShares(state);
   const observed = yearShares(state, year);
   const baseline = evolve(startIndicators(state), base2018, observed);
-  const scenario = evolve(baseline, observed, applyDeltas(observed, deltas));
+  const scenario = evolve(baseline, observed, applyDeltas(observed, deltas, undefined, opts));
   return { state, baseline, scenario };
 }
 
@@ -261,7 +348,9 @@ function aggregate(outcomes: StateOutcome[], pick: (o: StateOutcome) => Indicato
   const total = outcomes.reduce((s, o) => s + (STATE_AREA_KM2[o.state] ?? 0), 0) || 1;
   const w = (o: StateOutcome) => (STATE_AREA_KM2[o.state] ?? 0) / total;
   const avg = (f: (i: Indicators) => number) => outcomes.reduce((s, o) => s + w(o) * f(pick(o)), 0);
-  const shares = Object.fromEntries(LAND_CLASS_ORDER.map((c) => [c, avg((i) => i.shares[c])])) as Shares;
+  const shares = Object.fromEntries(
+    LAND_CLASS_ORDER.map((c) => [c, avg((i) => i.shares[c])]),
+  ) as Shares;
   return {
     shares,
     waterStress: avg((i) => i.waterStress),
@@ -271,8 +360,13 @@ function aggregate(outcomes: StateOutcome[], pick: (o: StateOutcome) => Indicato
   };
 }
 
-export function regionOutcome(region: string, year: string, deltas: ScenarioDeltas): RegionOutcome {
-  const states = regionStates(region).map((s) => stateOutcome(s, year, deltas));
+export function regionOutcome(
+  region: string,
+  year: string,
+  deltas: ScenarioDeltas,
+  opts?: ScenarioOptions,
+): RegionOutcome {
+  const states = regionStates(region).map((s) => stateOutcome(s, year, deltas, opts));
   return {
     region,
     year,
@@ -282,4 +376,5 @@ export function regionOutcome(region: string, year: string, deltas: ScenarioDelt
   };
 }
 
-export const isZeroScenario = (d: ScenarioDeltas) => d.agri === 0 && d.forest === 0 && d.built === 0 && d.water === 0;
+export const isZeroScenario = (d: ScenarioDeltas) =>
+  d.agri === 0 && d.forest === 0 && d.built === 0 && d.water === 0;

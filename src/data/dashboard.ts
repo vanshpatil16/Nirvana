@@ -23,7 +23,7 @@ export const navItems = [
   { label: "Land Difference", icon: Layers, href: "/landdifference" },
   { label: "Disputes & Conflicts", icon: Scale },
   { label: "Policy Lab", icon: FlaskConical },
-  { label: "Research Hub", icon: BookOpen },
+  { label: "Research Hub", icon: BookOpen, href: "/research-hub" },
   { label: "AI Research Copilot", icon: Beaker },
   { label: "Innovation Portal", icon: Sprout, href: "/innovation-portal" },
   { label: "Collaborative Workspaces", icon: Users },

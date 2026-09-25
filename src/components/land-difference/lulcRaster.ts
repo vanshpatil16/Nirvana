@@ -491,11 +491,11 @@ function toObjectUrl(f: Fields, paint: (img: Uint8ClampedArray) => void): Promis
   );
 }
 
-function paintBase(f: Fields, cls: Uint8Array) {
+function paintBase(f: Fields, cls: Uint8Array, visible?: boolean[]) {
   return toObjectUrl(f, (data) => {
     for (let i = 0; i < cls.length; i++) {
       const k = cls[i]!;
-      if (k === NONE) continue;
+      if (k === NONE || (visible && !visible[k])) continue;
       const rgba = CLASS_RGBA[k]!;
       const p = i * 4;
       data[p] = rgba[0];
@@ -564,15 +564,16 @@ export interface RegionRaster {
  * @param baseKey      cache key identifying `baseShares` (e.g. the year)
  * @param baseShares   observed shares per state, aligned with `states`
  * @param flowsByState scenario conversions per state, or null for no scenario
+ * @param visible      optional per-class visibility (indexed like LULC_CLASSES) for the base layer
  */
-export async function renderRegion(states: string[], baseKey: string, baseShares: Shares[], flowsByState: Flow[][] | null): Promise<RegionRaster> {
+export async function renderRegion(states: string[], baseKey: string, baseShares: Shares[], flowsByState: Flow[][] | null, visible?: boolean[]): Promise<RegionRaster> {
   const fields = await remember(fieldsCache, states.join("|"), () => buildFields(states), 4);
   const base = await remember(
     baseCache,
-    `${states.join("|")}#${baseKey}`,
+    `${states.join("|")}#${baseKey}${visible ? `#${visible.map(Number).join("")}` : ""}`,
     async () => {
       const cls = await classify(fields, baseShares);
-      return { cls, url: await paintBase(fields, cls) };
+      return { cls, url: await paintBase(fields, cls, visible) };
     },
     8,
     (evicted) => evicted.then((b) => URL.revokeObjectURL(b.url)),

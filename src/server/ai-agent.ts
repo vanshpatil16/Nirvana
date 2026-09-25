@@ -108,12 +108,16 @@ const SUBMIT_ANSWER_TOOL = {
         type: "array",
         items: { type: "string" },
         description:
-          "3-5 regulatory points, each exactly 'Label: detail' " +
-          "(e.g. 'Zoning & Land Use: ...', 'Dispute & Record Status: ...').",
+          "0-5 regulatory points, each exactly 'Label: detail' " +
+          "(e.g. 'Zoning & Land Use: ...', 'Dispute & Record Status: ...'). " +
+          "Include ONLY when specific regulations apply to this query; otherwise [] — never pad with filler.",
       },
       riskAssessment: {
         type: "string",
-        description: "Risk verdict in 1-2 sentences that MUST begin with Low, Moderate, or High.",
+        description:
+          "Risk verdict in 1-2 sentences beginning with Low, Moderate, or High. " +
+          "Include ONLY when the question concerns land, legal, environmental or financial risk; " +
+          "otherwise \"\" — do not invent a risk for greetings or how-to questions.",
       },
       evidence: {
         type: "array",
@@ -125,16 +129,19 @@ const SUBMIT_ANSWER_TOOL = {
           },
           required: ["label", "type"],
         },
-        description: "3-5 real sources backing the answer.",
+        description: "1-5 real sources you actually relied on; [] if none apply.",
       },
-      limitation: { type: "string", description: "One sentence data caveat." },
+      limitation: {
+        type: "string",
+        description: "One sentence data caveat — only when a real caveat applies, otherwise \"\".",
+      },
       suggestedFollowups: {
         type: "array",
         items: { type: "string" },
         description: "2-3 concrete questions the user could ask next.",
       },
     },
-    required: ["spoken", "summary", "framework", "riskAssessment", "evidence", "limitation", "suggestedFollowups"],
+    required: ["spoken", "summary", "suggestedFollowups"],
   },
 } as const;
 
@@ -147,14 +154,37 @@ const TOOLS = [
 // Schemas
 // ---------------------------------------------------------------------------
 
+// Optional card sections arrive as null/undefined/"[]" when the query doesn't
+// need them (greetings, how-to questions) — normalise to empty so the client
+// can hide the matching UI blocks entirely.
 const AnswerSchema = z.object({
   spoken: z.string().min(1),
   summary: z.string().min(1),
-  framework: z.array(z.string().min(1)).min(1).max(8),
-  riskAssessment: z.string().min(1),
-  evidence: z.array(z.object({ label: z.string().min(1), type: z.string().min(1) })).min(1).max(8),
-  limitation: z.string().min(1),
-  suggestedFollowups: z.array(z.string().min(1)).max(5),
+  framework: z
+    .array(z.string().min(1))
+    .max(8)
+    .nullish()
+    .transform((v) => v ?? []),
+  riskAssessment: z
+    .string()
+    .max(600)
+    .nullish()
+    .transform((v) => (v ?? "").trim()),
+  evidence: z
+    .array(z.object({ label: z.string().min(1), type: z.string().min(1) }))
+    .max(8)
+    .nullish()
+    .transform((v) => v ?? []),
+  limitation: z
+    .string()
+    .max(400)
+    .nullish()
+    .transform((v) => (v ?? "").trim()),
+  suggestedFollowups: z
+    .array(z.string().min(1))
+    .max(5)
+    .nullish()
+    .transform((v) => v ?? []),
 });
 type Answer = z.infer<typeof AnswerSchema>;
 
@@ -235,11 +265,13 @@ Answer rules:
 - Ground claims in real Indian sources: MahaBhumi / Bhu-Naksha, Bhulekh and 7/12 extracts, District Collector and Tehsil offices, MLRC 1966, CRZ notifications, municipal development plans, IMD, Sentinel-2 imagery.
 - Never invent survey numbers, file numbers, case details, or policy text. If you lack live data for something, say plainly what must be verified officially.
 - spoken: 1-3 short conversational sentences that will be read aloud — plain text only, no markdown, no emoji, no lists.
-- summary: the headline finding in 1-3 sentences.
-- framework: 3-5 items, each exactly "Label: detail" (e.g. "Zoning & Land Use: ...", "Dispute & Record Status: ...").
-- riskAssessment: 1-2 sentences that MUST begin with Low, Moderate, or High.
-- evidence: 3-5 real {label, type} sources.
-- limitation: one sentence data caveat.
+- summary: the headline finding in 1-3 sentences (always required).
+- Card sections are OPTIONAL — include ONLY what this particular question needs, and leave the rest empty. The UI hides empty sections:
+  · framework: 0-5 items "Label: detail" — only when specific rules/regulations apply (zoning, NA conversion, CRZ, revenue procedure, dispute law). For greetings, capability questions, or general explanations use [].
+  · riskAssessment: 1-2 sentences beginning Low, Moderate, or High — only when the user asks about risk (dispute, flood, environmental, conversion, encumbrance, financial). For greetings/how-to use "".
+  · evidence: for substantive land answers cite 1-3 sources you actually relied on (7/12 & Bhulekh extracts, MahaBhumi/Bhu-Naksha, CRZ notification, IMD, District Collector orders); use [] only for greetings or capability questions.
+  · limitation: only when a genuine data caveat applies — use "" otherwise.
+  Never pad these sections with generic filler to fill the card, but never drop a section the answer genuinely relies on either.
 - suggestedFollowups: 2-3 concrete questions the user could ask next.`;
 
   if (!context) {
@@ -352,14 +384,11 @@ function fallbackAnswer(message: string, prose: string, actions: FlyToAction[]):
         ? `Done — the map is now showing the plots around ${where}.`
         : summary,
     summary,
-    framework: [
-      "Record verification: Confirm the latest mutation entries in the 7/12 extract at the Tehsil office before acting on this analysis.",
-    ],
-    riskAssessment: "Moderate Risk. Treat this as preliminary guidance until certified land records are checked.",
-    evidence: [
-      { label: "Bhumi-Niti map layers & cadastral demo data", type: "Platform Data" },
-      { label: "Public land-record references (MahaBhumi / Bhulekh)", type: "Official Record" },
-    ],
+    // Degraded reply: no model verdict exists, so keep the optional card
+    // sections empty (the UI hides them) and surface only the genuine caveat.
+    framework: [],
+    riskAssessment: "",
+    evidence: [],
     limitation: "This reply was assembled without a full model response — verify details against certified records.",
     suggestedFollowups: [
       "Show me the plots in Mira Road",
@@ -386,11 +415,13 @@ async function runAgentLoop(params: {
   let answer: Answer | null = null;
   let prose = "";
   let usedModel = model;
+  let forceSubmit = false;
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    // Last round: force the structured answer so the loop always terminates.
+    // Last round (or after a prose reply): force the structured answer so the
+    // loop always terminates with a parseable submit_answer call.
     const toolChoice =
-      round >= MAX_TOOL_ROUNDS - 1
+      forceSubmit || round >= MAX_TOOL_ROUNDS - 1
         ? { type: "function", function: { name: SUBMIT_ANSWER_TOOL.name } }
         : "auto";
     const reply = await callOpenRouter(key, model, messages, toolChoice, referer);
@@ -399,9 +430,18 @@ async function runAgentLoop(params: {
 
     if (toolCalls.length === 0) {
       const content = typeof reply.message.content === "string" ? reply.message.content : "";
-      answer = extractAnswer(content);
+      const parsed = extractAnswer(content);
+      if (parsed) {
+        answer = parsed;
+        prose = content;
+        break;
+      }
+      // Model replied in plain prose — keep it (as fallback text / context)
+      // and force a structured submit_answer on the next round.
+      if (content.trim()) messages.push({ role: "assistant", content });
       prose = content;
-      break;
+      forceSubmit = true;
+      continue;
     }
 
     messages.push({

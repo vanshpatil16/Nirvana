@@ -15,6 +15,7 @@ import { Route as GisExplorerRouteImport } from './routes/gis-explorer'
 import { Route as InnovationPortalRouteImport } from './routes/innovation-portal'
 import { Route as LanddifferenceRouteImport } from './routes/landdifference'
 import { Route as RecordVsRealityRouteImport } from './routes/record-vs-reality'
+import { Route as ResearchHubRouteImport } from './routes/research-hub'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const RecordVsRealityRoute = RecordVsRealityRouteImport.update({
   path: '/record-vs-reality',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResearchHubRoute = ResearchHubRouteImport.update({
+  id: '/research-hub',
+  path: '/research-hub',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
+  '/research-hub': typeof ResearchHubRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
+  '/research-hub': typeof ResearchHubRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
+  '/research-hub': typeof ResearchHubRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/innovation-portal'
     | '/landdifference'
     | '/record-vs-reality'
+    | '/research-hub'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/innovation-portal'
     | '/landdifference'
     | '/record-vs-reality'
+    | '/research-hub'
   id:
     | '__root__'
     | '/'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/innovation-portal'
     | '/landdifference'
     | '/record-vs-reality'
+    | '/research-hub'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +118,7 @@ export interface RootRouteChildren {
   InnovationPortalRoute: typeof InnovationPortalRoute
   LanddifferenceRoute: typeof LanddifferenceRoute
   RecordVsRealityRoute: typeof RecordVsRealityRoute
+  ResearchHubRoute: typeof ResearchHubRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecordVsRealityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/research-hub': {
+      id: '/research-hub'
+      path: '/research-hub'
+      fullPath: '/research-hub'
+      preLoaderRoute: typeof ResearchHubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   InnovationPortalRoute: InnovationPortalRoute,
   LanddifferenceRoute: LanddifferenceRoute,
   RecordVsRealityRoute: RecordVsRealityRoute,
+  ResearchHubRoute: ResearchHubRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

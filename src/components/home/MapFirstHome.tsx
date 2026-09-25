@@ -33,6 +33,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import aiBotLogo from "@/assets/ai_intelligence_bot.png";
 import sidenavBottom from "@/assets/sidenav-bottom.png";
 import { navItems } from "@/data/dashboard";
 import mapWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -286,6 +287,10 @@ export function MapFirstHome() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [chatLog.length, analyzing, mode]);
+
+  // True while the AI intelligence panel is on screen — the sidebar stays
+  // closable (X sets mode back to "map") and the map controls shift with it.
+  const aiPanelOpen = mode === "chat" && Boolean(aiResponse || analyzing);
 
   // Satellite config
   const satProvider = getImageryConfig(getDefaultProvider().id);
@@ -789,75 +794,86 @@ export function MapFirstHome() {
         <p className="text-slate-700 leading-snug font-medium select-text">{reply.summary}</p>
       </div>
 
-      {(() => {
-        const level = /high/i.test(reply.riskAssessment)
-          ? { n: 3, label: "High", dot: "bg-red-500", bar: "bg-red-500" }
-          : /moderate/i.test(reply.riskAssessment)
-            ? { n: 2, label: "Moderate", dot: "bg-amber-500", bar: "bg-amber-500" }
-            : { n: 1, label: "Low", dot: "bg-green-600", bar: "bg-green-600" };
-        return (
-          <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                Risk assessment
-              </span>
-              <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
-                <i className={`w-2 h-2 rounded-full ${level.dot}`} />
-                {level.label}
-              </span>
-            </div>
-            <div className="flex gap-1 mb-2" aria-hidden="true">
-              {[1, 2, 3].map((i) => (
-                <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= level.n ? level.bar : "bg-slate-200"}`} />
-              ))}
-            </div>
-            <p className="text-slate-600 leading-snug line-clamp-3 select-text">{reply.riskAssessment}</p>
-          </div>
-        );
-      })()}
-
-      <div>
-        <h4 className="font-bold text-slate-900 text-xs mb-1.5">Regulatory framework</h4>
-        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
-          {reply.framework.map((item, idx) => {
-            const sep = item.indexOf(":");
-            const label = sep > 0 ? item.slice(0, sep).trim() : "Rule";
-            const body = sep > 0 ? item.slice(sep + 1).trim() : item;
-            return (
-              <li key={idx} className="flex items-baseline gap-2 px-2.5 py-2 bg-white">
-                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-green-700 bg-green-50 border border-green-100 rounded px-1.5 py-0.5 max-w-[110px] truncate">
-                  {label}
+      {/* Risk assessment — only when the agent actually flagged a risk. */}
+      {reply.riskAssessment.trim() &&
+        (() => {
+          const level = /high/i.test(reply.riskAssessment)
+            ? { n: 3, label: "High", dot: "bg-red-500", bar: "bg-red-500" }
+            : /moderate/i.test(reply.riskAssessment)
+              ? { n: 2, label: "Moderate", dot: "bg-amber-500", bar: "bg-amber-500" }
+              : { n: 1, label: "Low", dot: "bg-green-600", bar: "bg-green-600" };
+          return (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                  Risk assessment
                 </span>
-                <span className="text-slate-600 leading-snug line-clamp-2">{body}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
+                  <i className={`w-2 h-2 rounded-full ${level.dot}`} />
+                  {level.label}
+                </span>
+              </div>
+              <div className="flex gap-1 mb-2" aria-hidden="true">
+                {[1, 2, 3].map((i) => (
+                  <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= level.n ? level.bar : "bg-slate-200"}`} />
+                ))}
+              </div>
+              <p className="text-slate-600 leading-snug line-clamp-3 select-text">{reply.riskAssessment}</p>
+            </div>
+          );
+        })()}
 
-      <div>
-        <h4 className="font-bold text-slate-900 text-xs mb-1.5">Verified sources</h4>
-        <div className="flex flex-wrap gap-1.5">
-          {reply.evidence.map((ev, idx) => (
-            <span
-              key={idx}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold border border-slate-200"
-            >
-              <Database className="w-3 h-3 text-green-600" />
-              {ev.label}
-            </span>
-          ))}
+      {/* Regulatory framework — only when rules actually apply. */}
+      {reply.framework.length > 0 && (
+        <div>
+          <h4 className="font-bold text-slate-900 text-xs mb-1.5">Regulatory framework</h4>
+          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+            {reply.framework.map((item, idx) => {
+              const sep = item.indexOf(":");
+              const label = sep > 0 ? item.slice(0, sep).trim() : "Rule";
+              const body = sep > 0 ? item.slice(sep + 1).trim() : item;
+              return (
+                <li key={idx} className="flex items-baseline gap-2 px-2.5 py-2 bg-white">
+                  <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-green-700 bg-green-50 border border-green-100 rounded px-1.5 py-0.5 max-w-[110px] truncate">
+                    {label}
+                  </span>
+                  <span className="text-slate-600 leading-snug line-clamp-2">{body}</span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
-      </div>
+      )}
 
-      <details className="rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 group">
-        <summary className="cursor-pointer text-[11px] font-bold text-slate-500 hover:text-slate-700 list-none flex items-center gap-1.5">
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-          Data caveats
-        </summary>
-        <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed select-text">{reply.limitation}</p>
-      </details>
+      {/* Verified sources — only when the answer cites real sources. */}
+      {reply.evidence.length > 0 && (
+        <div>
+          <h4 className="font-bold text-slate-900 text-xs mb-1.5">Verified sources</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {reply.evidence.map((ev, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold border border-slate-200"
+              >
+                <Database className="w-3 h-3 text-green-600" />
+                {ev.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Data caveats — only when a genuine caveat was returned. */}
+      {reply.limitation.trim() && (
+        <details className="rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 group">
+          <summary className="cursor-pointer text-[11px] font-bold text-slate-500 hover:text-slate-700 list-none flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+            Data caveats
+          </summary>
+          <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed select-text">{reply.limitation}</p>
+        </details>
+      )}
     </div>
   );
 
@@ -1100,8 +1116,13 @@ export function MapFirstHome() {
 
       {/* ========================================================================= */}
       {/* FLOATING MAP CONTROLS (Right side stack)                                 */}
+      {/* Shifts left with the AI panel; hidden on small screens while it's open.  */}
       {/* ========================================================================= */}
-      <div className="absolute right-4 top-24 z-20 flex flex-col gap-2">
+      <div
+        className={`absolute top-24 z-20 flex-col gap-2 transition-all duration-300 ease-in-out ${
+          aiPanelOpen ? "hidden md:flex md:right-[416px]" : "right-4 flex"
+        }`}
+      >
         <div className="flex flex-col bg-white/90 backdrop-blur-md rounded-xl shadow-xl border border-slate-200/80 overflow-hidden">
           <button
             onClick={() => mapRef.current?.zoomIn()}
@@ -1158,7 +1179,11 @@ export function MapFirstHome() {
       {/* LAYERS POPOVER                                                           */}
       {/* ========================================================================= */}
       {layersOpen && (
-        <div className="absolute right-16 top-24 z-30 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/90 p-4 animate-in fade-in zoom-in-95 duration-150">
+        <div
+          className={`absolute top-24 z-30 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/90 p-4 animate-in fade-in zoom-in-95 duration-150 transition-[right] ease-in-out ${
+            aiPanelOpen ? "hidden md:block md:right-[464px]" : "right-16"
+          }`}
+        >
           <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
             <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Map Layers</span>
             <button onClick={() => setLayersOpen(false)} className="text-slate-400 hover:text-slate-600">
@@ -1308,15 +1333,17 @@ export function MapFirstHome() {
       {/* ========================================================================= */}
       {/* AI RESPONSE RIGHT SIDEBAR (docked, full-height)                           */}
       {/* ========================================================================= */}
-      {mode === "chat" && (aiResponse || analyzing) && (
+      {aiPanelOpen && (
         <aside className="absolute right-0 top-0 bottom-0 z-10 w-[400px] max-w-[94vw] bg-white border-l border-slate-200 shadow-xl flex flex-col overflow-hidden pt-16 pb-4 animate-in fade-in slide-in-from-right-4 duration-200">
           {/* Header — fixed */}
           <header className="shrink-0 px-5 pb-3 border-b border-slate-200/80 bg-gradient-to-b from-green-50/70 to-white">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-600/25 shrink-0">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
+                <img
+                  src={aiBotLogo}
+                  alt="Bhumi-Niti AI bot"
+                  className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-green-100 shadow-lg shadow-green-600/25"
+                />
                 <div className="min-w-0 leading-tight">
                   <span className="block font-bold text-sm text-slate-900 truncate">Bhumi-Niti AI Intelligence</span>
                   <span className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
@@ -1376,9 +1403,12 @@ export function MapFirstHome() {
                 </div>
               ) : (
                 <div key={turn.id} className="flex gap-2.5">
-                  <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-green-600 to-emerald-500 flex items-center justify-center shadow-sm ring-2 ring-white mt-0.5">
-                    <Sparkles className="w-3.5 h-3.5 text-white" />
-                  </div>
+                  <img
+                    src={aiBotLogo}
+                    alt=""
+                    aria-hidden="true"
+                    className="shrink-0 w-7 h-7 rounded-full object-cover ring-2 ring-white shadow-sm mt-0.5"
+                  />
                   <div className="flex-1 min-w-0 space-y-2">
                     {turn.reply ? (
                       renderAnswerCard(turn.reply)
@@ -1393,9 +1423,12 @@ export function MapFirstHome() {
 
             {analyzing && (
               <div className="flex gap-2.5">
-                <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-green-600 to-emerald-500 flex items-center justify-center shadow-sm ring-2 ring-white mt-0.5">
-                  <Sparkles className="w-3.5 h-3.5 text-white" />
-                </div>
+                <img
+                  src={aiBotLogo}
+                  alt=""
+                  aria-hidden="true"
+                  className="shrink-0 w-7 h-7 rounded-full object-cover ring-2 ring-white shadow-sm mt-0.5"
+                />
                 <div className="rounded-2xl rounded-tl-md bg-slate-100 border border-slate-200 px-3.5 py-3 flex items-center gap-2.5">
                   <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin shrink-0" />
                   <span className="text-[11px] font-medium text-slate-500">
@@ -1435,7 +1468,7 @@ export function MapFirstHome() {
       {/* ========================================================================= */}
       <div
         className={`absolute bottom-6 z-30 px-4 flex flex-col items-center gap-3 transition-all duration-300 ${
-          mode === "chat" && (aiResponse || analyzing)
+          aiPanelOpen
             ? "left-4 right-4 md:left-6 md:right-[424px] md:items-stretch"
             : "left-1/2 -translate-x-1/2 w-full max-w-3xl"
         }`}
