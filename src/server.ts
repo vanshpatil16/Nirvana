@@ -4,6 +4,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleAiApi } from "./server/ai-agent";
 import { handleParcelsApi } from "./server/parcel-store";
+import { handlePolicyExtract } from "./server/policy-extract";
 import { handleWeatherApi } from "./server/weather-india";
 
 type ServerEntry = {
@@ -62,6 +63,11 @@ export default {
       // Land-intelligence agent (OpenRouter tool loop; needs OPENROUTER_API_KEY).
       if (url.pathname === "/api/ai") {
         return handleAiApi(request, env);
+      }
+      // Policy document reader (Gemini; needs GEMINI_API_KEY). Reads an uploaded
+      // PDF into structured, cited policy parameters.
+      if (url.pathname === "/api/policy/extract") {
+        return handlePolicyExtract(request, env);
       }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
