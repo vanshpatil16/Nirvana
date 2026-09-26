@@ -25,6 +25,7 @@ import {
   type Policy,
   type SimulationResult,
 } from "@/data/policySimulation";
+import { BASE_YEAR as DATA_FROM, LATEST_YEAR as DATA_TO } from "@/data/policySimulation/observations";
 import { dateLabel, listSentence, pluralise } from "../lab-helpers";
 import { EvidencePanel, EvaluationBasisPanel } from "../parts/Evidence";
 import {
@@ -427,6 +428,9 @@ function PolicySetup({
   const window = policy.windows.find((w) => w.id === windowId);
   const notified = policy.targetGeographyIds;
   const contrast = policy.availableGeographyIds.filter((id) => !notified.includes(id));
+  // True when at least one of the instrument's own windows sits inside the
+  // record, so choosing a period actually changes the comparison.
+  const observable = policy.windows.some((w) => w.from >= DATA_FROM && w.to <= DATA_TO);
 
   const toggle = (id: string) =>
     onGeography(
@@ -498,21 +502,40 @@ function PolicySetup({
             Evaluation period
           </span>
         </div>
-        <div className="pl-multiselect">
-          {policy.windows.map((w) => (
-            <button
-              key={w.id}
-              className={`pl-chip ${windowId === w.id ? "on" : ""}`}
-              onClick={() => onWindow(w.id)}
-              title={w.note}
-            >
-              {w.label}
-            </button>
-          ))}
-        </div>
-        <p className="pl-help" style={{ marginTop: 8 }}>
-          {window?.note}
-        </p>
+        {observable ? (
+          <>
+            <div className="pl-multiselect">
+              {policy.windows.map((w) => (
+                <button
+                  key={w.id}
+                  className={`pl-chip ${windowId === w.id ? "on" : ""}`}
+                  onClick={() => onWindow(w.id)}
+                  title={w.note}
+                >
+                  {w.label}
+                </button>
+              ))}
+            </div>
+            <p className="pl-help" style={{ marginTop: 8 }}>
+              {window?.note}
+            </p>
+          </>
+        ) : (
+          <>
+            {/* Offering a period choice that cannot change the answer would be
+                worse than saying so: this instrument's stated windows all fall
+                outside the record, so there is nothing to choose between. */}
+            <div className="pl-multiselect">
+              <span className="pl-chip on">{DATA_FROM} – {DATA_TO}</span>
+            </div>
+            <p className="pl-help" style={{ marginTop: 8 }}>
+              This instrument took effect in {policy.implementationYear}, before the record begins in{" "}
+              {DATA_FROM}. Its own evaluation windows cannot be observed, so the whole available
+              record is used and split in half. Read the result as a description of the period, not
+              as an evaluation of the instrument.
+            </p>
+          </>
+        )}
       </div>
 
       <div className="pl-card pl-panel">

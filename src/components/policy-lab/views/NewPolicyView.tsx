@@ -28,7 +28,6 @@ import {
   registerDraft,
   runSimulation,
   scenarioPresetsFor,
-  statedRulePreset,
   validateConfig,
   type DraftMeta,
   type LandCategoryId,
@@ -59,10 +58,10 @@ export function NewPolicyView({ onToast }: { onToast?: (message: string) => void
   /** Where the parameters come from: a library instrument, or a PDF the user read in. */
   const [source, setSource] = useState<"library" | "upload">("library");
   const [policyId, setPolicyId] = useState(POLICIES[0]?.id ?? "");
-  // Opens on the instrument's own stated figures rather than the pack defaults —
-  // every value in that bundle traces to a clause, so it is the honest baseline.
+  // `null` means "as the instrument states it" — the policy's declared defaults,
+  // which are the figures read out of the document. Any other id is a scenario
+  // that deliberately departs from the instrument.
   const [presetId, setPresetId] = useState<string | null>(null);
-  const [customPreset, setCustomPreset] = useState(false);
   const [name, setName] = useState("");
   const [objective, setObjective] = useState("");
   const [geographyIds, setGeographyIds] = useState<string[]>([]);
@@ -77,10 +76,8 @@ export function NewPolicyView({ onToast }: { onToast?: (message: string) => void
   // re-initialise whenever the template changes
   useEffect(() => {
     if (!policy) return;
-    const stated = statedRulePreset(policy);
-    setPresetId(stated?.id ?? null);
-    setCustomPreset(false);
-    setParams(applyPreset(policy.parameters, stated?.id ?? null));
+    setPresetId(null);
+    setParams(applyPreset(policy.parameters, null));
     setGeographyIds(policy.targetGeographyIds.slice());
     setCategories(policy.defaultLandCategories.slice());
     setName(`${policy.shortName} — draft scenario`);
@@ -99,7 +96,6 @@ export function NewPolicyView({ onToast }: { onToast?: (message: string) => void
   const loadPreset = (id: string | null) => {
     if (!policy) return;
     setPresetId(id);
-    setCustomPreset(id === null);
     setParams(applyPreset(policy.parameters, id));
     setResult(null);
   };
@@ -152,7 +148,6 @@ export function NewPolicyView({ onToast }: { onToast?: (message: string) => void
   }
 
   const presets = scenarioPresetsFor(policy);
-  const statedRule = statedRulePreset(policy);
   const allowedCategories = policy.defaultLandCategories;
   const areaKm2 = geographyIds.reduce(
     (s, id) => s + (GEOGRAPHIES.find((g) => g.id === id)?.areaKm2 ?? 0),
@@ -305,15 +300,15 @@ export function NewPolicyView({ onToast }: { onToast?: (message: string) => void
                 </h5>
                 <div className="pl-multiselect">
                   <button
-                    className={`pl-chip ${customPreset ? "on" : ""}`}
+                    className={`pl-chip ${presetId === null ? "on" : ""}`}
                     onClick={() => loadPreset(null)}
                   >
-                    Custom
+                    As notified
                   </button>
                   {presets.map((p) => (
                     <button
                       key={p.id}
-                      className={`pl-chip ${!customPreset && presetId === p.id ? "on" : ""}`}
+                      className={`pl-chip ${presetId === p.id ? "on" : ""}`}
                       title={p.description}
                       onClick={() => loadPreset(p.id)}
                     >
@@ -322,16 +317,16 @@ export function NewPolicyView({ onToast }: { onToast?: (message: string) => void
                   ))}
                 </div>
                 <p className="pl-help">
-                  {customPreset
-                    ? "Custom — every value below is yours to set. The evidence column marks which figures still trace to a clause and which are assumptions."
+                  {presetId === null
+                    ? "As notified — every figure below is the one the instrument itself states. Change any value and the evidence column marks it as your assumption instead."
                     : (presets.find((p) => p.id === presetId)?.description ??
                       "Choose a scenario to load a set of parameter values.")}
                 </p>
-                {statedRule && !customPreset && presetId === statedRule.id && (
+                {presetId === null && (
                   <p className="pl-help">
-                    <CheckCircle2 style={{ width: 13, height: 13, verticalAlign: "-2px" }} /> Every
-                    figure in this bundle is the one the instrument itself states. Change any value
-                    and it is marked as your assumption instead.
+                    <CheckCircle2 style={{ width: 13, height: 13, verticalAlign: "-2px" }} /> The
+                    other options are scenarios that deliberately depart from the instrument — they
+                    are not claims about what the statute says.
                   </p>
                 )}
               </div>
@@ -436,9 +431,9 @@ export function NewPolicyView({ onToast }: { onToast?: (message: string) => void
               </button>
               <button
                 className="pl-btn ghost"
-                onClick={() => loadPreset(statedRulePreset(policy)?.id ?? null)}
+                onClick={() => loadPreset(null)}
               >
-                Reset to stated figures
+                Reset to as notified
               </button>
               <span className="pl-help" style={{ marginLeft: "auto" }}>
                 Baseline year {LATEST_YEAR} · 5-year projection

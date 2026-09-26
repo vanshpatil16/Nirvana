@@ -469,6 +469,16 @@ function buildSeries(
   baseYear: number,
   primaryId: string,
   kpi: Kpi | undefined,
+  /**
+   * The baseline and comparison windows actually used for the figures.
+   *
+   * Passed in rather than re-derived from `implementationYear` because an
+   * instrument that predates the dataset gets a substituted window — deriving
+   * from the statute again here produced an empty chart, since no observation
+   * exists at 1963.
+   */
+  baseline: { from: number; to: number },
+  compared: { from: number; to: number },
 ): SeriesPoint[] {
   const history = aggregateSeries(primaryId, config.geographyIds);
   if (config.kind === "new") {
@@ -500,9 +510,8 @@ function buildSeries(
     }
     return [...observed, ...projected];
   }
-  // existing policy — reference line is the pre-implementation trend continued
-  const baselineFrom = policy.implementationYear - policy.baselineYears;
-  const baselineTo = policy.implementationYear - 1;
+  // existing policy — reference line is the pre-comparison trend continued
+  const { from: baselineFrom, to: baselineTo } = baseline;
   const baseMean = meanOverWindow(primaryId, config.geographyIds, baselineFrom, baselineTo);
   const earlier = meanOverWindow(primaryId, config.geographyIds, baselineFrom, baselineTo - 2);
   const drift =
@@ -510,7 +519,7 @@ function buildSeries(
       ? (((baseMean - earlier) / Math.abs(earlier)) * 100) / 2
       : 0;
   return history.map<SeriesPoint>((o) => {
-    const isPost = o.year >= policy.implementationYear;
+    const isPost = o.year >= compared.from;
     return {
       key: String(o.year),
       label: String(o.year),
@@ -625,7 +634,18 @@ export function runSimulation(config: RunConfig): SimulationResult | null {
         primaryId,
       ),
       variants: buildVariants(policy, config, baseYear, primaryId),
-      series: primaryId ? buildSeries(policy, config, params, baseYear, primaryId, primary) : [],
+      series: primaryId
+        ? buildSeries(
+            policy,
+            config,
+            params,
+            baseYear,
+            primaryId,
+            primary,
+            { from: baseYear, to: baseYear },
+            { from: baseYear + 1, to: baseYear + PROJECTION_YEARS },
+          )
+        : [],
       assumptions: {
         parameters: policy.parameters.map((p) => ({
           id: p.id,
@@ -676,7 +696,11 @@ export function runSimulation(config: RunConfig): SimulationResult | null {
   // basis panel and the limitations that a substitution has taken place.
   const requestedFrom = window?.from ?? policy.implementationYear;
   const requestedTo = window?.to ?? DATA_TO;
-  const windowOutOfRange = requestedTo < DATA_FROM || requestedFrom > DATA_TO;
+  // A window counts as observable only if it lies *entirely* inside the record.
+  // A window that straddles the edge — "1966 – 2024" for a 1966 Act — would
+  // otherwise be compared against a half-record baseline, and the two periods
+  // would not nest, so the comparison would mean nothing.
+  const windowOutOfRange = requestedFrom < DATA_FROM || requestedTo > DATA_TO;
 
   const requestedBaselineFrom = policy.implementationYear - policy.baselineYears;
   const requestedBaselineTo = policy.implementationYear - 1;
@@ -835,7 +859,18 @@ export function runSimulation(config: RunConfig): SimulationResult | null {
     landMix,
     geographyImpact,
     variants: [],
-    series: primaryId ? buildSeries(policy, config, params, baseYear, primaryId, kpis[0]) : [],
+    series: primaryId
+      ? buildSeries(
+          policy,
+          config,
+          params,
+          baseYear,
+          primaryId,
+          kpis[0],
+          { from: baselineFrom, to: baselineTo },
+          { from: windowFrom, to: windowTo },
+        )
+      : [],
     assumptions: {
       parameters: [
         {

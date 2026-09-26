@@ -45,13 +45,18 @@ export const scenarioPresetsFor = (policy: Policy): ScenarioPreset[] => {
 };
 
 /**
- * The preset that reproduces the instrument's own figures, where the pack
- * declares one. Every pack ships a `stated-rule` preset, so this is the value
- * the New Policy screen opens on — the honest starting point, since every figure
- * in it traces to a clause.
+ * The instrument's own figures.
+ *
+ * There is deliberately no preset for this. A policy's declared defaults *are*
+ * the figures read out of the document, so "as notified" is simply the absence
+ * of an override (`null`). An earlier version shipped a `stated-rule` preset
+ * per pack, which was wrong: the packs carry generic placeholder values, so
+ * loading that preset overwrote real statutory figures — the Land Revenue
+ * Code's 100 m buffer became the pack's 500 m. The presets below are
+ * scenarios that deliberately depart from the instrument, not restatements of
+ * it.
  */
-export const statedRulePreset = (policy: Policy): ScenarioPreset | undefined =>
-  scenarioPresetsFor(policy).find((s) => s.id.endsWith(":stated-rule"));
+export const asNotified = (policy: Policy): ParamValues => defaultParameters(policy.parameters);
 
 /** Default parameter bundle for a template. */
 export const defaultParameters = (

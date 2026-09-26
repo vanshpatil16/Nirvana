@@ -49,6 +49,10 @@ export const landRevenueCode = definePolicy({
       { indicatorId: "crop_intensity", role: "secondary" },
       { indicatorId: "rural_density", role: "secondary" },
       { indicatorId: "forest_share", role: "secondary" },
+      // The pack's percolation rule acts on the water class, and the code's own
+      // s.42(2)(c) exclusion is ecological — so report the water share rather
+      // than leaving a live rule with no output.
+      { indicatorId: "water_share", role: "secondary" },
     ],
     sourceDocument: {
       title: "The Maharashtra Land Revenue Code, 1966",
@@ -286,7 +290,7 @@ export const fragmentationAct = definePolicy({
     baselineYears: 3,
     targetGeographyIds: ["r-cbasin", "r-sinterior", "r-edry", "r-neplateau", "r-chigh"],
     availableGeographyIds: ALL_UNIT_IDS,
-    datasetIds: ["cadastre", "ror", "govlulc", "admin"],
+    datasetIds: ["cadastre", "ror", "govlulc", "admin", "courts"],
     indicators: [
       { indicatorId: "fragment_share", role: "primary" },
       { indicatorId: "holdings_avg_size", role: "primary" },
@@ -294,6 +298,11 @@ export const fragmentationAct = definePolicy({
       { indicatorId: "crop_intensity", role: "secondary" },
       { indicatorId: "agri_per_capita", role: "secondary" },
       { indicatorId: "parcel_mismatch", role: "secondary" },
+      // The consolidation scheme carries tenancies and disputes as a
+      // consequence, so the rules that move them are reported rather than run
+      // invisibly.
+      { indicatorId: "tenancy_recorded", role: "secondary" },
+      { indicatorId: "litigation_rate", role: "secondary" },
     ],
     sourceDocument: {
       title: "The Maharashtra Prevention of Fragmentation and Consolidation of Holdings Act, 1947",
@@ -434,7 +443,7 @@ export const aadhaarAct = definePolicy({
     baselineYears: 3,
     targetGeographyIds: ["r-metro", "r-wdeccan", "r-cbasin", "r-neplateau", "r-sinterior"],
     availableGeographyIds: ALL_UNIT_IDS,
-    datasetIds: ["ror", "cadastre", "govlulc", "population"],
+    datasetIds: ["ror", "cadastre", "govlulc", "population", "registry", "courts"],
     indicators: [
       { indicatorId: "ror_digitisation", role: "primary" },
       { indicatorId: "tenancy_recorded", role: "primary" },
@@ -442,6 +451,9 @@ export const aadhaarAct = definePolicy({
       { indicatorId: "mutation_days", role: "secondary" },
       { indicatorId: "parcel_count", role: "secondary" },
       { indicatorId: "revenue_na_share", role: "secondary" },
+      // Audits and backlog both act on disputes and on recorded prices.
+      { indicatorId: "litigation_rate", role: "secondary" },
+      { indicatorId: "land_value", role: "secondary" },
     ],
     sourceDocument: {
       title:

@@ -398,23 +398,6 @@ const CONVERSION: RulePack = {
       },
     },
     {
-      id: "stated-rule",
-      name: "Stated rule",
-      description:
-        "The figures as they appear in the instrument — the baseline every comparison is drawn against.",
-      overrides: {
-        protected_buffer: 500,
-        moratorium: false,
-        conversion_ceiling: 4,
-        preservation_share: 10,
-        green_buffer: 6,
-        density_bonus: 10,
-        support_for_retained: 5,
-        review_cycle: 5,
-        development_pressure: 55,
-      },
-    },
-    {
       id: "strict-preservation",
       name: "Strict preservation",
       description: "Wide buffer, moratorium in force, low ceiling and a short review cycle.",
@@ -716,22 +699,6 @@ const RECORDS: RulePack = {
         fee_rebate: 0,
         field_staff_per_10k: 1,
         backlog: 82,
-      },
-    },
-    {
-      id: "stated-rule",
-      name: "Stated rule",
-      description:
-        "The figures as they appear in the instrument — the baseline every comparison is drawn against.",
-      overrides: {
-        digitised_share: 62,
-        mismatch_ceiling: 20,
-        resurvey_cycle: 6,
-        mutation_digital: true,
-        audit_share: 6,
-        fee_rebate: 8,
-        field_staff_per_10k: 4,
-        backlog: 45,
       },
     },
     {
@@ -1087,24 +1054,6 @@ const TENANCY: RulePack = {
         tenant_protection: false,
         standard_area_review: 20,
         subdivision_pressure: 88,
-      },
-    },
-    {
-      id: "stated-rule",
-      name: "Stated rule",
-      description:
-        "The figures as they appear in the instrument — the baseline every comparison is drawn against.",
-      overrides: {
-        standard_area: 0.8,
-        ceiling_area: 20,
-        fragment_transfer_ban: true,
-        partition_restriction: true,
-        subdivision_ban: true,
-        consolidation_coverage: 30,
-        tenancy_register_drive: 40,
-        tenant_protection: true,
-        standard_area_review: 10,
-        subdivision_pressure: 55,
       },
     },
     {
@@ -1479,23 +1428,6 @@ const PLANNING: RulePack = {
         heritage_preservation: false,
         zoning_review_cycle: 25,
         development_pressure: 88,
-      },
-    },
-    {
-      id: "stated-rule",
-      name: "Stated rule",
-      description:
-        "The figures as they appear in the plan — the baseline every comparison is drawn against.",
-      overrides: {
-        permitted_fsi: 1.5,
-        plot_coverage: 45,
-        height_limit: 24,
-        open_space: 10,
-        residential_share: 55,
-        ecological_buffer: 100,
-        heritage_preservation: true,
-        zoning_review_cycle: 10,
-        development_pressure: 60,
       },
     },
     {
@@ -1877,23 +1809,6 @@ const INDUSTRY: RulePack = {
       },
     },
     {
-      id: "stated-rule",
-      name: "Stated rule",
-      description:
-        "The figures as they appear in the policy — the baseline every comparison is drawn against.",
-      overrides: {
-        industrial_area: 60,
-        capital_subsidy: 15,
-        mega_project_threshold: 1000,
-        employment_commitment: 50,
-        stamp_duty_waiver: 75,
-        conversion_relaxation: true,
-        infrastructure_buffer: 1000,
-        incentive_tenure: 10,
-        project_pipeline: 50,
-      },
-    },
-    {
       id: "aggressive-push",
       name: "Aggressive push",
       description:
@@ -2204,21 +2119,6 @@ const LOGISTICS: RulePack = {
         open_space_share: 0,
         road_connectivity: 85,
         customs_facilitation: false,
-      },
-    },
-    {
-      id: "stated-rule",
-      name: "Stated rule",
-      description:
-        "The figures as they appear in the policy — the baseline every comparison is drawn against.",
-      overrides: {
-        logistics_park_area: 40,
-        warehousing_fsi: 1.2,
-        freight_corridor: 60,
-        land_cost_concession: 50,
-        open_space_share: 15,
-        road_connectivity: 55,
-        customs_facilitation: true,
       },
     },
     {
@@ -2563,24 +2463,6 @@ const ACQUISITION: RulePack = {
         compliance_grant: 10,
         voluntary_pooling: 3,
         project_pipeline: 88,
-      },
-    },
-    {
-      id: "stated-rule",
-      name: "Stated rule",
-      description:
-        "The figures as they appear in the instrument — the baseline every comparison is drawn against.",
-      overrides: {
-        acquisition_ceiling: 70,
-        compensation_floor: 200,
-        rr_compliance_target: 70,
-        rr_timeline: 24,
-        affected_family_limit: 650,
-        impact_assessment: true,
-        resettlement_premium: 20,
-        compliance_grant: 35,
-        voluntary_pooling: 12,
-        project_pipeline: 50,
       },
     },
     {

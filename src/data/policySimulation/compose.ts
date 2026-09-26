@@ -1,4 +1,5 @@
 import { packLandCategories, rulePackById } from "./rulePacks";
+import { BASE_YEAR, LATEST_YEAR } from "./observations";
 import type {
   EvaluationWindow,
   LandCategoryId,
@@ -47,32 +48,64 @@ export interface PolicySeed {
   windows?: EvaluationWindow[] | undefined;
 }
 
-/** Three standard evaluation windows, unless the seed overrides them. */
+/**
+ * Evaluation windows, unless the seed overrides them.
+ *
+ * Generated as three increasing spans from the year the instrument took effect,
+ * then clamped to the record and de-duplicated. The de-duplication matters:
+ * a fixed `year → year+5` and `year → 2024` pair collapses into the same window
+ * for any instrument from 2019 onward, which left the period selector offering
+ * two identical choices that produced the same numbers.
+ */
 function defaultWindows(year: number): EvaluationWindow[] {
-  const y = (n: number) => year + n;
-  return [
-    {
-      id: "w1",
-      label: `${year} – ${y(2)}`,
-      from: y(0),
-      to: y(2),
-      note: "First three years, including the transition period.",
-    },
-    {
-      id: "w2",
-      label: `${year} – ${y(5)}`,
-      from: y(0),
-      to: y(5),
-      note: "Medium window, one review cycle complete.",
-    },
-    {
-      id: "w3",
-      label: `${year} – 2024`,
-      from: y(0),
-      to: 2024,
-      note: "Full available record for the instrument.",
-    },
+  const first = BASE_YEAR;
+  const last = LATEST_YEAR;
+
+  // An instrument that took effect after the record has nothing to observe.
+  if (year > last) {
+    return [
+      {
+        id: "w1",
+        label: `${first} – ${last}`,
+        from: first,
+        to: last,
+        note: `This instrument took effect in ${year}, after the record ends. Only the full available record can be shown, and it says nothing about the instrument.`,
+      },
+    ];
+  }
+
+  const spans: { end: number; note: string }[] = [
+    { end: Math.min(year + 2, last), note: "First years after the instrument took effect." },
+    { end: Math.min(year + 5, last), note: "Medium window, one review cycle complete." },
+    { end: last, note: "Full available record for the instrument." },
   ];
+
+  const seen = new Set<string>();
+  const windows: EvaluationWindow[] = [];
+  for (const s of spans) {
+    if (s.end <= year) continue;
+    const key = `${year}-${s.end}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    windows.push({
+      id: `w${windows.length + 1}`,
+      label: `${year} – ${s.end}`,
+      from: year,
+      to: s.end,
+      note: s.note,
+    });
+  }
+
+  if (!windows.length) {
+    windows.push({
+      id: "w1",
+      label: `${first} – ${last}`,
+      from: first,
+      to: last,
+      note: "Only the full available record is available for this instrument.",
+    });
+  }
+  return windows;
 }
 
 export interface ComposeInput {

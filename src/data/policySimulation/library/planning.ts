@@ -48,6 +48,8 @@ export const mrAndTpAct = definePolicy({
       { indicatorId: "agri_share", role: "secondary" },
       { indicatorId: "agri_loss", role: "secondary" },
       { indicatorId: "litigation_rate", role: "secondary" },
+      // The ecological setback moves the forest class, so report it.
+      { indicatorId: "forest_share", role: "secondary" },
     ],
     sourceDocument: {
       title: "The Maharashtra Regional and Town Planning Act, 1966",
@@ -381,6 +383,8 @@ export const udcprEquivalencyOrder = definePolicy({
       { indicatorId: "fsi", role: "secondary" },
       { indicatorId: "litigation_rate", role: "secondary" },
       { indicatorId: "agri_share", role: "secondary" },
+      { indicatorId: "forest_share", role: "secondary" },
+      { indicatorId: "agri_loss", role: "secondary" },
     ],
     sourceDocument: {
       title:
@@ -509,6 +513,8 @@ export const regionalPlan = definePolicy({
       { indicatorId: "rural_density", role: "secondary" },
       { indicatorId: "land_value", role: "secondary" },
       { indicatorId: "forest_share", role: "secondary" },
+      { indicatorId: "revenue_na_share", role: "secondary" },
+      { indicatorId: "litigation_rate", role: "secondary" },
     ],
     sourceDocument: {
       title: "Maharashtra Regional Plan — final notification",
@@ -633,6 +639,8 @@ export const zonalMasterPlanMesz = definePolicy({
       { indicatorId: "revenue_na_share", role: "secondary" },
       { indicatorId: "agri_loss", role: "secondary" },
       { indicatorId: "rural_density", role: "secondary" },
+      { indicatorId: "forest_share", role: "secondary" },
+      { indicatorId: "litigation_rate", role: "secondary" },
     ],
     sourceDocument: {
       title: "Zonal Master Plan — Mumbai Metropolitan Region",

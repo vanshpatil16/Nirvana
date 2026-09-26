@@ -465,6 +465,8 @@ export const industrialPolicy2013 = definePolicy({
       { indicatorId: "land_value", role: "secondary" },
       { indicatorId: "revenue_na_share", role: "secondary" },
       { indicatorId: "agri_loss", role: "secondary" },
+      { indicatorId: "built_share", role: "secondary" },
+      { indicatorId: "litigation_rate", role: "secondary" },
     ],
     sourceDocument: {
       title: "Industrial Policy 2013 — Government of India",
@@ -634,6 +636,8 @@ export const midcAct = definePolicy({
       { indicatorId: "revenue_na_share", role: "secondary" },
       { indicatorId: "project_pipeline", role: "secondary" },
       { indicatorId: "litigation_rate", role: "secondary" },
+      { indicatorId: "built_share", role: "secondary" },
+      { indicatorId: "agri_loss", role: "secondary" },
     ],
     sourceDocument: {
       title: "The Maharashtra Industrial Development Act, 1961",
@@ -799,6 +803,7 @@ export const logisticsPolicy2024 = definePolicy({
       { indicatorId: "fsi", role: "secondary" },
       { indicatorId: "revenue_na_share", role: "secondary" },
       { indicatorId: "agri_loss", role: "secondary" },
+      { indicatorId: "forest_share", role: "secondary" },
     ],
     sourceDocument: {
       title: "Maharashtra Logistics Policy, 2024",
