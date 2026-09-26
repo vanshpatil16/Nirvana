@@ -17,6 +17,7 @@ import { Route as InnovationPortalRouteImport } from './routes/innovation-portal
 import { Route as LanddifferenceRouteImport } from './routes/landdifference'
 import { Route as RecordVsRealityRouteImport } from './routes/record-vs-reality'
 import { Route as ResearchHubRouteImport } from './routes/research-hub'
+import { Route as WorkflowRouteImport } from './routes/workflow'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const ResearchHubRoute = ResearchHubRouteImport.update({
   path: '/research-hub',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkflowRoute = WorkflowRouteImport.update({
+  id: '/workflow',
+  path: '/workflow',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/landdifference': typeof LanddifferenceRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
   '/research-hub': typeof ResearchHubRoute
+  '/workflow': typeof WorkflowRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/landdifference': typeof LanddifferenceRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
   '/research-hub': typeof ResearchHubRoute
+  '/workflow': typeof WorkflowRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/landdifference': typeof LanddifferenceRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
   '/research-hub': typeof ResearchHubRoute
+  '/workflow': typeof WorkflowRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/landdifference'
     | '/record-vs-reality'
     | '/research-hub'
+    | '/workflow'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/landdifference'
     | '/record-vs-reality'
     | '/research-hub'
+    | '/workflow'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/landdifference'
     | '/record-vs-reality'
     | '/research-hub'
+    | '/workflow'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   LanddifferenceRoute: typeof LanddifferenceRoute
   RecordVsRealityRoute: typeof RecordVsRealityRoute
   ResearchHubRoute: typeof ResearchHubRoute
+  WorkflowRoute: typeof WorkflowRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResearchHubRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workflow': {
+      id: '/workflow'
+      path: '/workflow'
+      fullPath: '/workflow'
+      preLoaderRoute: typeof WorkflowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   LanddifferenceRoute: LanddifferenceRoute,
   RecordVsRealityRoute: RecordVsRealityRoute,
   ResearchHubRoute: ResearchHubRoute,
+  WorkflowRoute: WorkflowRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

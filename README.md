@@ -116,6 +116,12 @@ collaborative programmes for land governance.
 ## 📸 Screenshots
 
 <p align="center">
+  <img src="docs/screenshots/hero-3d.gif" alt="Animated 3D hero — rotating dot-globe of India with orbiting survey markers and the BHUMI-NITI wordmark" width="76%" />
+  <br />
+  <sub><b>BHU-NITI in motion</b> — land records, satellite truth and policy evidence orbiting one digital-twin Earth.</sub>
+</p>
+
+<p align="center">
   <img src="docs/screenshots/home-map.png" alt="Map home — Nashik default view with parcel location card" width="88%" />
   <br />
   <sub><b>Live map home</b> — opens on the Nashik belt; click anywhere for a reverse-geocoded parcel card.</sub>
