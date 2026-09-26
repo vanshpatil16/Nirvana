@@ -15,6 +15,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as GisExplorerRouteImport } from './routes/gis-explorer'
 import { Route as InnovationPortalRouteImport } from './routes/innovation-portal'
 import { Route as LanddifferenceRouteImport } from './routes/landdifference'
+import { Route as PolicyLabRouteImport } from './routes/policy-lab'
 import { Route as RecordVsRealityRouteImport } from './routes/record-vs-reality'
 import { Route as ResearchHubRouteImport } from './routes/research-hub'
 import { Route as WorkflowRouteImport } from './routes/workflow'
@@ -49,6 +50,11 @@ const LanddifferenceRoute = LanddifferenceRouteImport.update({
   path: '/landdifference',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PolicyLabRoute = PolicyLabRouteImport.update({
+  id: '/policy-lab',
+  path: '/policy-lab',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecordVsRealityRoute = RecordVsRealityRouteImport.update({
   id: '/record-vs-reality',
   path: '/record-vs-reality',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/gis-explorer': typeof GisExplorerRoute
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
+  '/policy-lab': typeof PolicyLabRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
   '/research-hub': typeof ResearchHubRoute
   '/workflow': typeof WorkflowRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/gis-explorer': typeof GisExplorerRoute
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
+  '/policy-lab': typeof PolicyLabRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
   '/research-hub': typeof ResearchHubRoute
   '/workflow': typeof WorkflowRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/gis-explorer': typeof GisExplorerRoute
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
+  '/policy-lab': typeof PolicyLabRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
   '/research-hub': typeof ResearchHubRoute
   '/workflow': typeof WorkflowRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/gis-explorer'
     | '/innovation-portal'
     | '/landdifference'
+    | '/policy-lab'
     | '/record-vs-reality'
     | '/research-hub'
     | '/workflow'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/gis-explorer'
     | '/innovation-portal'
     | '/landdifference'
+    | '/policy-lab'
     | '/record-vs-reality'
     | '/research-hub'
     | '/workflow'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/gis-explorer'
     | '/innovation-portal'
     | '/landdifference'
+    | '/policy-lab'
     | '/record-vs-reality'
     | '/research-hub'
     | '/workflow'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   GisExplorerRoute: typeof GisExplorerRoute
   InnovationPortalRoute: typeof InnovationPortalRoute
   LanddifferenceRoute: typeof LanddifferenceRoute
+  PolicyLabRoute: typeof PolicyLabRoute
   RecordVsRealityRoute: typeof RecordVsRealityRoute
   ResearchHubRoute: typeof ResearchHubRoute
   WorkflowRoute: typeof WorkflowRoute
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LanddifferenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/policy-lab': {
+      id: '/policy-lab'
+      path: '/policy-lab'
+      fullPath: '/policy-lab'
+      preLoaderRoute: typeof PolicyLabRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/record-vs-reality': {
       id: '/record-vs-reality'
       path: '/record-vs-reality'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   GisExplorerRoute: GisExplorerRoute,
   InnovationPortalRoute: InnovationPortalRoute,
   LanddifferenceRoute: LanddifferenceRoute,
+  PolicyLabRoute: PolicyLabRoute,
   RecordVsRealityRoute: RecordVsRealityRoute,
   ResearchHubRoute: ResearchHubRoute,
   WorkflowRoute: WorkflowRoute,

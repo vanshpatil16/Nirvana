@@ -5,6 +5,7 @@ import { renderErrorPage } from "./lib/error-page";
 import { handleAiApi } from "./server/ai-agent";
 import { handleParcelsApi } from "./server/parcel-store";
 import { handleTtsApi } from "./server/tts";
+import { handlePolicyExtract } from "./server/policy-extract";
 import { handleWeatherApi } from "./server/weather-india";
 
 type ServerEntry = {
@@ -67,6 +68,11 @@ export default {
       // Spoken replies via ElevenLabs (needs ELEVENLABS_API_KEY; client falls back to browser TTS).
       if (url.pathname === "/api/tts") {
         return handleTtsApi(request, env);
+      }
+      // Policy document reader (Gemini; needs GEMINI_API_KEY). Reads an uploaded
+      // PDF into structured, cited policy parameters.
+      if (url.pathname === "/api/policy/extract") {
+        return handlePolicyExtract(request, env);
       }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

@@ -53,7 +53,10 @@ function featureBounds(feature: StoredFeature): [number, number, number, number]
   return [x0, y0, x1, y1];
 }
 
-function overlaps(a: [number, number, number, number], b: [number, number, number, number]): boolean {
+function overlaps(
+  a: [number, number, number, number],
+  b: [number, number, number, number],
+): boolean {
   return a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
 }
 
@@ -62,7 +65,10 @@ function matches(value: unknown, wanted?: string): boolean {
   return typeof value === "string" && value.toLowerCase() === wanted.toLowerCase();
 }
 
-export function queryParcels(query: ParcelQuery): { type: "FeatureCollection"; features: StoredFeature[] } {
+export function queryParcels(query: ParcelQuery): {
+  type: "FeatureCollection";
+  features: StoredFeature[];
+} {
   const [x0, y0, x1, y1] = query.bbox;
   const features: StoredFeature[] = [];
   for (const dataset of DATASETS) {

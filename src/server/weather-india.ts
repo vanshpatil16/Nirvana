@@ -79,7 +79,8 @@ const cache = new Map<number, CacheEntry>();
 function num(value: unknown): number | null {
   if (value === null || value === undefined) return null;
   const text = String(value).trim();
-  if (text === "" || text === "99.9" || text === "999" || text === "9999" || text === "9999.9") return null;
+  if (text === "" || text === "99.9" || text === "999" || text === "9999" || text === "9999.9")
+    return null;
   const parsed = Number(text);
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -136,7 +137,10 @@ async function fetchStation(id: number): Promise<ImdWeather> {
     const body = new URLSearchParams({ ID: String(id) });
     const response = await fetch(IMD_ENDPOINT, {
       method: "POST",
-      headers: { ...IMD_HEADERS, "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      headers: {
+        ...IMD_HEADERS,
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
       body,
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
@@ -145,7 +149,8 @@ async function fetchStation(id: number): Promise<ImdWeather> {
     const row = Array.isArray(payload) ? payload[0] : payload;
     if (!row || typeof row !== "object") throw new Error("IMD returned no station payload");
     const weather = normalize(id, row as Record<string, unknown>);
-    if (weather.lat === null || weather.lon === null) throw new Error(`IMD station ${id} missing coordinates`);
+    if (weather.lat === null || weather.lon === null)
+      throw new Error(`IMD station ${id} missing coordinates`);
     cache.set(id, { at: Date.now(), ok: true, data: weather });
     return weather;
   } catch (error) {
@@ -155,7 +160,11 @@ async function fetchStation(id: number): Promise<ImdWeather> {
 }
 
 /** Bounded fan-out so a cold summary never hammers IMD in one burst. */
-async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<PromiseSettledResult<R>[]> {
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
   const results: PromiseSettledResult<R>[] = new Array(items.length);
   let next = 0;
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
@@ -173,8 +182,15 @@ async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T)
   return results;
 }
 
-async function buildSummary(): Promise<{ generatedAt: string; count: number; failed: number; stations: ImdWeather[] }> {
-  const settled = await mapWithConcurrency(STATIONS, 6, (station) => fetchStation(station.stationId));
+async function buildSummary(): Promise<{
+  generatedAt: string;
+  count: number;
+  failed: number;
+  stations: ImdWeather[];
+}> {
+  const settled = await mapWithConcurrency(STATIONS, 6, (station) =>
+    fetchStation(station.stationId),
+  );
   const list: ImdWeather[] = [];
   let failed = 0;
   for (const entry of settled) {
@@ -188,7 +204,10 @@ async function buildSummary(): Promise<{ generatedAt: string; count: number; fai
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "content-type": "application/json;charset=utf-8", "cache-control": "public, max-age=300" },
+    headers: {
+      "content-type": "application/json;charset=utf-8",
+      "cache-control": "public, max-age=300",
+    },
   });
 }
 

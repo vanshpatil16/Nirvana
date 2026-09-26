@@ -78,7 +78,8 @@ const SHOW_AREA_TOOL = {
       },
       lon: {
         type: "number",
-        description: "Approximate longitude of the place centre (WGS84). Include it if you know it.",
+        description:
+          "Approximate longitude of the place centre (WGS84). Include it if you know it.",
       },
       zoom: {
         type: "number",
@@ -107,7 +108,10 @@ const SUBMIT_ANSWER_TOOL = {
           "1-3 short conversational sentences that will be read aloud to the user. " +
           "Plain text only — no markdown, no emoji, no lists.",
       },
-      summary: { type: "string", description: "Headline finding shown in the answer card, 1-3 sentences." },
+      summary: {
+        type: "string",
+        description: "Headline finding shown in the answer card, 1-3 sentences.",
+      },
       framework: {
         type: "array",
         items: { type: "string" },
@@ -121,7 +125,7 @@ const SUBMIT_ANSWER_TOOL = {
         description:
           "Risk verdict in 1-2 sentences beginning with Low, Moderate, or High. " +
           "Include ONLY when the question concerns land, legal, environmental or financial risk; " +
-          "otherwise \"\" — do not invent a risk for greetings or how-to questions.",
+          'otherwise "" — do not invent a risk for greetings or how-to questions.',
       },
       evidence: {
         type: "array",
@@ -137,7 +141,7 @@ const SUBMIT_ANSWER_TOOL = {
       },
       limitation: {
         type: "string",
-        description: "One sentence data caveat — only when a real caveat applies, otherwise \"\".",
+        description: 'One sentence data caveat — only when a real caveat applies, otherwise "".',
       },
       suggestedFollowups: {
         type: "array",
@@ -356,11 +360,17 @@ Answer rules:
     return `${base}\n\nNo parcel is currently selected on the map; answer generally for India.`;
   }
 
-  const place = [context.village, context.taluka, context.district, context.state].filter(Boolean).join(", ");
+  const place = [context.village, context.taluka, context.district, context.state]
+    .filter(Boolean)
+    .join(", ");
   const lines = [
     `- Coordinates: ${context.lat.toFixed(5)}, ${context.lon.toFixed(5)}`,
     place ? `- Place: ${place}` : null,
-    context.surveyNumber ? `- Survey No.: ${context.surveyNumber}` : context.parcelId ? `- Parcel ID: ${context.parcelId}` : null,
+    context.surveyNumber
+      ? `- Survey No.: ${context.surveyNumber}`
+      : context.parcelId
+        ? `- Parcel ID: ${context.parcelId}`
+        : null,
     `- Land use: ${context.landUse ?? "unknown"}${context.areaAcres != null ? ` · Area: ${context.areaAcres} ac` : ""}${context.source ? ` · Source: ${context.source}` : ""}`,
     'When the user says "here", "this plot", or "this land", they mean this selection.',
   ].filter((line): line is string => line !== null);
@@ -408,7 +418,10 @@ async function callOpenRouter(
   };
   const message = payload.choices?.[0]?.message;
   if (!message) throw new Error("OpenRouter returned no message");
-  return { message, model: typeof payload.model === "string" && payload.model ? payload.model : model };
+  return {
+    message,
+    model: typeof payload.model === "string" && payload.model ? payload.model : model,
+  };
 }
 
 function safeJson(raw: string): unknown {
@@ -468,7 +481,8 @@ function fallbackAnswer(message: string, prose: string, actions: FlyToAction[]):
     framework: [],
     riskAssessment: "",
     evidence: [],
-    limitation: "This reply was assembled without a full model response — verify details against certified records.",
+    limitation:
+      "This reply was assembled without a full model response — verify details against certified records.",
     suggestedFollowups: [
       "Show me the plots in Mira Road",
       "What approvals are needed for NA conversion here?",
@@ -542,7 +556,9 @@ async function runAgentLoop(params: {
           role: "tool",
           tool_call_id: call.id,
           content: JSON.stringify(
-            parsed.success ? { ok: true, navigated: parsed.data.place } : { ok: false, error: "invalid show_area arguments" },
+            parsed.success
+              ? { ok: true, navigated: parsed.data.place }
+              : { ok: false, error: "invalid show_area arguments" },
           ),
         });
       } else if (name === SUBMIT_ANSWER_TOOL.name) {
@@ -554,7 +570,10 @@ async function runAgentLoop(params: {
           content: JSON.stringify(
             parsed.success
               ? { ok: true }
-              : { ok: false, error: `invalid submit_answer arguments: ${parsed.error.issues[0]?.message ?? "schema mismatch"}` },
+              : {
+                  ok: false,
+                  error: `invalid submit_answer arguments: ${parsed.error.issues[0]?.message ?? "schema mismatch"}`,
+                },
           ),
         });
       } else {
@@ -714,7 +733,10 @@ function jsonResponse(data: unknown, status = 200): Response {
 
 export async function handleAiApi(request: Request, env?: unknown): Promise<Response> {
   if (request.method !== "POST") {
-    return jsonResponse({ ok: false, error: "Method not allowed — POST a {message} JSON body." }, 405);
+    return jsonResponse(
+      { ok: false, error: "Method not allowed — POST a {message} JSON body." },
+      405,
+    );
   }
 
   const key = readEnv(env, "OPENROUTER_API_KEY");
@@ -738,7 +760,13 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
 
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {
-    return jsonResponse({ ok: false, error: `Invalid request: ${parsed.error.issues[0]?.message ?? "schema mismatch"}` }, 400);
+    return jsonResponse(
+      {
+        ok: false,
+        error: `Invalid request: ${parsed.error.issues[0]?.message ?? "schema mismatch"}`,
+      },
+      400,
+    );
   }
 
   const { message, history, context } = parsed.data;
