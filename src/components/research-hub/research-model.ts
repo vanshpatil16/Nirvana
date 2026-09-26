@@ -15,6 +15,7 @@ export const STAGE_OF_VIEW: Record<HubView, number> = {
   experiments: 4,
   publications: 5,
   "policy-evidence": 6,
+  manuscript: 5,
 };
 
 export interface ExperimentVars {

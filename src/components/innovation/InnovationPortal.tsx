@@ -46,6 +46,7 @@ import logo from "@/assets/logo.png";
 import sidenavBottom from "@/assets/sidenav-bottom.png";
 import innovationLandscape from "@/assets/innovation-landscape.png";
 import featuredChallenge from "@/assets/featured_challenge.png";
+import { ProfileMenu } from "@/components/ProfileMenu";
 
 const ACTIVE_ITEM = "Innovation Portal";
 const GRID_INITIAL = 4;
@@ -145,14 +146,7 @@ function PageHeader({ openMenu, query, onQuery }: { openMenu: () => void; query:
           <Bell />
           <i />
         </Button>
-        <button className="profile">
-          <span>OK</span>
-          <div>
-            <strong>Omkar Kudalkar</strong>
-            <small>Researcher</small>
-          </div>
-          <ChevronDown />
-        </button>
+        <ProfileMenu />
       </div>
     </header>
   );

@@ -50,6 +50,20 @@ import {
   type ParcelFeature,
 } from "@/services/parcelService";
 import { getDefaultProvider, getImageryConfig } from "@/services/sentinelService";
+import type { MapAction, ActionChip } from "@/copilot/actions";
+import { highlightChange, setOverlay, type OverlayId } from "./copilot-map";
+import {
+  ActionChips,
+  AnalysingSteps,
+  ContextBar,
+  DataResults,
+  EvidenceList,
+  MapConfirmations,
+  PipelineStrip,
+  PlanDetails,
+  ValidationNotes,
+  type CopilotMeta,
+} from "./CopilotBlocks";
 
 maplibregl.config.WORKER_URL = mapWorkerUrl;
 
@@ -77,7 +91,27 @@ interface AIResponse {
   evidence: { label: string; type: string }[];
   limitation: string;
   suggestedFollowups: string[];
+  /** NL-GIS Copilot metadata (plan, data, evidence, chips…) */
+  copilot?: CopilotMeta | undefined;
 }
+
+type VoiceLang = "en" | "hi" | "mr";
+const VOICE_BCP47: Record<VoiceLang, string> = { en: "en-IN", hi: "hi-IN", mr: "mr-IN" };
+const VOICE_LABEL: Record<VoiceLang, string> = { en: "EN", hi: "हि", mr: "मर" };
+
+type LayerToggle = "parcels" | "landUse" | "risk" | "disputes";
+const LAYER_TOGGLE: Record<"lulc" | "climate_risk" | "disputes" | "parcels", LayerToggle> = {
+  lulc: "landUse",
+  climate_risk: "risk",
+  disputes: "disputes",
+  parcels: "parcels",
+};
+const OVERLAY_FOR: Record<LayerToggle, OverlayId> = {
+  parcels: "parcels",
+  landUse: "lulc",
+  risk: "climate_risk",
+  disputes: "disputes",
+};
 
 /** One chat-transcript entry rendered in the AI sidebar (user query or AI answer). */
 interface ChatTurn {
@@ -121,7 +155,7 @@ export function MapFirstHome() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeLayers, setActiveLayers] = useState({
     parcels: true,
-    landUse: true,
+    landUse: false,
     risk: false,
     disputes: false,
   });
@@ -173,32 +207,111 @@ export function MapFirstHome() {
 
   // Conversation history sent along to POST /api/ai (flattened summary turns).
   const chatHistoryRef = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
+  // Copilot conversational memory: the last validated query plan ("compare it with…")
+  const lastPlanRef = useRef<CopilotMeta["plan"] | null>(null);
+  const changeActiveRef = useRef(false); // a land-use change highlight is on the map
   const [chatLog, setChatLog] = useState<ChatTurn[]>([]);
   const chatIdRef = useRef(0);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Voice replies (browser speechSynthesis — keyless client-side TTS that
-  // speaks the agent's `spoken` field, mirroring voice-agejt's TTS stage).
+  // Voice replies: ElevenLabs via POST /api/tts (same stage as voice-agejt),
+  // falling back to the browser's speechSynthesis voice whenever ElevenLabs is
+  // unavailable, slow, or blocked from playing.
   const [ttsEnabled, setTtsEnabled] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsAbortRef = useRef<AbortController | null>(null);
+  const speakTokenRef = useRef(0);
+  // Set once the server reports ElevenLabs isn't configured, so later replies skip straight to the fallback
+  const elevenUnavailableRef = useRef(false);
+
+  // Copilot voice language: STT listens in it and replies are spoken in the
+  // language each answer was written in (auto-detected per question).
+  const [voiceLang, setVoiceLang] = useState<VoiceLang>("en");
+
+  const browserSpeak = (text: string, bcp47 = "en-IN") => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = bcp47;
+    const voices = synth.getVoices();
+    const base = bcp47.split("-")[0]!;
+    const voice =
+      voices.find((v) => v.lang.replace("_", "-") === bcp47) ??
+      voices.find((v) => v.lang.startsWith(base)) ??
+      // Marathi voices are rare — a Hindi voice reads Devanagari far better than an English one
+      (base === "mr" ? voices.find((v) => v.lang.startsWith("hi")) : undefined) ??
+      (base === "en" ? voices.find((v) => v.lang.startsWith("en")) : undefined);
+    if (voice) utter.voice = voice;
+    utter.rate = 1.03;
+    synth.speak(utter);
+  };
 
   const stopSpeaking = () => {
+    speakTokenRef.current += 1; // invalidates any reply still being fetched
+    ttsAbortRef.current?.abort();
+    ttsAbortRef.current = null;
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      if (audio.src.startsWith("blob:")) URL.revokeObjectURL(audio.src);
+      audioRef.current = null;
+    }
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
   };
 
-  const speak = (text: string) => {
-    if (!ttsEnabled || typeof window === "undefined" || !window.speechSynthesis || !text.trim()) return;
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-IN";
-    const voices = synth.getVoices();
-    const voice = voices.find((v) => v.lang === "en-IN") ?? voices.find((v) => v.lang.startsWith("en"));
-    if (voice) utter.voice = voice;
-    utter.rate = 1.03;
-    synth.speak(utter);
+  const speak = async (text: string, lang: VoiceLang = "en") => {
+    if (!ttsEnabled || typeof window === "undefined" || !text.trim()) return;
+    stopSpeaking();
+    const token = speakTokenRef.current;
+    const stale = () => token !== speakTokenRef.current;
+    const bcp47 = VOICE_BCP47[lang];
+    const fallback = () => browserSpeak(text, bcp47);
+    if (elevenUnavailableRef.current) {
+      fallback();
+      return;
+    }
+    const controller = new AbortController();
+    ttsAbortRef.current = controller;
+    const timeout = window.setTimeout(() => controller.abort(), 9000);
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text, language: lang }),
+        signal: controller.signal,
+      });
+      if (!res.ok || !res.headers.get("content-type")?.includes("audio")) {
+        if (res.status === 503) elevenUnavailableRef.current = true; // no key configured
+        // 415 = ElevenLabs cannot voice this language — browser voice handles it
+        throw new Error(`TTS ${res.status}`);
+      }
+      const blob = await res.blob();
+      window.clearTimeout(timeout);
+      if (stale()) return;
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        if (audioRef.current === audio) audioRef.current = null;
+      };
+      audio.onerror = () => {
+        if (audioRef.current === audio && !stale()) fallback();
+      };
+      // Autoplay can be refused (e.g. no recent user gesture) — use the browser voice instead
+      await audio.play().catch(() => {
+        if (!stale()) fallback();
+      });
+    } catch {
+      window.clearTimeout(timeout);
+      if (!stale()) fallback();
+    } finally {
+      if (ttsAbortRef.current === controller) ttsAbortRef.current = null;
+    }
   };
 
   // Warm the async voice list and stop any speech on unmount.
@@ -211,6 +324,8 @@ export function MapFirstHome() {
     return () => {
       synth.removeEventListener("voiceschanged", onVoices);
       synth.cancel();
+      ttsAbortRef.current?.abort();
+      audioRef.current?.pause();
     };
   }, []);
 
@@ -236,7 +351,7 @@ export function MapFirstHome() {
       return;
     }
     const rec = new Ctor();
-    rec.lang = "en-IN";
+    rec.lang = VOICE_BCP47[voiceLang];
     rec.interimResults = true;
     rec.maxAlternatives = 1;
     listenBase.current = aiInput;
@@ -683,6 +798,90 @@ export function MapFirstHome() {
     await handleMapClick(map, lon, lat);
   };
 
+  // Copilot map actions (server-derived from the validated query plan). Each
+  // returns a short confirmation shown under the answer, or null if skipped.
+  const geocode = async (place: string, lat: number | null, lon: number | null) => {
+    try {
+      const hit = (await searchPlaces(place, new AbortController().signal))[0];
+      if (hit) return { lat: hit.lat, lon: hit.lon };
+    } catch {
+      // fall back to the plan's coordinates
+    }
+    return lat !== null && lon !== null ? { lat, lon } : null;
+  };
+
+  const applyMapAction = async (action: MapAction): Promise<string | null> => {
+    const map = mapRef.current;
+    if (!map) return null;
+    switch (action.type) {
+      case "fly_to":
+        await executeFlyTo(action);
+        return `Zoomed to ${action.place}`;
+      case "show_layer": {
+        if (action.layer === "satellite") {
+          setBaseMode("satellite");
+          return "Satellite imagery shown (Sentinel-2 cloudless)";
+        }
+        const key = LAYER_TOGGLE[action.layer];
+        setActiveLayers((prev) => ({ ...prev, [key]: true }));
+        return setOverlay(map, OVERLAY_FOR[key], true, action.region);
+      }
+      case "highlight_change":
+        changeActiveRef.current = true;
+        setActiveLayers((prev) => ({ ...prev, landUse: true }));
+        return highlightChange(map, {
+          region: action.region,
+          fromYear: action.from_year,
+          toYear: action.to_year,
+          fromClass: action.from_class,
+          toClass: action.to_class,
+          fit: !action.place, // a named place gets its own fly_to
+        });
+      case "compare": {
+        const pts = (await Promise.all(action.places.map((p) => geocode(p.place, p.lat, p.lon)))).filter(
+          (p): p is { lat: number; lon: number } => p !== null,
+        );
+        if (pts.length === 0) return null;
+        const lons = pts.map((p) => p.lon);
+        const lats = pts.map((p) => p.lat);
+        map.fitBounds(
+          [
+            [Math.min(...lons) - 0.3, Math.min(...lats) - 0.3],
+            [Math.max(...lons) + 0.3, Math.max(...lats) + 0.3],
+          ],
+          { padding: 80, duration: 1200, maxZoom: 10 },
+        );
+        return `Map framed to compare ${action.places.map((p) => p.place).join(" and ")}`;
+      }
+      case "highlight_parcels": {
+        setActiveLayers((prev) => ({ ...prev, parcels: true }));
+        await setOverlay(map, "parcels", true);
+        map.flyTo({ center: [action.lon, action.lat], zoom: 15, speed: 1.2 });
+        await handleMapClick(map, action.lon, action.lat);
+        return `Parcels around ${action.place} loaded`;
+      }
+    }
+  };
+
+  const onChip = (chip: ActionChip) => {
+    if (chip.kind === "prompt" && chip.prompt) {
+      void handleAiSubmit(chip.prompt);
+    } else if (chip.kind === "action" && chip.action) {
+      void applyMapAction(chip.action).then((msg) => {
+        if (!msg) return;
+        setChatLog((prev) =>
+          prev.map((t, i) =>
+            i === prev.length - 1 && t.reply?.copilot
+              ? { ...t, reply: { ...t.reply, copilot: { ...t.reply.copilot, applied: [...(t.reply.copilot.applied ?? []), msg] } } }
+              : t,
+          ),
+        );
+      });
+    } else if (chip.kind === "link" && chip.href) {
+      window.location.assign(chip.href);
+    }
+  };
+
   // AI Submit handler — real agent call (OpenRouter tool loop) via POST /api/ai.
   const handleAiSubmit = async (promptText?: string) => {
     const textToSubmit = (promptText ?? aiInput).trim();
@@ -706,6 +905,8 @@ export function MapFirstHome() {
         body: JSON.stringify({
           message: textToSubmit,
           history: chatHistoryRef.current.slice(-12),
+          previousPlan: lastPlanRef.current,
+          languageHint: voiceLang,
           context: loc
             ? {
                 lat: loc.lat,
@@ -727,7 +928,14 @@ export function MapFirstHome() {
         ok?: boolean;
         error?: string;
         spoken?: string;
-        actions?: FlyToAction[];
+        actions?: MapAction[];
+        language?: CopilotMeta["language"];
+        plan?: CopilotMeta["plan"];
+        validation?: CopilotMeta["validation"];
+        data?: CopilotMeta["data"];
+        evidence?: CopilotMeta["evidence"];
+        chips?: CopilotMeta["chips"];
+        pipeline?: CopilotMeta["pipeline"];
         reply?: {
           summary: string;
           framework: string[];
@@ -741,26 +949,51 @@ export function MapFirstHome() {
         throw new Error(data?.error ?? `AI service unavailable (HTTP ${res.status})`);
       }
 
-      // Agentic map move: fly to the place and load the plots around it.
-      for (const action of data.actions ?? []) {
-        if (action.type === "fly_to") {
-          executeFlyTo(action).catch(() => undefined);
-        }
-      }
-
       const reply = data.reply;
-      const fullReply: AIResponse = { query: textToSubmit, ...reply };
+      const copilot: CopilotMeta | undefined = data.plan
+        ? {
+            language: data.language,
+            plan: data.plan,
+            validation: data.validation ?? [],
+            data: data.data ?? [],
+            evidence: data.evidence ?? [],
+            chips: data.chips ?? [],
+            pipeline: data.pipeline ?? [],
+            applied: [],
+          }
+        : undefined;
+      if (data.plan) lastPlanRef.current = data.plan;
+      const answerLang = data.language?.code;
+      const replyLang: VoiceLang = answerLang === "hi" || answerLang === "mr" ? answerLang : "en";
+      if (answerLang === "hi" || answerLang === "mr" || answerLang === "en") setVoiceLang(answerLang);
+      const fullReply: AIResponse = { query: textToSubmit, ...reply, copilot };
+      const turnId = ++chatIdRef.current;
       setAiResponse(fullReply);
-      setChatLog((prev) => [
-        ...prev,
-        { id: ++chatIdRef.current, role: "assistant", text: reply.summary, at: stamp(), reply: fullReply },
-      ]);
+      setChatLog((prev) => [...prev, { id: turnId, role: "assistant", text: reply.summary, at: stamp(), reply: fullReply }]);
+
+      // Agentic map actions — run in order, then confirm what actually changed on the map.
+      void (async () => {
+        const applied: string[] = [];
+        for (const action of data.actions ?? []) {
+          const msg = await applyMapAction(action).catch(() => null);
+          if (!msg) continue;
+          applied.push(msg);
+          const done = [...applied];
+          setChatLog((prev) =>
+            prev.map((t) =>
+              t.id === turnId && t.reply?.copilot
+                ? { ...t, reply: { ...t.reply, copilot: { ...t.reply.copilot, applied: done } } }
+                : t,
+            ),
+          );
+        }
+      })();
       chatHistoryRef.current = [
         ...chatHistoryRef.current.slice(-11),
         { role: "user", content: textToSubmit },
         { role: "assistant", content: reply.summary },
       ];
-      speak(data.spoken || reply.summary);
+      void speak(data.spoken || reply.summary, replyLang);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       const errorReply: AIResponse = {
@@ -787,6 +1020,12 @@ export function MapFirstHome() {
   // Full answer card rendered inside a transcript turn.
   const renderAnswerCard = (reply: AIResponse) => (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-3.5 space-y-3">
+      {reply.copilot && (
+        <div className="space-y-1.5">
+          <ContextBar meta={reply.copilot} />
+          <PipelineStrip meta={reply.copilot} />
+        </div>
+      )}
       <div className="border-l-2 border-green-600 pl-3">
         <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 block mb-0.5">
           Key finding
@@ -797,9 +1036,10 @@ export function MapFirstHome() {
       {/* Risk assessment — only when the agent actually flagged a risk. */}
       {reply.riskAssessment.trim() &&
         (() => {
-          const level = /high/i.test(reply.riskAssessment)
+          // English, Hindi and Marathi level words (Copilot answers in the user's language)
+          const level = /high|उच्च|ज़्यादा|अधिक|जास्त/i.test(reply.riskAssessment)
             ? { n: 3, label: "High", dot: "bg-red-500", bar: "bg-red-500" }
-            : /moderate/i.test(reply.riskAssessment)
+            : /moderate|medium|मध्यम/i.test(reply.riskAssessment)
               ? { n: 2, label: "Moderate", dot: "bg-amber-500", bar: "bg-amber-500" }
               : { n: 1, label: "Low", dot: "bg-green-600", bar: "bg-green-600" };
           return (
@@ -824,6 +1064,14 @@ export function MapFirstHome() {
           );
         })()}
 
+      {reply.copilot && (
+        <>
+          <ValidationNotes notes={reply.copilot.validation ?? []} />
+          <DataResults data={reply.copilot.data ?? []} />
+          <MapConfirmations applied={reply.copilot.applied ?? []} />
+        </>
+      )}
+
       {/* Regulatory framework — only when rules actually apply. */}
       {reply.framework.length > 0 && (
         <div>
@@ -846,8 +1094,10 @@ export function MapFirstHome() {
         </div>
       )}
 
-      {/* Verified sources — only when the answer cites real sources. */}
-      {reply.evidence.length > 0 && (
+      {/* Sources — Copilot answers list the server-built evidence with provenance. */}
+      {reply.copilot ? (
+        <EvidenceList items={reply.copilot.evidence ?? []} />
+      ) : reply.evidence.length > 0 && (
         <div>
           <h4 className="font-bold text-slate-900 text-xs mb-1.5">Verified sources</h4>
           <div className="flex flex-wrap gap-1.5">
@@ -874,8 +1124,35 @@ export function MapFirstHome() {
           <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed select-text">{reply.limitation}</p>
         </details>
       )}
+
+      {reply.copilot && (
+        <>
+          <ActionChips chips={reply.copilot.chips ?? []} onChip={onChip} />
+          {reply.copilot.plan && <PlanDetails plan={reply.copilot.plan} />}
+        </>
+      )}
     </div>
   );
+
+  // Layer panel checkboxes drive the real map overlays (also switched on by Copilot actions)
+  const overlayRegion = selectedLocation?.state || lastPlanRef.current?.location?.state || null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const apply = () => {
+      for (const key of Object.keys(OVERLAY_FOR) as LayerToggle[]) {
+        // keep a Copilot change highlight instead of redrawing the plain land-use raster over it
+        if (key === "landUse") {
+          if (activeLayers.landUse && changeActiveRef.current) continue;
+          if (!activeLayers.landUse) changeActiveRef.current = false;
+        }
+        void setOverlay(map, OVERLAY_FOR[key], activeLayers[key], overlayRegion);
+      }
+    };
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLayers]);
 
   const portal = selectedLocation ? officialPortalFor(selectedLocation.state) : null;
 
@@ -1429,12 +1706,7 @@ export function MapFirstHome() {
                   aria-hidden="true"
                   className="shrink-0 w-7 h-7 rounded-full object-cover ring-2 ring-white shadow-sm mt-0.5"
                 />
-                <div className="rounded-2xl rounded-tl-md bg-slate-100 border border-slate-200 px-3.5 py-3 flex items-center gap-2.5">
-                  <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin shrink-0" />
-                  <span className="text-[11px] font-medium text-slate-500">
-                    Analyzing spatial, legal &amp; dispute records…
-                  </span>
-                </div>
+                <AnalysingSteps />
               </div>
             )}
             <div ref={chatEndRef} className="h-px" />
@@ -1607,6 +1879,16 @@ export function MapFirstHome() {
                 >
                   {ttsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                 </button>
+                {speechSupported && (
+                  <button
+                    onClick={() => setVoiceLang((l) => (l === "en" ? "hi" : l === "hi" ? "mr" : "en"))}
+                    title={`Voice language: ${VOICE_BCP47[voiceLang]} — click to switch (follows the language of your last question)`}
+                    aria-label="Switch voice language"
+                    className="h-8 min-w-8 px-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-600 flex items-center justify-center transition-all shadow-sm"
+                  >
+                    {VOICE_LABEL[voiceLang]}
+                  </button>
+                )}
                 {speechSupported && (
                   <button
                     onClick={toggleListen}

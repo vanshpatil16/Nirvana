@@ -39,7 +39,8 @@ import {
   type ScenarioDeltas,
 } from "@/data/land-scenario";
 import { LULC_CLASSES, renderRegion, stateOuterRings, statesBounds, type RegionRaster } from "./lulcRaster";
-import { ImpactCards, SIDE_COLORS, ScenarioControls, StateComparison, type ScenarioSide } from "./ScenarioPanel";
+import { SIDE_COLORS, ScenarioControls, ScenarioInsights, type ScenarioSide } from "./ScenarioPanel";
+import { ProfileMenu } from "@/components/ProfileMenu";
 
 maplibregl.config.WORKER_URL = mapWorkerUrl;
 
@@ -404,7 +405,7 @@ export function LandDifference() {
             <div className="header-tools">
               <button className="lang">EN <ChevronDown /></button>
               <Button variant="ghost" size="icon" className="notification"><Bell /><i /></Button>
-              <button className="profile"><span>OK</span><div><strong>Omkar Kudalkar</strong><small>Researcher</small></div><ChevronDown /></button>
+              <ProfileMenu />
             </div>
           </header>
 
@@ -567,43 +568,7 @@ export function LandDifference() {
             </div>
 
             <ScenarioControls deltas={deltas} onChange={setDeltas} sides={scenarioSides} showChange={showChange} onShowChange={setShowChange} />
-            <ImpactCards sides={scenarioSides} />
-            <StateComparison sides={scenarioSides} />
-
-            {/* Sub-panel for analytics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Transition Breakdown */}
-              <div className="bg-card border border-border/80 rounded-xl p-5 shadow-sm md:col-span-2">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Statewide Transition Breakdown</h3>
-                <div className="space-y-4">
-                  {transitions.map(t => (
-                    <div key={t.id}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium">{t.label}</span>
-                        <span className="font-bold font-mono">{t.area.toLocaleString()} ha ({t.percentage}%)</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${t.percentage}%`, backgroundColor: t.color }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Change Intensity Score */}
-              <div className="bg-card border border-border/80 rounded-xl p-5 shadow-sm flex flex-col justify-center">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Change Intensity Score</h3>
-                <div className="flex items-end justify-between mb-2">
-                  <span className="font-display text-5xl font-bold" style={{ color: intensity.color }}>{intensity.score}</span>
-                  <span className="text-sm font-bold px-3 py-1 rounded-full" style={{ backgroundColor: `${intensity.color}20`, color: intensity.color }}>
-                    {intensity.label} Intensity
-                  </span>
-                </div>
-                <div className="h-2 w-full bg-muted rounded-full overflow-hidden mt-3">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${intensity.score}%`, backgroundColor: intensity.color }} />
-                </div>
-              </div>
-            </div>
+            <ScenarioInsights sides={scenarioSides} deltas={deltas} transitions={transitions} intensity={intensity} />
 
           </div>
         </main>

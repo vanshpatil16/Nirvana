@@ -21,6 +21,10 @@
  */
 
 import { z } from "zod";
+import { detectLanguage, type LanguageCode, type LanguageInfo } from "@/copilot/language";
+import { RawPlanSchema, validatePlan, type QueryPlan, type RawPlan, type ValidationNote } from "@/copilot/plan";
+import { chipsFor, followupsFor, mapActionsFor } from "@/copilot/actions";
+import { evidenceFor, executePlan, type DataResult } from "./copilot-data";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_MODEL = "openai/gpt-4o-mini";
@@ -145,10 +149,80 @@ const SUBMIT_ANSWER_TOOL = {
   },
 } as const;
 
+// Step 1 of the NL-GIS pipeline: turn the question into a structured plan (never an answer)
+const PLAN_QUERY_TOOL = {
+  name: "plan_query",
+  description:
+    "Convert the user's land question (any Indian language) into a structured query plan. " +
+    "Do not answer the question. Normalise place names to English.",
+  parameters: {
+    type: "object",
+    properties: {
+      intent: {
+        type: "string",
+        enum: [
+          "land_use_change",
+          "land_use_summary",
+          "parcel_lookup",
+          "conversion_eligibility",
+          "dispute_check",
+          "climate_risk",
+          "socio_economic",
+          "compare_regions",
+          "policy_research",
+          "show_location",
+          "general",
+        ],
+      },
+      location: {
+        type: "object",
+        description: "Main place in the question, in English. Omit when none is named.",
+        properties: {
+          name: { type: "string" },
+          district: { type: "string" },
+          state: { type: "string", description: "Indian state the place is in, in English" },
+          lat: { type: "number" },
+          lon: { type: "number" },
+        },
+      },
+      uses_map_context: {
+        type: "boolean",
+        description: "true when the user means the map selection or their own location: 'near me', 'here', 'this area/village/parcel', 'surrounding parcels'",
+      },
+      refers_to_previous: {
+        type: "boolean",
+        description: "true when the question refines or continues the previous analysis ('only agriculture to built-up', 'compare it with Nashik', 'what about 2020?')",
+      },
+      compare_with: {
+        type: "object",
+        description: "Second place when comparing",
+        properties: { name: { type: "string" }, state: { type: "string" }, lat: { type: "number" }, lon: { type: "number" } },
+      },
+      from_year: { type: "integer" },
+      to_year: { type: "integer" },
+      from_class: { type: "string", enum: ["agriculture", "forest", "built_up", "water", "barren", "other"] },
+      to_class: { type: "string", enum: ["agriculture", "forest", "built_up", "water", "barren", "other"] },
+      operation: { type: "string", enum: ["summarise", "compare", "trend", "lookup", "explain"] },
+      datasets: {
+        type: "array",
+        items: {
+          type: "string",
+          enum: ["land_records", "cadastral", "lulc", "satellite", "climate", "socio_economic", "registration", "disputes", "research_policy"],
+        },
+      },
+      map_action: { type: "string", enum: ["zoom", "highlight_change", "show_layer", "highlight_parcels", "compare", "none"] },
+      layer: { type: "string", enum: ["lulc", "climate_risk", "disputes", "parcels", "satellite"] },
+      topic: { type: "string", description: "Short English topic keywords for research search" },
+    },
+    required: ["intent", "uses_map_context", "refers_to_previous"],
+  },
+} as const;
+
 const TOOLS = [
   { type: "function" as const, function: SHOW_AREA_TOOL },
   { type: "function" as const, function: SUBMIT_ANSWER_TOOL },
 ];
+const PLAN_TOOLS = [{ type: "function" as const, function: PLAN_QUERY_TOOL }];
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -223,6 +297,10 @@ const RequestSchema = z.object({
     .max(30)
     .optional(),
   context: ContextSchema.nullish(),
+  /** The previous turn's validated plan, for follow-ups ("compare it with Nashik") */
+  previousPlan: z.record(z.string(), z.unknown()).nullish(),
+  /** Language of the previous turn, used when a message is too short to detect */
+  languageHint: z.string().max(5).nullish(),
 });
 
 export interface FlyToAction {
@@ -300,6 +378,7 @@ async function callOpenRouter(
   messages: ChatMessage[],
   toolChoice: unknown,
   referer: string,
+  tools: readonly unknown[] = TOOLS,
 ): Promise<{ message: AssistantMessage; model: string }> {
   const res = await fetch(OPENROUTER_URL, {
     method: "POST",
@@ -312,7 +391,7 @@ async function callOpenRouter(
     body: JSON.stringify({
       model,
       messages,
-      tools: TOOLS,
+      tools,
       tool_choice: toolChoice,
       temperature: 0.4,
       max_tokens: MAX_TOKENS,
@@ -495,6 +574,134 @@ async function runAgentLoop(params: {
 }
 
 // ---------------------------------------------------------------------------
+// NL-GIS Copilot pipeline: plan → (validate, query data server-side) → explain
+// ---------------------------------------------------------------------------
+
+function plannerPrompt(context: MapContext | null, previous: QueryPlan | null): string {
+  const ctx = context
+    ? `Map selection: ${[context.village, context.taluka, context.district, context.state].filter(Boolean).join(", ") || "unnamed point"} at ${context.lat.toFixed(4)}, ${context.lon.toFixed(4)}${context.landUse ? ` (land use: ${context.landUse})` : ""}.`
+    : "Nothing is selected on the map.";
+  const prev = previous
+    ? `Previous analysis (for follow-ups): ${JSON.stringify({ intent: previous.intent, location: previous.location?.name, state: previous.location?.state, from_year: previous.from_year, to_year: previous.to_year, from_class: previous.from_class, to_class: previous.to_class, compare_with: previous.compare_with?.name })}`
+    : "There is no previous analysis.";
+  return `You are the query planner of Bhumi-Niti, India's land-governance GIS platform. Convert the user's question into a plan by calling plan_query. Never answer the question.
+
+The user may write in English, Hindi, Marathi or another Indian language (or Hinglish). Understand it in any language, but return place names and topic keywords in English.
+
+Guidance:
+- land_use_change: change between years or classes ("agricultural land converted to built-up around Pune since 2019" → from_class agriculture, to_class built_up, from_year 2019, to_year 2024, map_action highlight_change).
+- land_use_summary: current land-use mix of a place.
+- parcel_lookup / show_location: find or show a place, village, survey number or its plots.
+- conversion_eligibility: NA / land-use conversion questions for a parcel or area.
+- dispute_check, climate_risk, socio_economic: those indicators for a place.
+- compare_regions: comparing two places; put the second place in compare_with.
+- policy_research: laws, regulations, research, reports.
+- general: greetings, how the platform works, anything else.
+- "near me", "here", "this area/village/parcel", "surrounding parcels" → uses_map_context true.
+- A follow-up that refines or continues the previous analysis → refers_to_previous true and only fill what changed ("only agriculture to built-up" → from_class/to_class; "compare it with Nashik" → compare_with Nashik).
+- Give the state for every Indian place, and approximate lat/lon for named places.
+- "since 2019" means from_year 2019 to_year 2024. Data exists for 2018–2024.
+
+${ctx}
+${prev}`;
+}
+
+async function planQuery(params: {
+  key: string;
+  model: string;
+  referer: string;
+  message: string;
+  history: { role: "user" | "assistant"; content: string }[];
+  context: MapContext | null;
+  previous: QueryPlan | null;
+}): Promise<RawPlan> {
+  const messages: ChatMessage[] = [
+    { role: "system", content: plannerPrompt(params.context, params.previous) },
+    ...params.history.slice(-4).map<ChatMessage>((h) => ({ role: h.role, content: h.content })),
+    { role: "user", content: params.message },
+  ];
+  try {
+    const reply = await callOpenRouter(
+      params.key,
+      params.model,
+      messages,
+      { type: "function", function: { name: PLAN_QUERY_TOOL.name } },
+      params.referer,
+      PLAN_TOOLS,
+    );
+    const call = reply.message.tool_calls?.find((c) => c.function?.name === PLAN_QUERY_TOOL.name);
+    const parsed = RawPlanSchema.safeParse(safeJson(call?.function?.arguments ?? "{}"));
+    if (parsed.success) return parsed.data;
+  } catch (error) {
+    console.error("[/api/ai] planner failed", error instanceof Error ? error.message : error);
+  }
+  // Planner unavailable: fall back to a general answer (validation adds a note)
+  return { intent: "general", uses_map_context: false, refers_to_previous: false };
+}
+
+function groundingPrompt(plan: QueryPlan, notes: ValidationNote[], data: DataResult[], lang: LanguageInfo): string {
+  const compact = data.map((d) => ({
+    dataset: d.dataset,
+    label: d.label,
+    provenance: d.provenance,
+    headline: d.headline,
+    rows: d.rows,
+    table: d.table,
+    note: d.note,
+  }));
+  return `COPILOT MODE — this turn has already been planned and the platform's data has been queried for you.
+
+LANGUAGE: Write spoken, summary, framework, riskAssessment, limitation and suggestedFollowups in ${lang.name}${lang.code === "en" ? "" : ` (${lang.native}, native script)`}. Keep place names recognisable.
+
+VALIDATED QUERY PLAN:
+${JSON.stringify(plan)}
+
+VALIDATION NOTES:
+${notes.length ? notes.map((n) => `- [${n.level}] ${n.text}`).join("\n") : "- none"}
+
+PLATFORM DATA RESULTS:
+${JSON.stringify(compact)}
+
+Rules for this answer:
+1. Every figure about land use, parcels, disputes, climate or households must come from PLATFORM DATA RESULTS, quoted as given. Never invent numbers, survey numbers, case details or dates.
+2. provenance "demo" means demonstration / model data: when you use it, call it a demo estimate — never official statistics.
+3. provenance "unavailable" means the integration isn't connected: say so and where to verify officially.
+4. You may add general explanation of laws and procedures, clearly as explanation, not as platform data.
+5. Do not list or name sources yourself (set evidence to []); the platform displays the evidence it actually used.
+6. If a validation note is a warning, mention it briefly.
+8. When a result has a note saying it is a state-level figure, say explicitly that the number is for the whole state, not the city or district the user named. Never present two places in the same state as having separately measured results.
+7. The map is updated automatically for this plan; don't call show_area.`;
+}
+
+async function explain(params: {
+  key: string;
+  model: string;
+  referer: string;
+  messages: ChatMessage[];
+  fallback: string;
+}): Promise<{ answer: Answer; model: string }> {
+  try {
+    const reply = await callOpenRouter(
+      params.key,
+      params.model,
+      params.messages,
+      { type: "function", function: { name: SUBMIT_ANSWER_TOOL.name } },
+      params.referer,
+    );
+    const call = reply.message.tool_calls?.find((c) => c.function?.name === SUBMIT_ANSWER_TOOL.name);
+    const parsed = AnswerSchema.safeParse(safeJson(call?.function?.arguments ?? ""));
+    if (parsed.success) return { answer: parsed.data, model: reply.model };
+    const salvaged = extractAnswer(typeof reply.message.content === "string" ? reply.message.content : "");
+    if (salvaged) return { answer: salvaged, model: reply.model };
+  } catch (error) {
+    console.error("[/api/ai] explain failed", error instanceof Error ? error.message : error);
+  }
+  // Model unavailable: return the platform's own data headline rather than nothing
+  const base = fallbackAnswer("", params.fallback, []);
+  return { answer: base, model: params.model };
+}
+
+// ---------------------------------------------------------------------------
 // HTTP handler
 // ---------------------------------------------------------------------------
 
@@ -543,27 +750,74 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
     // keep default
   }
 
-  const messages: ChatMessage[] = [
-    { role: "system", content: systemPrompt(context) },
-    ...(history ?? []).map<ChatMessage>((entry) => ({ role: entry.role, content: entry.content })),
-    { role: "user", content: message },
-  ];
+  const pipeline: { step: string; ms: number }[] = [];
+  let t = Date.now();
+  const mark = (step: string) => {
+    const now = Date.now();
+    pipeline.push({ step, ms: now - t });
+    t = now;
+  };
 
   try {
-    const result = await runAgentLoop({ key, model, referer, messages });
+    // 1. Language detection (local, no model call)
+    const detection = detectLanguage(message, (parsed.data.languageHint as LanguageCode | undefined) ?? "en");
+    const lang = detection.language;
+    mark("detect_language");
+
+    // 2. Intent extraction → structured plan (LLM, forced tool call)
+    const previous = (parsed.data.previousPlan ?? null) as QueryPlan | null;
+    const raw = await planQuery({ key, model, referer, message, history: history ?? [], context: context ?? null, previous });
+    mark("plan");
+
+    // 3. Validation against what the platform can answer
+    const { plan, notes } = validatePlan(raw, { language: lang.code, context: context ?? null, previous });
+    mark("validate");
+
+    // 4. Data / GIS layer + evidence (server-side, never from the LLM)
+    const data = executePlan(plan, message);
+    const evidence = evidenceFor(data);
+    mark("query_data");
+
+    // 5. Explanation in the user's language, grounded in the data results
+    const messages: ChatMessage[] = [
+      { role: "system", content: systemPrompt(context) },
+      { role: "system", content: groundingPrompt(plan, notes, data, lang) },
+      ...(history ?? []).map<ChatMessage>((entry) => ({ role: entry.role, content: entry.content })),
+      { role: "user", content: message },
+    ];
+    const answer = await explain({ key, model, referer, messages, fallback: data[0]?.headline ?? "" });
+    mark("explain");
+
+    // 6. Map actions + chips + follow-ups (deterministic, from the validated plan)
+    const actions = mapActionsFor(plan);
+    const chips = chipsFor(plan, lang.code);
+    const followups = Array.from(new Set([...followupsFor(plan, lang.code), ...answer.answer.suggestedFollowups])).slice(0, 4);
+    mark("act");
+
     return jsonResponse({
       ok: true,
-      model: result.model,
+      model: answer.model,
+      language: { code: lang.code, name: lang.name, native: lang.native, bcp47: lang.bcp47, confidence: detection.confidence, method: detection.method },
+      plan,
+      validation: notes,
+      data,
+      evidence: [
+        ...evidence,
+        { label: `AI explanation · ${answer.model}`, detail: "Wording and general context generated by the language model", provenance: "ai" },
+      ],
+      chips,
+      pipeline,
       reply: {
-        summary: result.answer.summary,
-        framework: result.answer.framework,
-        riskAssessment: result.answer.riskAssessment,
-        evidence: result.answer.evidence,
-        limitation: result.answer.limitation,
-        suggestedFollowups: result.answer.suggestedFollowups,
+        summary: answer.answer.summary,
+        framework: answer.answer.framework,
+        riskAssessment: answer.answer.riskAssessment,
+        // Sources come from the data layer, not from the model
+        evidence: evidence.map((e) => ({ label: e.label, type: e.provenance })),
+        limitation: answer.answer.limitation,
+        suggestedFollowups: followups,
       },
-      spoken: result.answer.spoken,
-      actions: result.actions,
+      spoken: answer.answer.spoken,
+      actions,
     });
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unknown error";

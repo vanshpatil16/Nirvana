@@ -12,7 +12,8 @@ export type HubView =
   | "policy-evidence"
   | "experiments"
   | "network"
-  | "gaps";
+  | "gaps"
+  | "manuscript";
 
 export type EvidenceKind = "paper" | "dataset" | "policy" | "layer";
 

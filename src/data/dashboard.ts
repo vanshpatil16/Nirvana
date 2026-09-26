@@ -1,13 +1,14 @@
 import {
-  AlertTriangle,
+  ArrowRightLeft,
   BarChart3,
+  CloudLightning,
+  Gavel,
+  LandPlot,
   Beaker,
   BookOpen,
-  Building2,
   Database,
   FlaskConical,
   Layers,
-  Leaf,
   Map,
   MapPinned,
   Network,
@@ -26,16 +27,20 @@ export const navItems = [
   { label: "Research Hub", icon: BookOpen, href: "/research-hub" },
   { label: "AI Research Copilot", icon: Beaker },
   { label: "Innovation Portal", icon: Sprout, href: "/innovation-portal" },
-  { label: "Collaborative Workspaces", icon: Users },
+  { label: "Collaborative Workspaces", icon: Users, href: "/collaborativehub" },
   { label: "Data & APIs", icon: Database },
   { label: "Impact & Monitoring", icon: Network },
 ];
 
+/**
+ * Headline indicators (demo). `series` is a 2017–2024 annual demo series whose
+ * last step matches `change`; `upIsGood` sets whether a rise is shown as good.
+ */
 export const kpis = [
-  { value: "684,832", label: "Villages Mapped", trend: "↑ 2.4%", tone: "sage", icon: Building2 },
-  { value: "421,309", label: "Land-Use Changes", trend: "↑ 12.6%", tone: "violet", icon: MapPinned },
-  { value: "14,203", label: "Active Land Disputes", trend: "↓ 8.1%", tone: "terra", icon: AlertTriangle },
-  { value: "231", label: "High-Risk Districts", trend: "↑ 9.3%", tone: "leaf", icon: Leaf },
+  { value: "684,832", label: "Villages mapped", change: 2.4, upIsGood: true, icon: LandPlot, series: [590, 612, 628, 641, 652, 661, 668.8, 684.8] },
+  { value: "421,309", label: "Land-use changes", change: 12.6, upIsGood: null, icon: ArrowRightLeft, series: [300, 318, 331, 339, 352, 361, 374.2, 421.3] },
+  { value: "14,203", label: "Active land disputes", change: -8.1, upIsGood: false, icon: Gavel, series: [13.1, 14.0, 14.9, 15.6, 16.1, 15.9, 15.5, 14.2] },
+  { value: "231", label: "High-risk districts", change: 9.3, upIsGood: false, icon: CloudLightning, series: [168, 176, 183, 190, 197, 204, 211, 231] },
 ] as const;
 
 export const mapLayers = [

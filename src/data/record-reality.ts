@@ -1,3 +1,6 @@
+// Local aerial image for field-officer evidence (the previous remote photo no longer loads)
+import fieldInspection from "@/assets/sat_2024.jpg";
+
 export interface ParcelRecord {
   surveyNo: string;
   state: string;
@@ -34,6 +37,8 @@ export interface ParcelRecord {
     description: string;
     verified: boolean;
     imageUrl: string;
+    geoTag?: string | null;
+    ocrVerified?: boolean;
   }>;
   nearbyPlots: Array<{
     surveyNo: string;
@@ -145,7 +150,7 @@ export const PARCEL_DATABASE: Record<string, ParcelRecord> = {
         author: "Circle Inspector (Shirur)",
         description: "Ground check confirmed non-agricultural warehouse structure on plot.",
         verified: true,
-        imageUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=400&q=80",
+        imageUrl: fieldInspection,
       },
       {
         id: "ev-3",
@@ -248,7 +253,7 @@ export const PARCEL_DATABASE: Record<string, ParcelRecord> = {
         author: "Villager",
         description: "New brick unit constructed without registration board.",
         verified: false,
-        imageUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=400&q=80",
+        imageUrl: fieldInspection,
       },
     ],
     nearbyPlots: [

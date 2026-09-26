@@ -4,6 +4,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleAiApi } from "./server/ai-agent";
 import { handleParcelsApi } from "./server/parcel-store";
+import { handleTtsApi } from "./server/tts";
 import { handleWeatherApi } from "./server/weather-india";
 
 type ServerEntry = {
@@ -62,6 +63,10 @@ export default {
       // Land-intelligence agent (OpenRouter tool loop; needs OPENROUTER_API_KEY).
       if (url.pathname === "/api/ai") {
         return handleAiApi(request, env);
+      }
+      // Spoken replies via ElevenLabs (needs ELEVENLABS_API_KEY; client falls back to browser TTS).
+      if (url.pathname === "/api/tts") {
+        return handleTtsApi(request, env);
       }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

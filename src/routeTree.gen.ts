@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CollaborativehubRouteImport } from './routes/collaborativehub'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as GisExplorerRouteImport } from './routes/gis-explorer'
 import { Route as InnovationPortalRouteImport } from './routes/innovation-portal'
@@ -20,6 +21,11 @@ import { Route as ResearchHubRouteImport } from './routes/research-hub'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollaborativehubRoute = CollaborativehubRouteImport.update({
+  id: '/collaborativehub',
+  path: '/collaborativehub',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -55,6 +61,7 @@ const ResearchHubRoute = ResearchHubRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/collaborativehub': typeof CollaborativehubRoute
   '/dashboard': typeof DashboardRoute
   '/gis-explorer': typeof GisExplorerRoute
   '/innovation-portal': typeof InnovationPortalRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/collaborativehub': typeof CollaborativehubRoute
   '/dashboard': typeof DashboardRoute
   '/gis-explorer': typeof GisExplorerRoute
   '/innovation-portal': typeof InnovationPortalRoute
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/collaborativehub': typeof CollaborativehubRoute
   '/dashboard': typeof DashboardRoute
   '/gis-explorer': typeof GisExplorerRoute
   '/innovation-portal': typeof InnovationPortalRoute
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/collaborativehub'
     | '/dashboard'
     | '/gis-explorer'
     | '/innovation-portal'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/collaborativehub'
     | '/dashboard'
     | '/gis-explorer'
     | '/innovation-portal'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/collaborativehub'
     | '/dashboard'
     | '/gis-explorer'
     | '/innovation-portal'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CollaborativehubRoute: typeof CollaborativehubRoute
   DashboardRoute: typeof DashboardRoute
   GisExplorerRoute: typeof GisExplorerRoute
   InnovationPortalRoute: typeof InnovationPortalRoute
@@ -128,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collaborativehub': {
+      id: '/collaborativehub'
+      path: '/collaborativehub'
+      fullPath: '/collaborativehub'
+      preLoaderRoute: typeof CollaborativehubRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -177,6 +197,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CollaborativehubRoute: CollaborativehubRoute,
   DashboardRoute: DashboardRoute,
   GisExplorerRoute: GisExplorerRoute,
   InnovationPortalRoute: InnovationPortalRoute,

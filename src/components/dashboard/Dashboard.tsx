@@ -12,6 +12,7 @@ import { LandInsightPanel } from "./LandInsightPanel";
 import landscape from "@/assets/bhumi-landscape.png";
 import logo from "@/assets/logo.png";
 import sidenavBottom from "@/assets/sidenav-bottom.png";
+import { ProfileMenu } from "@/components/ProfileMenu";
 
 const IndiaMap = lazy(() => import("./IndiaMap").then((m) => ({ default: m.IndiaMap })));
 
@@ -38,15 +39,51 @@ function Sidebar({ open, close, activeItem = "Dashboard" }: { open: boolean; clo
 }
 
 function TopHeader({ openMenu }: { openMenu: () => void }) {
-  return <header className="top-header"><Button variant="ghost" size="icon" className="menu-button" onClick={openMenu} aria-label="Open navigation"><Menu /></Button><label className="global-search"><Search /><input placeholder="Search villages, districts, policies, research papers, datasets..." /><kbd><Command /> K</kbd></label><div className="header-tools"><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" aria-label="Theme settings"><Moon /></Button></TooltipTrigger><TooltipContent>Light appearance</TooltipContent></Tooltip><button className="lang">EN <ChevronDown /></button><Button variant="ghost" size="icon" className="notification" aria-label="Notifications"><Bell /><i /></Button><button className="profile"><span>OK</span><div><strong>Omkar Kudalkar</strong><small>Researcher</small></div><ChevronDown /></button></div></header>;
+  return <header className="top-header"><Button variant="ghost" size="icon" className="menu-button" onClick={openMenu} aria-label="Open navigation"><Menu /></Button><label className="global-search"><Search /><input placeholder="Search villages, districts, policies, research papers, datasets..." /><kbd><Command /> K</kbd></label><div className="header-tools"><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" aria-label="Theme settings"><Moon /></Button></TooltipTrigger><TooltipContent>Light appearance</TooltipContent></Tooltip><button className="lang">EN <ChevronDown /></button><Button variant="ghost" size="icon" className="notification" aria-label="Notifications"><Bell /><i /></Button><ProfileMenu /></div></header>;
 }
 
 function HeroBanner() {
   return <section className="hero"><img src={landscape} width={1536} height={768} alt="Agricultural landscape, river and village in India" /><div className="hero-shade" /><div className="hero-copy"><span>NATIONAL LAND INTELLIGENCE</span><h1>Data. People. Policy.<br />A Stronger Tomorrow.</h1><p>Integrated knowledge, real-world evidence and collaborative innovation for sustainable land governance.</p><div><Button>Explore the Map <ArrowRight /></Button><Button variant="outline">View Research</Button></div></div></section>;
 }
 
+// Small trend line for a KPI card (demo annual series, 2017–2024)
+function Sparkline({ values, tone }: { values: readonly number[]; tone: "good" | "bad" | "neutral" }) {
+  const w = 96, h = 34, lo = Math.min(...values), hi = Math.max(...values);
+  const pts = values.map((v, i) => [(i / (values.length - 1)) * w, h - 3 - ((v - lo) / (hi - lo || 1)) * (h - 8)] as const);
+  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const last = pts[pts.length - 1]!;
+  return (
+    <svg className={`kpi-spark ${tone}`} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+      <path d={`${line} L${w},${h} L0,${h} Z`} className="area" />
+      <path d={line} className="line" />
+      <circle cx={last[0]} cy={last[1]} r={3} />
+    </svg>
+  );
+}
+
 function KPIGrid() {
-  return <section className="kpi-grid" aria-label="National land intelligence indicators">{kpis.map(({ value, label, trend, tone, icon: Icon }) => <article className={`kpi-card tone-${tone}`} key={label}><span><Icon /></span><div><strong>{value}</strong><small>{label}</small><b>{trend}</b></div></article>)}</section>;
+  return (
+    <section className="kpi-grid" aria-label="National land intelligence indicators">
+      {kpis.map(({ value, label, change, upIsGood, icon: Icon, series }) => {
+        const tone = upIsGood === null ? "neutral" : (change > 0) === upIsGood ? "good" : "bad";
+        return (
+          <article className="kpi-card" key={label}>
+            <div className="kpi-top">
+              <span className="kpi-label"><Icon aria-hidden="true" />{label}</span>
+            </div>
+            <div className="kpi-main">
+              <strong>{value}</strong>
+              <Sparkline values={series} tone={tone} />
+            </div>
+            <div className="kpi-foot">
+              <b className={`kpi-delta ${tone}`}>{change > 0 ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%</b>
+              <small>vs 2023</small>
+            </div>
+          </article>
+        );
+      })}
+    </section>
+  );
 }
 
 function TemporalSide({ tab, year, playing, speed, onTogglePlay, onSpeed, onYear }: {

@@ -69,6 +69,9 @@ import {
   WorkspaceCard,
 } from "./ResearchSections";
 import { WorkspaceView } from "./Workspace";
+import { ProfileMenu } from "@/components/ProfileMenu";
+import { LiveManuscript } from "./LiveManuscript";
+import { CollabOverview } from "./CollabOverview";
 import { STAGE_OF_VIEW } from "./research-model";
 import { ResearchMap } from "./ResearchMap";
 import "./research-hub.css";
@@ -83,6 +86,14 @@ const SUBNAV: { view: HubView; label: string }[] = [
   { view: "publications", label: "Publications" },
   { view: "policy-evidence", label: "Policy Evidence" },
   { view: "network", label: "Research Network" },
+];
+
+const COLLAB_SUBNAV: { view: HubView; label: string }[] = [
+  { view: "overview", label: "Overview" },
+  { view: "workspaces", label: "Workspaces" },
+  { view: "manuscript", label: "Live manuscript" },
+  { view: "my-research", label: "My research" },
+  { view: "network", label: "Research network" },
 ];
 
 const RAIL: { view: HubView; label: string; icon: typeof Home }[] = [
@@ -124,10 +135,12 @@ function writeStore(key: string, value: unknown) {
 function Shell({
   drawer,
   close,
+  activeItem = ACTIVE_ITEM,
   children,
 }: {
   drawer: boolean;
   close: () => void;
+  activeItem?: string;
   children: ReactNode;
 }) {
   return (
@@ -156,7 +169,7 @@ function Shell({
         </div>
         <nav aria-label="Main navigation">
           {navItems.map(({ label, icon: Icon, href }) => {
-            const isActive = label === ACTIVE_ITEM;
+            const isActive = label === activeItem;
             if (href) {
               return (
                 <a
@@ -238,14 +251,7 @@ function PageHeader({ openMenu, onSearch }: { openMenu: () => void; onSearch: ()
           <Bell />
           <i />
         </Button>
-        <button className="profile">
-          <span>OK</span>
-          <div>
-            <strong>Omkar Kudalkar</strong>
-            <small>Researcher</small>
-          </div>
-          <ChevronDown />
-        </button>
+        <ProfileMenu />
       </div>
     </header>
   );
@@ -285,7 +291,9 @@ export function ResearchHub({
   view: initialView,
   workspaceId,
   onNavigate,
+  variant = "research",
 }: {
+  variant?: "research" | "collab";
   view?: HubView | undefined;
   workspaceId?: string | undefined;
   onNavigate?: ((view: HubView, ws?: string) => void) | undefined;
@@ -405,6 +413,7 @@ export function ResearchHub({
     [go, workspaces, saved, onNavigate],
   );
 
+  const collab = variant === "collab";
   const activeWs = openWs ? workspaces.find((w) => w.id === openWs) : undefined;
   const stage = activeWs ? 2 : STAGE_OF_VIEW[view];
   const paperObj = paper ? paperById(paper) : undefined;
@@ -414,7 +423,11 @@ export function ResearchHub({
     <HubContext.Provider value={api}>
       <TooltipProvider>
         <div className="dashboard-shell">
-          <Shell drawer={drawer} close={() => setDrawer(false)}>
+          <Shell
+            drawer={drawer}
+            close={() => setDrawer(false)}
+            activeItem={collab ? "Collaborative Workspaces" : ACTIVE_ITEM}
+          >
             <main>
               <PageHeader openMenu={() => setDrawer(true)} onSearch={() => go("discover")} />
               <div className="dashboard-content rh">
@@ -429,10 +442,11 @@ export function ResearchHub({
                       cursor: "pointer",
                     }}
                   >
-                    <BookOpen /> Research Hub
+                    {collab ? <Users /> : <BookOpen />}{" "}
+                    {collab ? "Collaborative Hub" : "Research Hub"}
                   </button>
                   <nav aria-label="Research Hub sections">
-                    {SUBNAV.map((s) => (
+                    {(collab ? COLLAB_SUBNAV : SUBNAV).map((s) => (
                       <button
                         key={s.view}
                         className={view === s.view ? "active" : ""}
@@ -444,28 +458,32 @@ export function ResearchHub({
                     ))}
                   </nav>
                 </div>
-                <div className="rh-layout">
-                  <aside className="rh-rail" aria-label="Research Hub navigation">
-                    <h4>Research Hub</h4>
-                    {RAIL.map((r) => (
-                      <button
-                        key={r.view}
-                        className={view === r.view ? "active" : ""}
-                        onClick={() => go(r.view)}
-                      >
-                        <r.icon /> {r.label}
-                      </button>
-                    ))}
-                    <p className="rh-rail-note">
-                      <ShieldCheck style={{ width: 13, verticalAlign: -2 }} /> Platform
-                      demonstration data. Studies, researchers and metrics shown here are
-                      illustrative.
-                    </p>
-                  </aside>
+                <div className={`rh-layout${collab ? " rh-layout-wide" : ""}`}>
+                  {!collab && (
+                    <aside className="rh-rail" aria-label="Research Hub navigation">
+                      <h4>Research Hub</h4>
+                      {RAIL.map((r) => (
+                        <button
+                          key={r.view}
+                          className={view === r.view ? "active" : ""}
+                          onClick={() => go(r.view)}
+                        >
+                          <r.icon /> {r.label}
+                        </button>
+                      ))}
+                      <p className="rh-rail-note">
+                        <ShieldCheck style={{ width: 13, verticalAlign: -2 }} /> Platform
+                        demonstration data. Studies, researchers and metrics shown here are
+                        illustrative.
+                      </p>
+                    </aside>
+                  )}
                   <div className="rh-main">
-                    {stage >= 0 && <LifecycleStrip stage={stage} />}
+                    {!collab && stage >= 0 && <LifecycleStrip stage={stage} />}
                     {activeWs ? (
                       <WorkspaceView ws={activeWs} onBack={() => go("workspaces")} />
+                    ) : collab && view === "overview" ? (
+                      <CollabOverview onCreate={() => setCreating(true)} />
                     ) : (
                       <View
                         view={view}
@@ -794,6 +812,17 @@ function View({
       );
     }
 
+    case "manuscript":
+      return (
+        <>
+          <SectionHead eyebrow="Live now" icon={FileText} title="Live manuscript">
+            A working paper being co-written right now: tracked changes, comments and live cursors
+            from four institutions.
+          </SectionHead>
+          <LiveManuscript />
+        </>
+      );
+
     case "workspaces":
       return (
         <>
@@ -869,6 +898,33 @@ function View({
           <SectionHead eyebrow="Publish" icon={FileText} title="Publications">
             {PAPERS.length} studies in the demonstration catalogue.
           </SectionHead>
+          <section style={{ marginBottom: 36 }}>
+            <SectionHead
+              eyebrow="Live now"
+              icon={Users}
+              title="Live manuscript"
+              action={
+                <button className="rh-btn" onClick={() => hub.openWorkspace("ws-mh-transition")}>
+                  Open workspace <ArrowRight />
+                </button>
+              }
+            >
+              A working paper being co-written right now: tracked changes, comments and live cursors
+              from four institutions.
+            </SectionHead>
+            <LiveManuscript />
+          </section>
+          <h3
+            className="rh-muted"
+            style={{
+              margin: "0 0 12px",
+              fontSize: 12,
+              letterSpacing: ".12em",
+              textTransform: "uppercase",
+            }}
+          >
+            Catalogue
+          </h3>
           <div className="rh-chips" style={{ marginTop: 0, marginBottom: 16 }}>
             {types.map((t) => (
               <button
@@ -885,6 +941,7 @@ function View({
               <PaperCard key={p.id} paper={p} />
             ))}
           </div>
+
           <section className="rh-section">
             <SectionHead
               eyebrow="Publication builder"

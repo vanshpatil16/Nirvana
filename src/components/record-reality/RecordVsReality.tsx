@@ -41,10 +41,13 @@ import {
 import logo from "@/assets/logo.png";
 import sidenavBottom from "@/assets/sidenav-bottom.png";
 import satelliteMap from "@/assets/satellite_map.jpg";
+import { FieldCapture, type CapturedEvidence } from "./FieldCapture";
 import sat2020 from "@/assets/sat_2020.jpg";
 import sat2024 from "@/assets/sat_2024.jpg";
+import { ProfileMenu } from "@/components/ProfileMenu";
 
 export function RecordVsReality() {
+  const [legendOpen, setLegendOpen] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [selectedState, setSelectedState] = useState<string>("Maharashtra");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("Pune");
@@ -82,7 +85,7 @@ export function RecordVsReality() {
     submitterType: "Citizen Report" as "Citizen Report" | "Field Officer" | "Drone Survey",
     author: "Omkar Kudalkar",
     description: "",
-    imageUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=400&q=80",
+    imageUrl: satelliteMap,
   });
 
   // Current active parcel record
@@ -168,6 +171,23 @@ export function RecordVsReality() {
     setTasks([newTask, ...tasks]);
     setShowTaskModal(false);
     triggerToast(`Verification task created successfully for Survey ${selectedSurveyNo}!`);
+  };
+
+  const handleCapturedEvidence = (ev: CapturedEvidence) => {
+    const newEv = {
+      id: `ev-${Date.now()}`,
+      date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+      submitterType: ev.submitterType,
+      author: ev.author,
+      description: ev.description,
+      verified: true,
+      imageUrl: ev.imageUrl || satelliteMap,
+      geoTag: ev.geoTag,
+      ocrVerified: ev.ocrVerified,
+    };
+    setEvidenceList([newEv, ...evidenceList]);
+    setShowAddEvidenceModal(false);
+    triggerToast(`Field evidence recorded for Survey ${selectedSurveyNo}${ev.ocrVerified ? " · 7/12 cross-checked" : ""}.`);
   };
 
   const handleAddEvidence = (e: React.FormEvent) => {
@@ -257,7 +277,7 @@ export function RecordVsReality() {
           <button className="drawer-backdrop" onClick={() => setDrawer(false)} aria-label="Close navigation" />
         )}
 
-        <main className="flex-1 overflow-x-hidden">
+        <main className="flex-1 overflow-x-clip">
           {/* Top Header */}
           <header className="top-header">
             <Button
@@ -292,18 +312,11 @@ export function RecordVsReality() {
                 <Bell />
                 <i />
               </Button>
-              <button className="profile">
-                <span>OK</span>
-                <div>
-                  <strong>Omkar Kudalkar</strong>
-                  <small>Researcher</small>
-                </div>
-                <ChevronDown />
-              </button>
+              <ProfileMenu />
             </div>
           </header>
 
-          <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
+          <div className="rvr p-4 md:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
             {/* Page Title Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-5">
               <div>
@@ -340,10 +353,6 @@ export function RecordVsReality() {
                   <Download className="h-4 w-4 text-emerald-700" />
                   Download Report
                 </Button>
-
-                <span className="hidden xl:block italic text-xs font-serif text-muted-foreground border-l border-border pl-4">
-                  "From records to reality, for transparent governance."
-                </span>
               </div>
             </div>
 
@@ -507,37 +516,29 @@ export function RecordVsReality() {
                             <p className="text-[10px] text-muted-foreground">Source: {currentParcel.sources.official}</p>
                           </div>
 
-                          {/* Legend Overlay */}
-                          <div className="absolute bottom-3 left-3 z-10 bg-background/90 backdrop-blur-xs border border-border p-2.5 rounded-lg text-[10px] space-y-1 text-foreground shadow-xs">
-                            <div className="font-semibold mb-1 text-[11px]">Legend</div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-emerald-700" />
-                              <span>Agriculture</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-600" />
-                              <span>Residential</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-rose-400 border border-rose-600" />
-                              <span>Commercial</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-green-700 border border-green-900" />
-                              <span>Forest</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-sky-400 border border-sky-600" />
-                              <span>Water Body</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-purple-400 border border-purple-600" />
-                              <span>Government</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-amber-700 border border-amber-900" />
-                              <span>Others</span>
-                            </div>
+                          {/* Legend — collapsed to a chip so it never covers the parcels */}
+                          <div className="rvr-legend absolute bottom-3 left-3 z-10">
+                            <button type="button" className="rvr-legend-btn" onClick={() => setLegendOpen((v) => !v)} aria-expanded={legendOpen}>
+                              <Layers className="h-3.5 w-3.5" /> Legend
+                            </button>
+                            {legendOpen && (
+                              <div className="rvr-legend-list">
+                                {[
+                                  ["Agriculture", "#10b981"],
+                                  ["Residential", "#fbbf24"],
+                                  ["Commercial", "#fb7185"],
+                                  ["Forest", "#15803d"],
+                                  ["Water Body", "#38bdf8"],
+                                  ["Government", "#c084fc"],
+                                  ["Others", "#b45309"],
+                                ].map(([label, color]) => (
+                                  <span key={label}>
+                                    <i style={{ background: color }} />
+                                    {label}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
                           {/* Vector Cadastral SVG Mock Map */}
@@ -774,8 +775,8 @@ export function RecordVsReality() {
                 {/* Section: Historical Change (Last 5 Years) */}
                 <div className="bg-card border border-border/80 rounded-xl p-4 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-serif font-semibold text-base text-foreground">Historical Change (Last 5 Years)</h3>
-                    <span className="text-xs text-muted-foreground font-mono">2020 – 2024 Timeline</span>
+                    <div className="rvr-head"><span>Timeline</span><h3>Historical Change (Last 5 Years)</h3></div>
+                    <span className="rvr-chip">2020 – 2024</span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -808,7 +809,7 @@ export function RecordVsReality() {
                 <div className="bg-card border border-border/80 rounded-xl p-4 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-serif font-semibold text-base text-foreground">Field Evidence</h3>
+                      <div className="rvr-head"><span>Ground truth</span><h3>Field Evidence</h3></div>
                       <span className="bg-emerald-900/10 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 text-[11px] font-semibold px-2 py-0.5 rounded-full">
                         {evidenceList.length} Submissions
                       </span>
@@ -821,7 +822,7 @@ export function RecordVsReality() {
                       className="gap-1.5 text-xs text-emerald-800 border-emerald-700/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      Add Evidence
+                      Capture evidence
                     </Button>
                   </div>
 
@@ -830,7 +831,15 @@ export function RecordVsReality() {
                       <div key={ev.id} className="border border-border rounded-lg p-3 bg-background flex flex-col justify-between">
                         <div className="space-y-2">
                           <div className="h-24 bg-muted rounded-md overflow-hidden relative">
-                            <img src={ev.imageUrl} alt={ev.submitterType} className="w-full h-full object-cover" />
+                            <img
+                              src={ev.imageUrl || satelliteMap}
+                              alt={ev.submitterType}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              onError={(e) => {
+                                if (!e.currentTarget.src.endsWith(satelliteMap)) e.currentTarget.src = satelliteMap;
+                              }}
+                            />
                             <span className="absolute bottom-1.5 left-1.5 bg-black/75 text-white text-[10px] px-2 py-0.5 rounded font-medium">
                               {ev.submitterType}
                             </span>
@@ -839,6 +848,20 @@ export function RecordVsReality() {
                             <span className="text-[10px] font-mono text-muted-foreground block">{ev.date}</span>
                             <div className="text-xs font-semibold text-foreground">{ev.author}</div>
                             <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{ev.description}</p>
+                            {(ev.geoTag || ev.ocrVerified) && (
+                              <div className="rvr-ev-tags">
+                                {ev.geoTag && (
+                                  <span title={ev.geoTag}>
+                                    <MapPin /> Geo-tagged
+                                  </span>
+                                )}
+                                {ev.ocrVerified && (
+                                  <span>
+                                    <CheckCircle2 /> 7/12 OCR
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -848,7 +871,7 @@ export function RecordVsReality() {
 
                 {/* Section: Nearby Plots Analysis */}
                 <div className="bg-card border border-border/80 rounded-xl p-4 shadow-sm space-y-3">
-                  <h3 className="font-serif font-semibold text-base text-foreground">Nearby Plots Analysis</h3>
+                  <div className="rvr-head"><span>Neighbourhood</span><h3>Nearby Plots Analysis</h3></div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
                       <thead className="bg-muted/50 border-b border-border text-muted-foreground font-medium uppercase tracking-wider">
@@ -910,8 +933,8 @@ export function RecordVsReality() {
               </div>
 
               {/* Right: Analysis Result / Intelligence Panel (4 columns on lg) */}
-              <div className="lg:col-span-4 space-y-4">
-                <div className="bg-card border border-border/80 rounded-xl p-5 shadow-sm space-y-5 sticky top-4">
+              <div className="lg:col-span-4 space-y-4 lg:self-stretch">
+                <div className="rvr-panel bg-card border border-border/80 rounded-xl p-5 shadow-sm space-y-5 lg:sticky lg:top-[88px]">
                   {/* Panel Header */}
                   <div className="flex items-center justify-between border-b border-border/60 pb-3">
                     <h2 className="font-serif font-bold text-lg text-foreground">Analysis Result</h2>
@@ -1331,80 +1354,23 @@ export function RecordVsReality() {
           </div>
         )}
 
-        {/* Modal 5: Add Field Evidence */}
+        {/* Modal 5: Capture field evidence (camera, upload, demo OCR) */}
         {showAddEvidenceModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-card border border-border rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <h3 className="font-serif font-bold text-lg text-foreground">Submit Field Evidence</h3>
-                <Button variant="ghost" size="icon" onClick={() => setShowAddEvidenceModal(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <form onSubmit={handleAddEvidence} className="space-y-3 text-xs">
-                <div>
-                  <label className="font-semibold text-muted-foreground block mb-1">Submitter Role</label>
-                  <select
-                    value={evidenceForm.submitterType}
-                    onChange={(e) =>
-                      setEvidenceForm({
-                        ...evidenceForm,
-                        submitterType: e.target.value as any,
-                      })
-                    }
-                    className="w-full bg-background border border-input rounded px-2.5 py-1.5"
-                  >
-                    <option value="Citizen Report">Citizen Report</option>
-                    <option value="Field Officer">Field Officer</option>
-                    <option value="Drone Survey">Drone Survey</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-semibold text-muted-foreground block mb-1">Submitter Name / Designation</label>
-                  <input
-                    type="text"
-                    value={evidenceForm.author}
-                    onChange={(e) => setEvidenceForm({ ...evidenceForm, author: e.target.value })}
-                    className="w-full bg-background border border-input rounded px-2.5 py-1.5"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="font-semibold text-muted-foreground block mb-1">Observation Details</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Describe ground observation, structure type, boundaries..."
-                    value={evidenceForm.description}
-                    onChange={(e) => setEvidenceForm({ ...evidenceForm, description: e.target.value })}
-                    className="w-full bg-background border border-input rounded px-2.5 py-1.5"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="font-semibold text-muted-foreground block mb-1">Evidence Photo URL</label>
-                  <input
-                    type="text"
-                    value={evidenceForm.imageUrl}
-                    onChange={(e) => setEvidenceForm({ ...evidenceForm, imageUrl: e.target.value })}
-                    className="w-full bg-background border border-input rounded px-2.5 py-1.5 font-mono text-[10px]"
-                  />
-                </div>
-
-                <div className="pt-2 flex justify-end gap-2">
-                  <Button type="button" variant="ghost" onClick={() => setShowAddEvidenceModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" className="bg-emerald-800 text-white font-medium text-xs">
-                    Upload Evidence
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
+          <FieldCapture
+            parcel={{
+              surveyNo: currentParcel.surveyNo,
+              village: currentParcel.village,
+              tehsil: currentParcel.tehsil,
+              district: currentParcel.district,
+              officialLandUse: currentParcel.officialLandUse,
+              observedLandUse: currentParcel.observedLandUse,
+              areaHectares: currentParcel.areaHectares,
+              lat: 18.8624,
+              lon: 74.3721,
+            }}
+            onClose={() => setShowAddEvidenceModal(false)}
+            onSubmit={handleCapturedEvidence}
+          />
         )}
       </div>
     </TooltipProvider>
