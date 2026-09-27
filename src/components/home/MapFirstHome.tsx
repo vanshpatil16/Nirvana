@@ -566,6 +566,11 @@ export function MapFirstHome() {
     }
   }, [baseMode]);
 
+  // Parcels last served by the cadastral API (/api/parcels — currently the
+  // Maharashtra import only), so a click can select them. Other sources are
+  // hit-tested exactly as before.
+  const cadastralParcelsRef = useRef<ParcelCollection | null>(null);
+
   // Load parcels around bbox
   const loadParcelsForBBox = async (map: MapInstance, lon: number, lat: number, span = 0.05) => {
     const bbox: BBox = [lon - span, lat - span, lon + span, lat + span];
@@ -578,6 +583,7 @@ export function MapFirstHome() {
       } catch {
         collection = null;
       }
+      cadastralParcelsRef.current = collection && collection.features.length > 0 ? collection : null;
 
       // 2. Fallback to bundled demo extract
       if (!collection || collection.features.length === 0) {
@@ -641,7 +647,7 @@ export function MapFirstHome() {
     // Load parcels around clicked point — fire-and-forget so a slow Overpass
     // mirror never delays the location card (the card only needs the reverse
     // geocode + bundled demo parcels).
-    void loadParcelsForBBox(map, lon, lat);
+    const parcelsLoaded = loadParcelsForBBox(map, lon, lat);
 
     // Reverse geocode to get District, Taluka, Village (fallbacks match the
     // Nashik-belt default view when the geocoder is unreachable)
@@ -672,9 +678,11 @@ export function MapFirstHome() {
     let foundParcel: ParcelFeature | null = null;
 
     if (parcelsSource) {
-      // Check demo & loaded parcels
+      // Imported cadastral parcels first (wait briefly for this click's load), then the demo extract
+      await Promise.race([parcelsLoaded, new Promise((r) => setTimeout(r, 1500))]);
+      const cadastral = cadastralParcelsRef.current?.features ?? [];
       const demoColl = getDemoParcels();
-      for (const feat of demoColl.features) {
+      for (const feat of [...cadastral, ...demoColl.features]) {
         const ring = feat.geometry.coordinates[0];
         if (ring && pointInPolygon([lon, lat], ring)) {
           foundParcel = feat;

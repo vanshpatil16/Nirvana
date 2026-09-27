@@ -94,6 +94,7 @@ def main() -> None:
     missing_survey = 0
     seen_ids: set = set()
     duplicate_ids = 0
+    interior_rings = 0
 
     for index, item in enumerate(raw):
         if not isinstance(item, dict) or item.get("type") != "Feature":
@@ -122,6 +123,17 @@ def main() -> None:
                 invalid += 1
                 continue
             repaired += 1 if was_repaired else 0
+            # Keep interior rings (holes, e.g. a plot enclosing another) instead of
+            # silently dropping them; closure is the only repair applied.
+            holes = []
+            for inner in part[1:]:
+                if not isinstance(inner, list):
+                    continue
+                inner_ring, inner_repaired = close_ring(inner)
+                if len(inner_ring) >= 4 and ring_area(inner_ring) >= 1e-12:
+                    holes.append(inner_ring)
+                    repaired += 1 if inner_repaired else 0
+            interior_rings += len(holes)
 
             parcel_id = props.get(args.id_prop)
             if not isinstance(parcel_id, str) or not parcel_id.strip():
@@ -145,14 +157,14 @@ def main() -> None:
                                ("district", args.district), ("state", args.state)):
                 if value:
                     out_props[key] = value
-            for extra in ("landuse", "name", "areaSqm"):
+            for extra in ("landuse", "name", "areaSqm", "plotNumber", "recordedAreaHa", "potKharabaHa"):
                 if props.get(extra) is not None:
                     out_props[extra] = props[extra]
 
             features.append({
                 "type": "Feature",
                 "properties": out_props,
-                "geometry": {"type": "Polygon", "coordinates": [ring]},
+                "geometry": {"type": "Polygon", "coordinates": [ring, *holes]},
             })
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -169,6 +181,7 @@ def main() -> None:
         "validPolygons": len(features),
         "invalidPolygons": invalid,
         "ringsRepairedByClosure": repaired,
+        "interiorRingsKept": interior_rings,
         "duplicateIds": duplicate_ids,
         "missingParcelIdsGenerated": generated_ids,
         "missingSurveyNumbers": missing_survey,

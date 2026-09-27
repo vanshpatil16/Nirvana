@@ -422,7 +422,7 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
 
   /**
    * Ordered provider chain (first non-empty wins):
-   *   1. Cadastral API  — GET /api/parcels?bbox=… (imported Adai scope + future state providers)
+   *   1. Cadastral API  — GET /api/parcels?bbox=… (Maharashtra cadastral import + future state providers)
    *   2. Bundled extract — offline-proof demo corridor
    *   3. Live OSM        — viewport Overpass fetch
    * Empty everywhere → honest "unavailable", never invented geometry.
@@ -450,7 +450,7 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
         const fromApi = await api.query(bbox, controller.signal);
         if (fromApi.features.length > 0 && useResult(fromApi)) return;
       } catch {
-        /* endpoint absent (dev) or Adai scope not intersecting — fall through */
+        /* endpoint absent (dev) or no imported cadastre here — fall through */
       } finally {
         window.clearTimeout(timer);
       }
@@ -1582,10 +1582,10 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
                 <td>{isDemoMode() ? "Bundled extract" : "Live"}</td>
               </tr>
               <tr>
-                <td>Cadastral API (Adai scope)</td>
-                <td>GET /api/parcels · imported OSM extract</td>
+                <td>Cadastral API (Maharashtra)</td>
+                <td>GET /api/parcels · BhuNaksha plot outlines (via BhuMe)</td>
                 <td>—</td>
-                <td>Adai, Panvel</td>
+                <td>Vadnerbhairav, Chandwad</td>
                 <td>Bundled</td>
               </tr>
               <tr>

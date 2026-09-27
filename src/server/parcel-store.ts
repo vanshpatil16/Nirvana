@@ -1,14 +1,18 @@
 /**
  * Cadastral parcel store backing GET /api/parcels.
  *
- * Current scale (demo extracts): an in-memory array with bbox prefiltering.
+ * Maharashtra: real cadastral plot outlines for Vadnerbhairav (Chandwad, Nashik),
+ * see src/data/cadastral/README.md for provenance. Other states are unaffected —
+ * they have no dataset here and fall through to the existing OSM fallbacks.
+ *
+ * Current scale (one village): an in-memory array with bbox prefiltering.
  * Production scale (thousands+ parcels): replace DATASETS with PostGIS —
  *   SELECT … WHERE ST_Intersects(geom, ST_MakeEnvelope(…))
  * with the GIST index from scripts/import_parcels.py --slug <name> (*.sql).
  * The response shape stays identical normalized GeoJSON either way.
  */
 
-import adaiPanvel from "@/data/cadastral/adai-panvel.json";
+import vadnerbhairavChandwad from "@/data/cadastral/vadnerbhairav-chandwad.json";
 
 interface StoredFeature {
   type: "Feature";
@@ -21,7 +25,9 @@ interface CadastralDataset {
   features: StoredFeature[];
 }
 
-const DATASETS: CadastralDataset[] = [adaiPanvel as unknown as CadastralDataset];
+const DATASETS: CadastralDataset[] = [
+  { slug: "vadnerbhairav-chandwad", ...(vadnerbhairavChandwad as unknown as Omit<CadastralDataset, "slug">) },
+];
 
 export interface ParcelQuery {
   bbox: [number, number, number, number];
@@ -30,7 +36,8 @@ export interface ParcelQuery {
   parcelId?: string | undefined;
 }
 
-const MAX_FEATURES = 2000;
+// A whole village (2,457 plots) fits in one map viewport request
+const MAX_FEATURES = 3000;
 const MAX_SPAN_DEG = 2;
 
 function featureBounds(feature: StoredFeature): [number, number, number, number] | null {
@@ -116,7 +123,7 @@ export function handleParcelsApi(request: Request): Response {
   });
   return Response.json(result, {
     headers: {
-      "X-Data-Source": "BHUMI-NITI cadastral import (demo scope)",
+      "X-Data-Source": "BHUMI-NITI cadastral import",
       "X-Datasets": datasetSlugs().join(","),
       "Cache-Control": "public, max-age=300",
     },

@@ -21,6 +21,7 @@ export interface DemoPreset {
 
 /** Verified demo corridor presets (Gujarat + Nashik + Raigad cadastral scopes). */
 export const DEMO_PRESETS: DemoPreset[] = [
+  { name: "Vadnerbhairav, Chandwad", lat: 20.2601, lon: 74.0328, zoom: 14 },
   { name: "Adai, Panvel", lat: 18.9954, lon: 73.1199, zoom: 13 },
   { name: "Nashik Belt", lat: 19.9736, lon: 73.7562, zoom: 12 },
   { name: "Dholera", lat: 22.2496, lon: 72.196, zoom: 12 },
