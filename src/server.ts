@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleAiApi } from "./server/ai-agent";
+import { handleInnovationAiApi } from "./server/innovation-ai";
 import { handleParcelsApi } from "./server/parcel-store";
 import { handleTtsApi } from "./server/tts";
 import { handlePolicyExtract } from "./server/policy-extract";
@@ -64,6 +65,11 @@ export default {
       // Land-intelligence agent (OpenRouter tool loop; needs OPENROUTER_API_KEY).
       if (url.pathname === "/api/ai") {
         return handleAiApi(request, env);
+      }
+      // Innovation Portal evidence assistant (§8). Same OpenRouter key, but
+      // grounded in a challenge/project source pack and citation-verified.
+      if (url.pathname === "/api/innovation/ai") {
+        return handleInnovationAiApi(request, env);
       }
       // Spoken replies via ElevenLabs (needs ELEVENLABS_API_KEY; client falls back to browser TTS).
       if (url.pathname === "/api/tts") {
