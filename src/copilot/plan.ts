@@ -45,6 +45,7 @@ export const DATASETS = [
   "registration",
   "disputes",
   "research_policy",
+  "policy_library",
 ] as const;
 export type DatasetId = (typeof DATASETS)[number];
 
@@ -138,12 +139,12 @@ const INTENT_DATASETS: Record<Intent, DatasetId[]> = {
   land_use_change: ["lulc", "satellite"],
   land_use_summary: ["lulc", "satellite"],
   parcel_lookup: ["cadastral", "land_records"],
-  conversion_eligibility: ["cadastral", "land_records", "lulc", "research_policy"],
+  conversion_eligibility: ["cadastral", "land_records", "lulc", "policy_library"],
   dispute_check: ["disputes", "land_records"],
   climate_risk: ["climate"],
   socio_economic: ["socio_economic"],
   compare_regions: ["lulc", "climate", "disputes", "socio_economic"],
-  policy_research: ["research_policy"],
+  policy_research: ["policy_library", "research_policy"],
   show_location: ["cadastral", "satellite"],
   general: [],
 };

@@ -8,6 +8,7 @@
  *   platform    data imported into this platform (cadastral extract)
  *   demo        demonstration model / placeholder figures — never official
  *   reference   demo research & policy catalogue
+ *   document    verbatim text of real Acts / policies (Policy Lab library)
  *   unavailable integration interface exists, API not connected yet
  *
  * To plug in a real API, replace the matching `run*` function; the result shape stays.
@@ -26,9 +27,10 @@ import {
 import { STATE_STATS } from "@/data/state-intelligence";
 import { POLICIES, searchCatalogue } from "@/data/research-hub";
 import { queryParcels } from "./parcel-store";
+import { libraryOverview, primaryIndicators, searchPolicies, type PolicyQuote } from "./policy-context";
 import type { DatasetId, LandClassName, Place, QueryPlan } from "@/copilot/plan";
 
-export type Provenance = "live" | "platform" | "demo" | "reference" | "unavailable";
+export type Provenance = "live" | "platform" | "demo" | "reference" | "document" | "unavailable";
 
 export interface DataResult {
   dataset: DatasetId;
@@ -40,6 +42,8 @@ export interface DataResult {
   table?: { columns: string[]; rows: string[][] };
   source: string;
   note?: string | undefined;
+  /** verbatim excerpts from real documents (policy_library only) */
+  quotes?: PolicyQuote[] | undefined;
 }
 
 export interface EvidenceItem {
@@ -330,6 +334,43 @@ function runResearch(plan: QueryPlan, query: string, place: Place | null): DataR
   };
 }
 
+/** Real Acts & policies from the Policy Lab library, with verbatim clause-level quotes. */
+function runPolicyLibrary(plan: QueryPlan, query: string): DataResult {
+  const matches = searchPolicies([query, plan.topic].filter(Boolean).join(" "));
+  if (!matches.length) {
+    const lib = libraryOverview();
+    return {
+      dataset: "policy_library",
+      label: "Policy Lab library",
+      provenance: "document",
+      region: "Maharashtra",
+      headline: `No instrument in the Policy Lab library matches this question. The library holds ${lib.length} Maharashtra and national instruments.`,
+      table: { columns: ["Instrument", "Domain", "Year"], rows: lib.map((p) => [p.name, p.domain, String(p.year)]) },
+      source: "Policy Lab library — Acts & policies read from their source PDFs",
+    };
+  }
+  const quotes = matches.flatMap((m) => m.quotes.slice(0, m === matches[0] ? 3 : 1));
+  const top = matches[0]!.policy;
+  const inferred = quotes.filter((q) => q.method === "inferred").length;
+  return {
+    dataset: "policy_library",
+    label: `Policy Lab library · ${matches.length} instrument${matches.length > 1 ? "s" : ""}`,
+    provenance: "document",
+    region: "Maharashtra",
+    headline: `${top.name} (${top.sourceDocument.reference}) is the closest match in the Policy Lab library.`,
+    rows: matches.map((m) => ({
+      label: m.policy.domain,
+      value: `${m.policy.name} · tracked in Policy Lab: ${primaryIndicators(m.policy).slice(0, 3).join(", ") || "—"}`,
+      emphasis: m === matches[0],
+    })),
+    quotes,
+    source: "Policy Lab library — Acts & policies read from their source PDFs",
+    note: inferred
+      ? `${inferred} excerpt${inferred > 1 ? "s back" : " backs"} a Policy Lab modelling value that the document itself doesn’t state.`
+      : undefined,
+  };
+}
+
 const notConnected = (dataset: DatasetId, label: string, where: string): DataResult => ({
   dataset,
   label,
@@ -387,6 +428,9 @@ export function executePlan(plan: QueryPlan, query: string): DataResult[] {
       case "research_policy":
         out.push(runResearch(plan, query, plan.location));
         break;
+      case "policy_library":
+        out.push(runPolicyLibrary(plan, query));
+        break;
       case "land_records":
         out.push(
           notConnected(
@@ -415,6 +459,20 @@ export function evidenceFor(results: DataResult[]): EvidenceItem[] {
   const seen = new Set<string>();
   const items: EvidenceItem[] = [];
   for (const r of results) {
+    // one evidence line per cited clause, so every quote in the answer is traceable
+    if (r.quotes?.length) {
+      for (const q of r.quotes) {
+        const label = `${q.shortName} — ${q.clause}${q.page ? `, p. ${q.page}` : ""}`;
+        if (seen.has(label)) continue;
+        seen.add(label);
+        items.push({
+          label,
+          detail: `${q.method === "inferred" ? "Modelling value, not stated in the text" : q.method === "derived" ? "Derived from the text" : "Verbatim text"}${q.sourceFile ? ` · ${q.sourceFile}` : ""}`,
+          provenance: "document",
+        });
+      }
+      continue;
+    }
     const key = `${r.source}|${r.provenance}`;
     if (seen.has(key)) continue;
     seen.add(key);

@@ -211,12 +211,16 @@ const PLAN_QUERY_TOOL = {
         type: "array",
         items: {
           type: "string",
-          enum: ["land_records", "cadastral", "lulc", "satellite", "climate", "socio_economic", "registration", "disputes", "research_policy"],
+          enum: ["land_records", "cadastral", "lulc", "satellite", "climate", "socio_economic", "registration", "disputes", "research_policy", "policy_library"],
         },
       },
       map_action: { type: "string", enum: ["zoom", "highlight_change", "show_layer", "highlight_parcels", "compare", "none"] },
       layer: { type: "string", enum: ["lulc", "climate_risk", "disputes", "parcels", "satellite"] },
-      topic: { type: "string", description: "Short English topic keywords for research search" },
+      topic: {
+        type: "string",
+        description:
+          "Short English search keywords: the Act/policy name, section or regulation numbers, and the subject (e.g. 'Maharashtra Land Revenue Code section 42 non-agricultural conversion permission')",
+      },
     },
     required: ["intent", "uses_map_context", "refers_to_previous"],
   },
@@ -614,7 +618,8 @@ Guidance:
 - conversion_eligibility: NA / land-use conversion questions for a parcel or area.
 - dispute_check, climate_risk, socio_economic: those indicators for a place.
 - compare_regions: comparing two places; put the second place in compare_with.
-- policy_research: laws, regulations, research, reports.
+- policy_research: laws, Acts, sections, rules, regulations, government policies and schemes, research and reports — including anything about the Policy Lab and its instruments (Maharashtra Land Revenue Code, Tenancy & Agricultural Lands Act, Fragmentation & Consolidation of Holdings Act, MR&TP Act, UDCPR / FSI, Industries Policy 2025, Package Scheme of Incentives 2019, MIDC Act, Logistics Policy 2024, Aadhaar Act). Put the Act name and any section number in topic, in English.
+- conversion_eligibility also covers "can I convert / NA permission" questions; it pulls the relevant Act text too.
 - general: greetings, how the platform works, anything else.
 - "near me", "here", "this area/village/parcel", "surrounding parcels" → uses_map_context true.
 - A follow-up that refines or continues the previous analysis → refers_to_previous true and only fill what changed ("only agriculture to built-up" → from_class/to_class; "compare it with Nashik" → compare_with Nashik).
@@ -667,6 +672,19 @@ function groundingPrompt(plan: QueryPlan, notes: ValidationNote[], data: DataRes
     rows: d.rows,
     table: d.table,
     note: d.note,
+    quotes: d.quotes?.map((q) => ({
+      instrument: q.policy,
+      clause: q.clause,
+      page: q.page || null,
+      text: q.quote.length > 600 ? `${q.quote.slice(0, 600)}…` : q.quote,
+      grounding: q.method,
+      // A modelling value must never read like a figure from the Act
+      parameter: q.parameter
+        ? q.method === "inferred"
+          ? `MODELLING VALUE, NOT IN THE DOCUMENT — do not state it as law: ${q.parameter} = ${q.value}`
+          : `${q.parameter} = ${q.value}`
+        : undefined,
+    })),
   }));
   return `COPILOT MODE — this turn has already been planned and the platform's data has been queried for you.
 
@@ -689,7 +707,10 @@ Rules for this answer:
 5. Do not list or name sources yourself (set evidence to []); the platform displays the evidence it actually used.
 6. If a validation note is a warning, mention it briefly.
 8. When a result has a note saying it is a state-level figure, say explicitly that the number is for the whole state, not the city or district the user named. Never present two places in the same state as having separately measured results.
-7. The map is updated automatically for this plan; don't call show_area.`;
+7. The map is updated automatically for this plan; don't call show_area.
+9. provenance "document" is verbatim text from real Acts and policies in the Policy Lab library. When you state what a law or policy says, use ONLY those quotes: paraphrase them faithfully (translate if answering in Hindi/Marathi) and cite them inline as "(Act short name, clause, p. N)" — omit the page when it is null. Never invent section numbers, pages, figures or provisions that are not in the quotes; if the quotes don't cover the question, say the library doesn't cover it.
+10. A quote with grounding "inferred" is a Policy Lab modelling value, not something the document states — say so if you mention it. "derived" means it follows from the text but isn't stated as a figure.
+11. Policy Lab simulations run on simulated land data; if the user asks about a policy's impact, point them to the Policy Lab and say the impact figures there are simulated.`;
 }
 
 async function explain(params: {

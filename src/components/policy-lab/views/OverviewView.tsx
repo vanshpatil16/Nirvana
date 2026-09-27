@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import {
   ArrowRight,
   Database,
@@ -18,8 +19,42 @@ import {
   unsourcedCount,
   type Policy,
 } from "@/data/policySimulation";
+import heroVideo from "@/assets/policy_home.mp4";
 import { compact, listSentence, pluralise } from "../lab-helpers";
 import { PrototypeTag } from "../parts/States";
+
+/** Decorative, muted loop feathered into the hero; a still frame under reduced motion. */
+function HeroVideo() {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => {
+      const v = ref.current;
+      if (!v) return;
+      if (mq.matches) v.pause();
+      else void v.play().catch(() => undefined);
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  return (
+    <div className="pl-hero-media" aria-hidden="true">
+      <video
+        ref={ref}
+        className="pl-hero-video"
+        src={heroVideo}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        disablePictureInPicture
+        tabIndex={-1}
+      />
+    </div>
+  );
+}
 
 export function OverviewView({ onMode }: { onMode: (mode: "existing" | "new") => void }) {
   const citationTotal = POLICIES.reduce((sum, p) => sum + citationCount(p), 0);
@@ -51,23 +86,24 @@ export function OverviewView({ onMode }: { onMode: (mode: "existing" | "new") =>
               Evaluate a new policy
             </button>
           </div>
+          <div className="pl-hero-stats">
+            {[
+              { v: String(MOCK_LAYER_MANIFEST.policies), l: "Instruments" },
+              { v: String(citationTotal), l: "Citations" },
+              { v: String(MOCK_LAYER_MANIFEST.indicators), l: "Indicators" },
+              { v: String(MOCK_LAYER_MANIFEST.geographies), l: "Study units" },
+            ].map((s) => (
+              <div key={s.l}>
+                <strong>{s.v}</strong>
+                <span>{s.l}</span>
+              </div>
+            ))}
+          </div>
           <div className="pl-hero-meta">
             <PrototypeTag />
           </div>
         </div>
-        <div className="pl-hero-stats">
-          {[
-            { v: String(MOCK_LAYER_MANIFEST.policies), l: "Instruments" },
-            { v: String(citationTotal), l: "Citations" },
-            { v: String(MOCK_LAYER_MANIFEST.indicators), l: "Indicators" },
-            { v: String(MOCK_LAYER_MANIFEST.geographies), l: "Study units" },
-          ].map((s) => (
-            <div key={s.l}>
-              <strong>{s.v}</strong>
-              <span>{s.l}</span>
-            </div>
-          ))}
-        </div>
+        <HeroVideo />
       </div>
 
       <div className="pl-section">

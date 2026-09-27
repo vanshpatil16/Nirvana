@@ -53,6 +53,11 @@ const T: Record<string, Partial<Record<LanguageCode, string>>> = {
   disputes: { en: "Show dispute hotspots", hi: "विवाद क्षेत्र दिखाएँ", mr: "वाद क्षेत्रे दाखवा" },
   research: { en: "Find related research", hi: "संबंधित शोध खोजें", mr: "संबंधित संशोधन शोधा" },
   policy: { en: "View policy documents", hi: "नीति दस्तावेज़ देखें", mr: "धोरण दस्तऐवज पहा" },
+  policyLab: {
+    en: "Simulate in Policy Lab",
+    hi: "पॉलिसी लैब में सिमुलेट करें",
+    mr: "पॉलिसी लॅबमध्ये चाचणी करा",
+  },
   change: {
     en: "Show land-use change",
     hi: "भूमि-उपयोग परिवर्तन दिखाएँ",
@@ -195,6 +200,14 @@ export function chipsFor(plan: QueryPlan, lang: LanguageCode): ActionChip[] {
       kind: "action",
       action: { type: "show_layer", layer: "disputes", region: loc?.state ?? null },
     });
+  // Answers built on Act text lead with the Policy Lab, where the same instrument can be simulated
+  if (plan.datasets.includes("policy_library"))
+    chips.unshift({
+      id: "policy-lab",
+      label: t("policyLab", lang),
+      kind: "link",
+      href: "/policy-lab?mode=existing",
+    });
   chips.push({
     id: "research",
     label: t("research", lang),
@@ -243,10 +256,34 @@ const Q: Record<string, Partial<Record<LanguageCode, (p: string) => string>>> = 
     mr: (p) => `${p} मधील जमीन बदलावर कोणते संशोधन आहे?`,
   },
 };
+// Follow-ups for law / policy questions — never tied to a place the user didn't name
+const POLICY_FOLLOWUPS: Record<"en" | "hi" | "mr", string[]> = {
+  en: [
+    "Which areas are excluded from the permission-free conversion?",
+    "How does the Tenancy Act protect a tenant in possession?",
+    "What does UDCPR say about FSI?",
+  ],
+  hi: [
+    "बिना अनुमति रूपांतरण से कौन-से क्षेत्र बाहर हैं?",
+    "किरायेदारी अधिनियम कब्ज़े वाले किरायेदार की रक्षा कैसे करता है?",
+    "UDCPR में FSI के बारे में क्या लिखा है?",
+  ],
+  mr: [
+    "परवानगीशिवाय रूपांतरणातून कोणती क्षेत्रे वगळली आहेत?",
+    "कूळ कायदा ताब्यातील कुळाचे संरक्षण कसे करतो?",
+    "UDCPR मध्ये FSI बद्दल काय म्हटले आहे?",
+  ],
+};
+
 const q = (key: string, lang: LanguageCode, place: string) =>
   (Q[key]?.[lang] ?? Q[key]?.en)?.(place) ?? "";
 
 export function followupsFor(plan: QueryPlan, lang: LanguageCode): string[] {
+  if (
+    plan.intent === "policy_research" ||
+    (!plan.location && plan.datasets.includes("policy_library"))
+  )
+    return POLICY_FOLLOWUPS[lang === "hi" || lang === "mr" ? lang : "en"];
   const place = plan.location?.name ?? (lang === "hi" ? "भारत" : lang === "mr" ? "भारत" : "India");
   const list: string[] = [];
   if (
@@ -260,6 +297,6 @@ export function followupsFor(plan: QueryPlan, lang: LanguageCode): string[] {
   if (plan.intent !== "dispute_check") list.push(q("disputes", lang, place));
   if (plan.location?.source === "map_context" && plan.intent !== "conversion_eligibility")
     list.push(q("conversion", lang, place));
-  if (plan.intent !== "policy_research") list.push(q("research", lang, place));
+  list.push(q("research", lang, place));
   return list.filter(Boolean).slice(0, 3);
 }

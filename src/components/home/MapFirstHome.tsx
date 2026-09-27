@@ -52,18 +52,8 @@ import {
 import { getDefaultProvider, getImageryConfig } from "@/services/sentinelService";
 import type { MapAction, ActionChip } from "@/copilot/actions";
 import { highlightChange, setOverlay, type OverlayId } from "./copilot-map";
-import {
-  ActionChips,
-  AnalysingSteps,
-  ContextBar,
-  DataResults,
-  EvidenceList,
-  MapConfirmations,
-  PipelineStrip,
-  PlanDetails,
-  ValidationNotes,
-  type CopilotMeta,
-} from "./CopilotBlocks";
+import { AnalysingSteps, type CopilotMeta } from "./CopilotBlocks";
+import { CopilotAnswer } from "./CopilotAnswer";
 
 maplibregl.config.WORKER_URL = mapWorkerUrl;
 
@@ -397,10 +387,14 @@ export function MapFirstHome() {
   const [analyzing, setAnalyzing] = useState(false);
   const [aiModel, setAiModel] = useState("Bhumi-Niti AI v2.4 (Land Engine)");
 
-  // Keep the AI transcript pinned to the newest content (user query while
-  // analyzing, then the answer card) — also re-pins when the panel re-opens.
+  // Bring the newest question to the top of the transcript so its answer reads
+  // from the start (long answers used to open scrolled to their last line).
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const scroller = chatScrollRef.current;
+    const turns = scroller?.querySelectorAll<HTMLElement>("[data-turn='user']");
+    const last = turns?.[turns.length - 1];
+    if (scroller && last) scroller.scrollTo({ top: last.offsetTop - scroller.offsetTop - 12, behavior: "smooth" });
+    else chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [chatLog.length, analyzing, mode]);
 
   // True while the AI intelligence panel is on screen — the sidebar stays
@@ -1018,14 +1012,18 @@ export function MapFirstHome() {
   };
 
   // Full answer card rendered inside a transcript turn.
-  const renderAnswerCard = (reply: AIResponse) => (
+  const renderAnswerCard = (reply: AIResponse) =>
+    reply.copilot ? (
+      <CopilotAnswer
+        summary={reply.summary}
+        riskAssessment={reply.riskAssessment}
+        framework={reply.framework}
+        limitation={reply.limitation}
+        meta={reply.copilot}
+        onChip={onChip}
+      />
+    ) : (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-3.5 space-y-3">
-      {reply.copilot && (
-        <div className="space-y-1.5">
-          <ContextBar meta={reply.copilot} />
-          <PipelineStrip meta={reply.copilot} />
-        </div>
-      )}
       <div className="border-l-2 border-green-600 pl-3">
         <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 block mb-0.5">
           Key finding
@@ -1064,14 +1062,6 @@ export function MapFirstHome() {
           );
         })()}
 
-      {reply.copilot && (
-        <>
-          <ValidationNotes notes={reply.copilot.validation ?? []} />
-          <DataResults data={reply.copilot.data ?? []} />
-          <MapConfirmations applied={reply.copilot.applied ?? []} />
-        </>
-      )}
-
       {/* Regulatory framework — only when rules actually apply. */}
       {reply.framework.length > 0 && (
         <div>
@@ -1094,10 +1084,7 @@ export function MapFirstHome() {
         </div>
       )}
 
-      {/* Sources — Copilot answers list the server-built evidence with provenance. */}
-      {reply.copilot ? (
-        <EvidenceList items={reply.copilot.evidence ?? []} />
-      ) : reply.evidence.length > 0 && (
+      {reply.evidence.length > 0 && (
         <div>
           <h4 className="font-bold text-slate-900 text-xs mb-1.5">Verified sources</h4>
           <div className="flex flex-wrap gap-1.5">
@@ -1125,12 +1112,6 @@ export function MapFirstHome() {
         </details>
       )}
 
-      {reply.copilot && (
-        <>
-          <ActionChips chips={reply.copilot.chips ?? []} onChip={onChip} />
-          {reply.copilot.plan && <PlanDetails plan={reply.copilot.plan} />}
-        </>
-      )}
     </div>
   );
 
@@ -1611,9 +1592,9 @@ export function MapFirstHome() {
       {/* AI RESPONSE RIGHT SIDEBAR (docked, full-height)                           */}
       {/* ========================================================================= */}
       {aiPanelOpen && (
-        <aside className="absolute right-0 top-0 bottom-0 z-10 w-[400px] max-w-[94vw] bg-white border-l border-slate-200 shadow-xl flex flex-col overflow-hidden pt-16 pb-4 animate-in fade-in slide-in-from-right-4 duration-200">
+        <aside className="absolute right-0 top-0 bottom-0 z-10 w-[420px] max-w-[94vw] bg-[#fbfbf9] border-l border-slate-200 shadow-xl flex flex-col overflow-hidden pt-[76px] animate-in fade-in slide-in-from-right-4 duration-200">
           {/* Header — fixed */}
-          <header className="shrink-0 px-5 pb-3 border-b border-slate-200/80 bg-gradient-to-b from-green-50/70 to-white">
+          <header className="shrink-0 px-5 py-3 border-b border-slate-200/80 bg-white">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
                 <img
@@ -1622,7 +1603,7 @@ export function MapFirstHome() {
                   className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-green-100 shadow-lg shadow-green-600/25"
                 />
                 <div className="min-w-0 leading-tight">
-                  <span className="block font-bold text-sm text-slate-900 truncate">Bhumi-Niti AI Intelligence</span>
+                  <span className="block font-semibold text-[14px] text-slate-900 truncate">Bhumi-Niti Copilot</span>
                   <span className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
                     <i className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
                     Land intelligence assistant
@@ -1645,7 +1626,7 @@ export function MapFirstHome() {
           </header>
 
           {/* Selected parcel context — fixed */}
-          {selectedLocation && (
+          {selectedLocation && (selectedLocation.surveyNumber || selectedLocation.areaAcres != null) && (
             <div className="shrink-0 px-5 py-2.5 border-b border-slate-100 bg-slate-50/60">
               <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
                 Selected parcel
@@ -1668,62 +1649,48 @@ export function MapFirstHome() {
           {/* Scrollable transcript — grows with every query, auto-pins to newest */}
           <div
             ref={chatScrollRef}
-            className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-3.5 scroll-smooth select-text"
+            className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-5 space-y-6 scroll-smooth select-text"
           >
             {chatLog.map((turn) =>
               turn.role === "user" ? (
-                <div key={turn.id} className="flex justify-end">
-                  <div className="max-w-[85%] bg-green-50/70 border border-green-100 rounded-2xl rounded-br-md px-3.5 py-2 shadow-sm">
-                    <p className="text-xs font-semibold text-slate-800 leading-snug">{turn.text}</p>
-                    <span className="mt-1 block text-right text-[9px] font-medium text-green-700/70">{turn.at}</span>
+                <div key={turn.id} data-turn="user" className="flex justify-end">
+                  <div className="max-w-[88%] bg-emerald-900 text-white rounded-2xl rounded-br-md px-3.5 py-2.5 shadow-sm">
+                    <p className="text-[13px] font-medium leading-snug">{turn.text}</p>
+                    <span className="mt-1 block text-right text-[10px] text-emerald-200/80">{turn.at}</span>
                   </div>
                 </div>
               ) : (
-                <div key={turn.id} className="flex gap-2.5">
-                  <img
-                    src={aiBotLogo}
-                    alt=""
-                    aria-hidden="true"
-                    className="shrink-0 w-7 h-7 rounded-full object-cover ring-2 ring-white shadow-sm mt-0.5"
-                  />
-                  <div className="flex-1 min-w-0 space-y-2">
+                <div key={turn.id} data-turn="assistant" className="flex-1 min-w-0">
+                  <div className="min-w-0 space-y-2">
                     {turn.reply ? (
                       renderAnswerCard(turn.reply)
                     ) : (
                       <p className="text-xs text-slate-600 leading-snug">{turn.text}</p>
                     )}
-                    <span className="block text-[9px] font-medium text-slate-400">Bhumi-Niti AI · {turn.at}</span>
+                    <span className="block text-[10px] text-slate-400">Bhumi-Niti Copilot · {turn.at}</span>
                   </div>
                 </div>
               ),
             )}
 
             {analyzing && (
-              <div className="flex gap-2.5">
-                <img
-                  src={aiBotLogo}
-                  alt=""
-                  aria-hidden="true"
-                  className="shrink-0 w-7 h-7 rounded-full object-cover ring-2 ring-white shadow-sm mt-0.5"
-                />
-                <AnalysingSteps />
-              </div>
+              <AnalysingSteps />
             )}
             <div ref={chatEndRef} className="h-px" />
           </div>
 
           {/* Suggested follow-ups — sticky footer of the panel */}
           {!analyzing && aiResponse && aiResponse.suggestedFollowups.length > 0 && (
-            <div className="shrink-0 px-5 pt-3 pb-1 border-t border-slate-200/80 bg-white/95 backdrop-blur">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                Suggested Questions
+            <div className="shrink-0 px-5 pt-3 pb-4 border-t border-slate-200/80 bg-white">
+              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                Ask next
               </span>
-              <div className="flex flex-col gap-1.5">
-                {aiResponse.suggestedFollowups.map((q, idx) => (
+              <div className="flex flex-col gap-1">
+                {aiResponse.suggestedFollowups.slice(0, 3).map((q, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleAiSubmit(q)}
-                    className="group w-full text-left text-xs font-semibold text-green-800 bg-green-50 hover:bg-green-100 border border-green-100 hover:border-green-200 px-3 py-2 rounded-xl transition-all flex items-center justify-between gap-2"
+                    className="group w-full text-left text-[12.5px] text-slate-700 hover:text-emerald-900 hover:bg-emerald-50 px-2.5 py-1.5 rounded-lg transition-colors flex items-center justify-between gap-2"
                   >
                     <span className="truncate">{q}</span>
                     <ArrowRight className="w-3.5 h-3.5 text-green-500 shrink-0 transition-transform group-hover:translate-x-0.5" />
@@ -1741,7 +1708,7 @@ export function MapFirstHome() {
       <div
         className={`absolute bottom-6 z-30 px-4 flex flex-col items-center gap-3 transition-all duration-300 ${
           aiPanelOpen
-            ? "left-4 right-4 md:left-6 md:right-[424px] md:items-stretch"
+            ? "left-4 right-4 md:left-6 md:right-[444px] md:items-stretch"
             : "left-1/2 -translate-x-1/2 w-full max-w-3xl"
         }`}
       >
