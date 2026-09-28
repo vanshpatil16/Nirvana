@@ -19,6 +19,13 @@ import { Route as PolicyLabRouteImport } from './routes/policy-lab'
 import { Route as RecordVsRealityRouteImport } from './routes/record-vs-reality'
 import { Route as ResearchHubRouteImport } from './routes/research-hub'
 import { Route as WorkflowRouteImport } from './routes/workflow'
+import { Route as InnovationIndexRouteImport } from './routes/innovation/index'
+import { Route as InnovationImpactRouteImport } from './routes/innovation/impact'
+import { Route as InnovationPilotsRouteImport } from './routes/innovation/pilots'
+import { Route as InnovationSubmitRouteImport } from './routes/innovation/submit'
+import { Route as InnovationChallengesIndexRouteImport } from './routes/innovation/challenges/index'
+import { Route as InnovationChallengesChallengeIdRouteImport } from './routes/innovation/challenges/$challengeId'
+import { Route as InnovationWorkspaceProjectIdRouteImport } from './routes/innovation/workspace/$projectId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +77,44 @@ const WorkflowRoute = WorkflowRouteImport.update({
   path: '/workflow',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InnovationIndexRoute = InnovationIndexRouteImport.update({
+  id: '/innovation/',
+  path: '/innovation/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InnovationImpactRoute = InnovationImpactRouteImport.update({
+  id: '/innovation/impact',
+  path: '/innovation/impact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InnovationPilotsRoute = InnovationPilotsRouteImport.update({
+  id: '/innovation/pilots',
+  path: '/innovation/pilots',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InnovationSubmitRoute = InnovationSubmitRouteImport.update({
+  id: '/innovation/submit',
+  path: '/innovation/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InnovationChallengesIndexRoute =
+  InnovationChallengesIndexRouteImport.update({
+    id: '/innovation/challenges/',
+    path: '/innovation/challenges/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const InnovationChallengesChallengeIdRoute =
+  InnovationChallengesChallengeIdRouteImport.update({
+    id: '/innovation/challenges/$challengeId',
+    path: '/innovation/challenges/$challengeId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const InnovationWorkspaceProjectIdRoute =
+  InnovationWorkspaceProjectIdRouteImport.update({
+    id: '/innovation/workspace/$projectId',
+    path: '/innovation/workspace/$projectId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +127,13 @@ export interface FileRoutesByFullPath {
   '/record-vs-reality': typeof RecordVsRealityRoute
   '/research-hub': typeof ResearchHubRoute
   '/workflow': typeof WorkflowRoute
+  '/innovation/impact': typeof InnovationImpactRoute
+  '/innovation/pilots': typeof InnovationPilotsRoute
+  '/innovation/submit': typeof InnovationSubmitRoute
+  '/innovation/': typeof InnovationIndexRoute
+  '/innovation/challenges/$challengeId': typeof InnovationChallengesChallengeIdRoute
+  '/innovation/workspace/$projectId': typeof InnovationWorkspaceProjectIdRoute
+  '/innovation/challenges/': typeof InnovationChallengesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +146,13 @@ export interface FileRoutesByTo {
   '/record-vs-reality': typeof RecordVsRealityRoute
   '/research-hub': typeof ResearchHubRoute
   '/workflow': typeof WorkflowRoute
+  '/innovation/impact': typeof InnovationImpactRoute
+  '/innovation/pilots': typeof InnovationPilotsRoute
+  '/innovation/submit': typeof InnovationSubmitRoute
+  '/innovation': typeof InnovationIndexRoute
+  '/innovation/challenges/$challengeId': typeof InnovationChallengesChallengeIdRoute
+  '/innovation/workspace/$projectId': typeof InnovationWorkspaceProjectIdRoute
+  '/innovation/challenges': typeof InnovationChallengesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +166,13 @@ export interface FileRoutesById {
   '/record-vs-reality': typeof RecordVsRealityRoute
   '/research-hub': typeof ResearchHubRoute
   '/workflow': typeof WorkflowRoute
+  '/innovation/impact': typeof InnovationImpactRoute
+  '/innovation/pilots': typeof InnovationPilotsRoute
+  '/innovation/submit': typeof InnovationSubmitRoute
+  '/innovation/': typeof InnovationIndexRoute
+  '/innovation/challenges/$challengeId': typeof InnovationChallengesChallengeIdRoute
+  '/innovation/workspace/$projectId': typeof InnovationWorkspaceProjectIdRoute
+  '/innovation/challenges/': typeof InnovationChallengesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +187,13 @@ export interface FileRouteTypes {
     | '/record-vs-reality'
     | '/research-hub'
     | '/workflow'
+    | '/innovation/impact'
+    | '/innovation/pilots'
+    | '/innovation/submit'
+    | '/innovation/'
+    | '/innovation/challenges/$challengeId'
+    | '/innovation/workspace/$projectId'
+    | '/innovation/challenges/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +206,13 @@ export interface FileRouteTypes {
     | '/record-vs-reality'
     | '/research-hub'
     | '/workflow'
+    | '/innovation/impact'
+    | '/innovation/pilots'
+    | '/innovation/submit'
+    | '/innovation'
+    | '/innovation/challenges/$challengeId'
+    | '/innovation/workspace/$projectId'
+    | '/innovation/challenges'
   id:
     | '__root__'
     | '/'
@@ -145,6 +225,13 @@ export interface FileRouteTypes {
     | '/record-vs-reality'
     | '/research-hub'
     | '/workflow'
+    | '/innovation/impact'
+    | '/innovation/pilots'
+    | '/innovation/submit'
+    | '/innovation/'
+    | '/innovation/challenges/$challengeId'
+    | '/innovation/workspace/$projectId'
+    | '/innovation/challenges/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +245,13 @@ export interface RootRouteChildren {
   RecordVsRealityRoute: typeof RecordVsRealityRoute
   ResearchHubRoute: typeof ResearchHubRoute
   WorkflowRoute: typeof WorkflowRoute
+  InnovationImpactRoute: typeof InnovationImpactRoute
+  InnovationPilotsRoute: typeof InnovationPilotsRoute
+  InnovationSubmitRoute: typeof InnovationSubmitRoute
+  InnovationIndexRoute: typeof InnovationIndexRoute
+  InnovationChallengesChallengeIdRoute: typeof InnovationChallengesChallengeIdRoute
+  InnovationWorkspaceProjectIdRoute: typeof InnovationWorkspaceProjectIdRoute
+  InnovationChallengesIndexRoute: typeof InnovationChallengesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +326,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/innovation/': {
+      id: '/innovation/'
+      path: '/innovation'
+      fullPath: '/innovation/'
+      preLoaderRoute: typeof InnovationIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/innovation/impact': {
+      id: '/innovation/impact'
+      path: '/innovation/impact'
+      fullPath: '/innovation/impact'
+      preLoaderRoute: typeof InnovationImpactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/innovation/pilots': {
+      id: '/innovation/pilots'
+      path: '/innovation/pilots'
+      fullPath: '/innovation/pilots'
+      preLoaderRoute: typeof InnovationPilotsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/innovation/submit': {
+      id: '/innovation/submit'
+      path: '/innovation/submit'
+      fullPath: '/innovation/submit'
+      preLoaderRoute: typeof InnovationSubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/innovation/challenges/': {
+      id: '/innovation/challenges/'
+      path: '/innovation/challenges'
+      fullPath: '/innovation/challenges/'
+      preLoaderRoute: typeof InnovationChallengesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/innovation/challenges/$challengeId': {
+      id: '/innovation/challenges/$challengeId'
+      path: '/innovation/challenges/$challengeId'
+      fullPath: '/innovation/challenges/$challengeId'
+      preLoaderRoute: typeof InnovationChallengesChallengeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/innovation/workspace/$projectId': {
+      id: '/innovation/workspace/$projectId'
+      path: '/innovation/workspace/$projectId'
+      fullPath: '/innovation/workspace/$projectId'
+      preLoaderRoute: typeof InnovationWorkspaceProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +389,13 @@ const rootRouteChildren: RootRouteChildren = {
   RecordVsRealityRoute: RecordVsRealityRoute,
   ResearchHubRoute: ResearchHubRoute,
   WorkflowRoute: WorkflowRoute,
+  InnovationImpactRoute: InnovationImpactRoute,
+  InnovationPilotsRoute: InnovationPilotsRoute,
+  InnovationSubmitRoute: InnovationSubmitRoute,
+  InnovationIndexRoute: InnovationIndexRoute,
+  InnovationChallengesChallengeIdRoute: InnovationChallengesChallengeIdRoute,
+  InnovationWorkspaceProjectIdRoute: InnovationWorkspaceProjectIdRoute,
+  InnovationChallengesIndexRoute: InnovationChallengesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -6,8 +6,8 @@
 
 **National Digital Platform for Evidence-Based Land Governance**
 
-*Land · Data · Policy · India — a map-first workspace for cadastral parcels, disputes,
-climate risk, research and a **voice-first AI land analyst**.*
+_Land · Data · Policy · India — a map-first workspace for cadastral parcels, disputes,
+climate risk, research and a **voice-first AI land analyst**._
 
 <br />
 
@@ -28,34 +28,44 @@ climate risk, research and a **voice-first AI land analyst**.*
 <br />
 
 **[Overview](#overview)** · **[Features](#features)** · **[Screenshots](#screenshots)** ·
-**[Ask Bhumi AI](#ask-bhumi--voice-first-ai-agent)** · **[Quick Start](#quick-start)** ·
-**[API](#api-reference)** · **[Architecture](#architecture)**
+**[Ask Bhumi AI](#ask-bhumi--voice-first-ai-agent)** · **[Innovation](#innovation-portal)** ·
+**[Quick Start](#quick-start)** · **[API](#api-reference)** · **[Architecture](#architecture)**
 
 </div>
 
 ---
 
 <a id="overview"></a>
+
 ## 🌍 Overview
 
 Bhumi-Niti unifies the land-governance stack into a single research-grade web platform:
 
 - **🗺️ A live parcel map** — click anywhere to reverse-geocode the point and inspect
   survey number, area and land use, backed by a three-tier data pipeline
-  (cadastral API → bundled OSM demo extract → live Overpass).
+  (cadastral API → bundled OSM demo extract → live Overpass), plus **real MRSAC
+  cadastral vector tiles** drawn straight onto the map with a provenance card.
 - **🎙️ Ask Bhumi** — speak or type a question; an OpenRouter tool-loop agent answers with
   a structured risk/framework/evidence card, **reads it aloud**, and **flies the map to the
   place you asked about**.
 - **🌦️ Live weather intelligence** — IMD station feed (43 stations) with a
   temperature/rainfall heat layer and an animated climate-risk timeline.
-- **📊 Six product surfaces** — dashboard, GIS explorer, record-vs-reality,
-  land-difference, innovation portal and the AI map home.
+- **🛰️ Real data layers** — toggle WRIS rivers & waterbodies and NDEM historical flood
+  extent over the map; every layer ships an honest attribution/provenance chip
+  (observed vs. modeled, license, coverage) instead of a silent decoration.
+- **🧪 Innovation Portal** — a full `/innovation` suite (challenges, pilots, impact,
+  submissions, project workspaces) with an evidence-first AI assistant that
+  **drops hallucinated citations in code**.
+- **📊 Product surfaces** — dashboard, GIS explorer, record-vs-reality,
+  land-difference, policy lab, research hub, collaborative hub, workflow and the
+  AI map home.
 
 Built as a serious prototype for evidence-based land policy — **not** an official record system.
 
 ---
 
 <a id="features"></a>
+
 ## ✨ Features
 
 <table>
@@ -63,6 +73,7 @@ Built as a serious prototype for evidence-based land policy — **not** an offic
 <td width="50%">
 
 ### 🗣️ Ask Bhumi — voice-first AI
+
 Browser speech-to-text with **auto-submit on silence**, an OpenRouter agent with
 `show_area` / `submit_answer` tools, spoken replies via the Web Speech API, and a
 scrollable chat transcript that pins to the newest turn.
@@ -71,8 +82,31 @@ scrollable chat transcript that pins to the newest turn.
 <td width="50%">
 
 ### 📍 Click-to-inspect parcels
+
 Every map click reverse-geocodes (Nominatim) into District · Mandal · Village cards and
 loads plot polygons through API → demo → OSM Overpass with per-attempt timeouts.
+Clicking a **real cadastral polygon** opens the parcel card instead, with a
+`REAL CADASTRAL POLYGON` badge and full source/provenance rows.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🗺️ Real cadastral + WRIS/NDEM layers
+
+State-aware **MRSAC cadastral vector tiles** (per-state `tiles.json` → `vector_layers`
+ids), plus WRIS rivers/waterbodies and NDEM flood-extent overlays in the layers panel —
+each with license, coverage and "not a forecast" honesty chips.
+
+</td>
+<td width="50%">
+
+### 🏷️ Evidence provenance system
+
+Every dataset, KPI and AI claim carries an **evidence class** (observed / derived /
+modeled / synthetic) and a **reliability class A–F** badge from the data-source registry,
+with an explicit "Not publicly available" state instead of invented values.
 
 </td>
 </tr>
@@ -80,6 +114,7 @@ loads plot polygons through API → demo → OSM Overpass with per-attempt timeo
 <td width="50%">
 
 ### 🌦️ IMD live weather layer
+
 43 live IMD stations with a **Temperature / Rainfall** toggle, intensity legend, and
 live-station status chips rendered over the national map.
 
@@ -87,6 +122,7 @@ live-station status chips rendered over the national map.
 <td width="50%">
 
 ### 📈 Climate-risk timeline
+
 Year-scrubbing (2018 → 2024) animation over Sentinel-2 cloudless mosaics with
 choropleth risk states, district metrics and before/after land-use comparison.
 
@@ -96,15 +132,19 @@ choropleth risk states, district metrics and before/after land-use comparison.
 <td width="50%">
 
 ### 🧭 GIS Explorer & land tools
+
 Dedicated routes for GIS layers, Record-vs-Reality evidence checks and
 Land-Difference (2018 vs 2024) analysis.
 
 </td>
 <td width="50%">
 
-### 💡 Innovation Portal
-Challenge board for research & policy innovation — hackathons, workspaces and
-collaborative programmes for land governance.
+### 💡 Innovation Portal (`/innovation`)
+
+Merged in from the `innovation-portal` branch: a challenge board with pilots,
+impact dashboard, submission flow and project workspaces — plus an
+evidence-first AI assistant (`POST /api/innovation/ai`) that validates every
+citation against the supplied source pack and **drops hallucinated refs**.
 
 </td>
 </tr>
@@ -113,6 +153,7 @@ collaborative programmes for land governance.
 ---
 
 <a id="screenshots"></a>
+
 ## 📸 Screenshots
 
 <p align="center">
@@ -122,9 +163,9 @@ collaborative programmes for land governance.
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/home-map.png" alt="Map home — Nashik default view with parcel location card" width="88%" />
+  <img src="docs/screenshots/home-map.png" alt="Map home — Vashi (Mumbai) default view with real cadastral parcels" width="88%" />
   <br />
-  <sub><b>Live map home</b> — opens on the Nashik belt; click anywhere for a reverse-geocoded parcel card.</sub>
+  <sub><b>Live map home</b> — opens on Vashi, Mumbai metro at zoom 13 where MRSAC cadastral parcels are dense; click a polygon for its provenance card.</sub>
 </p>
 
 <p align="center">
@@ -142,6 +183,7 @@ collaborative programmes for land governance.
 ---
 
 <a id="ask-bhumi--voice-first-ai-agent"></a>
+
 ## 🗣️ Ask Bhumi — Voice-First AI Agent
 
 The `/` route is a working agent, not a chat widget:
@@ -174,7 +216,34 @@ flowchart LR
 
 ---
 
+<a id="innovation-portal"></a>
+
+## 🧪 Innovation Portal — `/innovation`
+
+Merged from the `innovation-portal` branch. The old single route `/innovation-portal`
+now **redirects to `/innovation`**, so sidebar links and bookmarks keep working.
+
+| Route                                 | Screen                                                           |
+| ------------------------------------- | ---------------------------------------------------------------- |
+| `/innovation`                         | Home — featured challenge, lifecycle funnel, KPI bars            |
+| `/innovation/challenges`              | Challenge board with stage facets & filters                      |
+| `/innovation/challenges/$challengeId` | Challenge detail + brief                                         |
+| `/innovation/pilots`                  | Real-world pilots map & listing                                  |
+| `/innovation/impact`                  | Impact dashboard with DID chart                                  |
+| `/innovation/submit`                  | Solution submission flow                                         |
+| `/innovation/workspace/$projectId`    | Project workspace — evidence locker, modules, AI assistant panel |
+
+**Evidence assistant (`POST /api/innovation/ai`)** — eight tools (`find_evidence`,
+`explain_dataset`, `similar_pilots`, `literature_brief`, `missing_evidence`,
+`suggest_kpis`, `policy_brief`, `ask`). The trust rule is enforced **in code**, not just
+prompted: the model only sees a bounded source pack, every returned citation is checked
+against it, and hallucinated refs are **dropped and reported** so the UI shows what was
+discarded. Implementation notes live in [`innovation-portal.md`](./innovation-portal.md).
+
+---
+
 <a id="architecture"></a>
+
 ## 🏗️ Architecture
 
 ```mermaid
@@ -188,6 +257,9 @@ flowchart TB
         P["GET /api/parcels"]
         W["GET /api/weather/*"]
         A["POST /api/ai"]
+        IA["POST /api/innovation/ai"]
+        TTS["POST /api/tts"]
+        POL["POST /api/policy/extract"]
     end
 
     subgraph Data["External data"]
@@ -195,16 +267,23 @@ flowchart TB
         OSM["OSM Overpass + Nominatim"]
         EOX["EOX Sentinel-2 mosaics"]
         OR["OpenRouter LLM"]
+        GEM["Google Gemini (policy PDF)"]
+        EB["ElevenLabs (TTS)"]
         CAD["Imported cadastral datasets\nsrc/data/cadastral"]
+        VEC["Cadastre + WRIS/NDEM vector tiles\nsrc/services/cadastre.ts"]
     end
 
     APP --> VOICE
-    APP --> P & W & A
+    APP --> P & W & A & IA & TTS & POL
     A --> OR
+    IA --> OR
+    TTS --> EB
+    POL --> GEM
     W --> IMM
     P --> CAD
     APP --> OSM
     APP --> EOX
+    APP --> VEC
 ```
 
 **Request flow on the edge:** `src/server.ts` answers `/api/*` first, then falls through to
@@ -214,22 +293,24 @@ code runs on `vite dev` and the Cloudflare Workers build.
 ---
 
 <a id="tech-stack"></a>
+
 ## 🛠 Tech Stack
 
-| Layer | Choices |
-|---|---|
-| **Framework** | React 19, TanStack Start / Router, React Query 5 |
-| **Build & runtime** | Vite 8, nitro (Cloudflare Workers preset), TypeScript 5.8 (strict) |
-| **Styling** | Tailwind CSS 4, Radix UI primitives, CVA + tailwind-merge, tw-animate-css |
-| **Mapping** | MapLibre GL 6, custom GeoJSON parcel layers, OSM raster/vector styles |
-| **Charts & forms** | Recharts, react-hook-form + zod, lucide-react icons |
-| **AI & voice** | OpenRouter chat completions, Web Speech API (STT/TTS), zod tool schemas |
-| **Quality** | ESLint 9, Prettier, `tsc --noEmit`, headless-Chrome E2E checks |
-| **Deployment** | Lovable-connected repo, nitro → Cloudflare Workers |
+| Layer               | Choices                                                                   |
+| ------------------- | ------------------------------------------------------------------------- |
+| **Framework**       | React 19, TanStack Start / Router, React Query 5                          |
+| **Build & runtime** | Vite 8, nitro (Cloudflare Workers preset), TypeScript 5.8 (strict)        |
+| **Styling**         | Tailwind CSS 4, Radix UI primitives, CVA + tailwind-merge, tw-animate-css |
+| **Mapping**         | MapLibre GL 6, custom GeoJSON parcel layers, OSM raster/vector styles     |
+| **Charts & forms**  | Recharts, react-hook-form + zod, lucide-react icons                       |
+| **AI & voice**      | OpenRouter chat completions, Web Speech API (STT/TTS), zod tool schemas   |
+| **Quality**         | ESLint 9, Prettier, `tsc --noEmit`, headless-Chrome E2E checks            |
+| **Deployment**      | Lovable-connected repo, nitro → Cloudflare Workers                        |
 
 ---
 
 <a id="quick-start"></a>
+
 ## 🚀 Quick Start
 
 **Prerequisites** — [Node.js](https://nodejs.org) **20.19+** and npm
@@ -242,7 +323,9 @@ npm install
 
 # Configure secrets (never commit .env — it is git-ignored)
 cp .env.example .env
-#   → add your OPENROUTER_API_KEY (powers the Ask Bhumi agent)
+#   → OPENROUTER_API_KEY (Ask Bhumi + innovation evidence assistant)
+#   → ELEVENLABS_API_KEY  (server-side voice; optional)
+#   → GEMINI_API_KEY      (Policy Lab PDF reader; optional)
 
 npm run dev
 #   → http://localhost:8080
@@ -253,29 +336,32 @@ and everything else (map, parcels, weather, dashboard) works offline-first in de
 
 ### Scripts
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Dev server with SSR + `/api/*` handlers → `http://localhost:8080` |
-| `npm run build` | Production build (client + SSR + nitro Cloudflare bundle) |
-| `npm run preview` | Preview the production build locally |
-| `npm run lint` | ESLint over the whole repo |
-| `npm run format` | Prettier write |
+| Command           | What it does                                                      |
+| ----------------- | ----------------------------------------------------------------- |
+| `npm run dev`     | Dev server with SSR + `/api/*` handlers → `http://localhost:8080` |
+| `npm run build`   | Production build (client + SSR + nitro Cloudflare bundle)         |
+| `npm run preview` | Preview the production build locally                              |
+| `npm run lint`    | ESLint over the whole repo                                        |
+| `npm run format`  | Prettier write                                                    |
 
 ---
 
 <a id="environment"></a>
+
 ## 🔐 Environment Variables
 
 `.env` is **git-ignored**; `.env.example` documents every key.
 
-| Variable | Scope | Default | Purpose |
-|---|---|---|---|
-| `OPENROUTER_API_KEY` | Server only | — | Powers `POST /api/ai` (the agent). Read exclusively in `src/server/ai-agent.ts`. |
-| `OPENROUTER_MODEL` | Server only | `openai/gpt-4o-mini` | Chat model for the agent loop. |
-| `VITE_DEMO_MODE` | Client | `true` | Prefers the bundled real OSM extract (Gujarat corridor); degrades gracefully offline. |
-| `VITE_SENTINEL_YEAR` | Client | `2024` | Sentinel-2 mosaic year for the EOX cloudless layer. |
-| `VITE_PARCEL_API_URL` | Client | *(own API)* | Optional external PostGIS-backed parcel service. |
-| `SENTINEL_CLIENT_ID` / `SECRET` | Server only | — | Reserved for an authenticated Copernicus proxy path. |
+| Variable                        | Scope       | Default              | Purpose                                                                                                                                        |
+| ------------------------------- | ----------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY`            | Server only | —                    | Powers `POST /api/ai` (the agent) and `POST /api/innovation/ai`. Read exclusively in `src/server/ai-agent.ts` / `src/server/innovation-ai.ts`. |
+| `OPENROUTER_MODEL`              | Server only | `openai/gpt-4o-mini` | Chat model for the agent loop.                                                                                                                 |
+| `ELEVENLABS_API_KEY`            | Server only | —                    | Powers `POST /api/tts` (server-side voice; browser TTS fallback).                                                                              |
+| `GEMINI_API_KEY`                | Server only | —                    | Powers `POST /api/policy/extract` (policy PDF → structured quotes).                                                                            |
+| `VITE_DEMO_MODE`                | Client      | `true`               | Prefers the bundled real OSM extract (Gujarat corridor); degrades gracefully offline.                                                          |
+| `VITE_SENTINEL_YEAR`            | Client      | `2024`               | Sentinel-2 mosaic year for the EOX cloudless layer.                                                                                            |
+| `VITE_PARCEL_API_URL`           | Client      | _(own API)_          | Optional external PostGIS-backed parcel service.                                                                                               |
+| `SENTINEL_CLIENT_ID` / `SECRET` | Server only | —                    | Reserved for an authenticated Copernicus proxy path.                                                                                           |
 
 > ☁️ **Deployed builds** (Cloudflare Workers) do not read `.env` — bind
 > `OPENROUTER_API_KEY` as an environment **secret** on the platform instead.
@@ -283,15 +369,19 @@ and everything else (map, parcels, weather, dashboard) works offline-first in de
 ---
 
 <a id="api-reference"></a>
+
 ## 🌐 API Reference
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/parcels?bbox=w,s,e,n` | Cadastral features for a bounding box. Optional filters: `village`, `surveyNumber`, `parcelId`. |
-| `GET` | `/api/weather/stations` | All live IMD stations (43) with temperature & rainfall. |
-| `GET` | `/api/weather/station?id=…` | Single station reading. |
-| `GET` | `/api/weather/summary` | National rainfall summary. |
-| `POST` | `/api/ai` | Land-intelligence agent — tool loop, structured reply, spoken text, map actions. |
+| Method | Endpoint                    | Description                                                                                                                                                                                                                                              |
+| ------ | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/parcels?bbox=w,s,e,n` | Cadastral features for a bounding box. Optional filters: `village`, `surveyNumber`, `parcelId`.                                                                                                                                                          |
+| `GET`  | `/api/weather/stations`     | All live IMD stations (43) with temperature & rainfall.                                                                                                                                                                                                  |
+| `GET`  | `/api/weather/station?id=…` | Single station reading.                                                                                                                                                                                                                                  |
+| `GET`  | `/api/weather/summary`      | National rainfall summary.                                                                                                                                                                                                                               |
+| `POST` | `/api/ai`                   | Land-intelligence agent — tool loop, structured reply, spoken text, map actions.                                                                                                                                                                         |
+| `POST` | `/api/innovation/ai`        | Innovation evidence assistant — 8 tools (find evidence, explain dataset, similar pilots, literature brief, missing evidence, suggest KPIs, policy brief, ask); **every citation validated against the supplied source pack, hallucinated refs dropped**. |
+| `POST` | `/api/tts`                  | ElevenLabs speech for Ask Bhumi replies (falls back to browser TTS).                                                                                                                                                                                     |
+| `POST` | `/api/policy/extract`       | Gemini PDF reader → structured, quoted policy parameters (Policy Lab).                                                                                                                                                                                   |
 
 <details>
 <summary><b>POST /api/ai — example</b></summary>
@@ -324,6 +414,7 @@ curl -X POST http://localhost:8080/api/ai \
 ---
 
 <a id="project-structure"></a>
+
 ## 📁 Project Structure
 
 ```text
@@ -331,19 +422,24 @@ bhuniti/
 ├── public/                     # logo, static assets
 ├── docs/screenshots/           # README imagery
 ├── src/
-│   ├── routes/                 # /  /dashboard  /gis-explorer  /innovation-portal …
+│   ├── routes/                 # /  /dashboard  /gis-explorer  /innovation/*  /policy-lab …
 │   ├── components/
 │   │   ├── home/               # MapFirstHome — live map + Ask Bhumi composer/sidebar
 │   │   ├── dashboard/          # IndiaMap, timeline, choropleth, panels
-│   │   ├── innovation/  land-difference/  record-reality/
+│   │   ├── innovation/         # shell, home, challenges, pilots, impact, workspace
+│   │   ├── ui/                 # provenance badges (provenance.tsx)
+│   │   ├── land-difference/  record-reality/
 │   ├── server/
 │   │   ├── ai-agent.ts         # OpenRouter tool loop (show_area / submit_answer)
+│   │   ├── innovation-ai.ts    # evidence assistant — citation-verified tool loop
 │   │   ├── parcel-store.ts     # bbox cadastral API
+│   │   ├── tts.ts              # ElevenLabs spoken replies
+│   │   ├── policy-extract.ts   # Gemini policy-PDF reader
 │   │   └── weather-india.ts    # live IMD weather proxy
-│   ├── services/               # parcelService (3-tier pipeline), geocode, weather, sentinel
-│   ├── data/                   # imd-stations, demo-parcels, cadastral extracts, fixtures
+│   ├── services/               # cadastre (TileJSON/vector layers), parcelService (3-tier pipeline), geocode, weather, sentinel
+│   ├── data/                   # data-sources registry, imd-stations, cadastral extracts, innovation/ fixtures
 │   ├── assets/                 # generated imagery
-│   └── styles.css              # design tokens & global styles
+│   └── styles.css              # design tokens, provenance + innovation portal styles
 ├── vite.config.ts              # dev server wiring → src/server.ts
 ├── .env.example                # all supported env keys
 └── package.json
@@ -352,22 +448,29 @@ bhuniti/
 ---
 
 <a id="data-sources"></a>
+
 ## 📡 Data Sources & Disclaimers
 
-| Source | Used for | Access |
-|---|---|---|
-| **IMD** (India Meteorological Dept.) | Live station weather, rainfall heat layer | Server proxy, 43 stations |
-| **OpenStreetMap** | Parcel polygons (Overpass), reverse/forward geocoding (Nominatim) | Keyless, rate-limited |
-| **EOX / Copernicus** | Sentinel-2 cloudless mosaics (2018 · 2020 · 2024) | Tile service |
-| **Bundled cadastral extracts** | Demo parcels (Gujarat corridor, survey-level) | In-repo JSON |
+| Source                                 | Used for                                                                    | Access                                                                                              |
+| -------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **IMD** (India Meteorological Dept.)   | Live station weather, rainfall heat layer                                   | Server proxy, 43 stations                                                                           |
+| **MRSAC / Datameet cadastre**          | Real cadastral polygons (state-wise `tiles.json` vector layers)             | `src/services/cadastre.ts`, CC0 — 48 releases indexed (43 vector-tile, 5 raster-only & never wired) |
+| **WRIS** (Water Resources Info System) | Rivers & waterbodies overlay layers                                         | Vector tiles, CC0 via Datameet                                                                      |
+| **NDEM**                               | Historical flood inundation 1998–2022 overlay                               | Vector tiles, CC0 via Datameet — _observed extent, not a forecast_                                  |
+| **OpenStreetMap**                      | Parcel polygons (Overpass), reverse/forward geocoding (Nominatim), base map | Keyless, rate-limited                                                                               |
+| **EOX / Copernicus**                   | Sentinel-2 cloudless mosaics (2018 · 2020 · 2024)                           | Tile service                                                                                        |
+| **Bundled cadastral extracts**         | Demo parcels (Gujarat corridor, survey-level)                               | In-repo JSON                                                                                        |
 
 > ⚠️ **Prototype data shown for demonstration.** Nothing here substitutes for official
-> MahaBhumi / Bhu-Naksha records, Tahsildar offices or court documents. The AI assistant
-> states its evidence and limitations on every answer.
+> MahaBhumi / Bhu-Naksha records, Tahsildar offices or court documents. Cadastral tiles
+> are labelled `REAL CADASTRAL POLYGON` with provider/upstream/license rows; OSM polygons
+> are explicitly **not** cadastre; missing fields read "Not publicly available / not
+> connected" — the AI assistant states its evidence and limitations on every answer.
 
 ---
 
 <a id="deployment"></a>
+
 ## ☁️ Deployment
 
 - **Lovable** — this repository is connected to Lovable; every push to the connected
@@ -379,22 +482,26 @@ bhuniti/
 ---
 
 <a id="quality"></a>
+
 ## ✅ Quality Gates
 
 ```sh
 npm run lint        # ESLint 9
 npm run format      # Prettier
-npx tsc --noEmit    # strict TypeScript, zero errors
+npm run typecheck   # strict TypeScript (tsc --noEmit), zero errors
 npm run build       # client + SSR + nitro, must pass
 ```
 
 Verified end-to-end with headless Chrome: voice auto-submit → agent reply → TTS narration,
 transcript auto-scroll, follow-up chips, fly-to geocoding (district-level accuracy) and
-zero page errors.
+zero page errors — plus the map stack: cadastral tiles render at default view, parcel
+clicks open a provenance card, WRIS/NDEM toggles fetch their `.pbf` tiles and remove
+cleanly on toggle-off.
 
 ---
 
 <a id="roadmap"></a>
+
 ## 🗺️ Roadmap
 
 - 🧩 **Pluggable policy tools** — land-records lookups as additional agent tools
@@ -405,6 +512,7 @@ zero page errors.
 ---
 
 <a id="development-with-lovable"></a>
+
 ## 🔗 Development with Lovable
 
 This project was built with [Lovable](https://lovable.dev).
