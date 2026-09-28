@@ -1177,3 +1177,41 @@ button.parcel-note:hover { border-color: var(--primary); color: var(--primary); 
   .kpi-card .kpi-main strong { font-size: 20px; }
   .kpi-card svg.kpi-spark { width: 64px; }
 }
+
+
+/* ---- Provenance badges (data-source registry) --------------------------- */
+.pv-badge { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; font-size: 9px; font-weight: 800; letter-spacing: .05em; line-height: 1.5; text-transform: uppercase; white-space: nowrap; }
+.pv-evidence.pv-observed { border-color: color-mix(in oklab, #13744a 45%, var(--border)); background: color-mix(in oklab, #13744a 10%, transparent); color: #13744a; }
+.pv-evidence.pv-derived { border-color: color-mix(in oklab, #2f66ee 40%, var(--border)); background: color-mix(in oklab, #2f66ee 9%, transparent); color: #2a5bcc; }
+.pv-evidence.pv-modeled { border-color: color-mix(in oklab, #d98b09 50%, var(--border)); background: color-mix(in oklab, #d98b09 12%, transparent); color: #9a6507; }
+.pv-evidence.pv-synthetic { border-style: dashed; border-color: color-mix(in oklab, #d85f3e 55%, var(--border)); background: color-mix(in oklab, #d85f3e 10%, transparent); color: #b3482c; }
+.pv-reliability.pv-class-A { background: color-mix(in oklab, #004e2b 12%, transparent); color: #004e2b; border-color: color-mix(in oklab, #004e2b 45%, var(--border)); }
+.pv-reliability.pv-class-B { background: color-mix(in oklab, #13744a 9%, transparent); color: #10613c; }
+.pv-reliability.pv-class-C { background: color-mix(in oklab, #4aa8ff 10%, transparent); color: #1d5fb0; }
+.pv-reliability.pv-class-D { background: color-mix(in oklab, #8f2bb0 8%, transparent); color: #6f2189; }
+.pv-reliability.pv-class-E { background: var(--muted); color: var(--muted-foreground); }
+.pv-reliability.pv-class-F { border-style: dashed; border-color: color-mix(in oklab, #d85f3e 55%, var(--border)); background: color-mix(in oklab, #d85f3e 10%, transparent); color: #b3482c; }
+.pv-cadastre.pv-real-cadastre { background: #004e2b; border-color: #004e2b; color: #fcfaf6; }
+.pv-cadastre.pv-osm-non-cadastre { border-style: dashed; background: color-mix(in oklab, #d98b09 14%, transparent); color: #8a5a06; border-color: color-mix(in oklab, #d98b09 60%, var(--border)); }
+.pv-cadastre.pv-no-public-data { background: var(--muted); color: var(--muted-foreground); }
+.pv-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pv-panel { border-top: 1px solid var(--border); }
+.pv-rows dd { font-weight: 600; font-size: 11.5px; }
+.pv-honesty { margin: 0 0 8px; border-left: 3px solid var(--saffron, #d98b09); padding-left: 8px; color: var(--muted-foreground); font-size: 11px; line-height: 1.5; }
+.pv-evidence-desc { margin: 0 0 8px; color: var(--muted-foreground); font-size: 11px; }
+.pv-kpi-tag { display: inline-flex; margin-left: 6px; border: 1px dashed var(--border); border-radius: 999px; padding: 1px 7px; font-size: 8.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); vertical-align: middle; }
+.pv-kpi-tag.pv-tag-observed { border-style: solid; border-color: color-mix(in oklab, #13744a 45%, var(--border)); color: #13744a; }
+.pv-kpi-tag.pv-tag-derived { border-style: solid; border-color: color-mix(in oklab, #2f66ee 40%, var(--border)); color: #2a5bcc; }
+.pv-kpi-tag.pv-tag-modeled { border-style: solid; border-color: color-mix(in oklab, #d98b09 55%, var(--border)); color: #9a6507; }
+.pv-kpi-tag.pv-tag-synthetic { border-color: color-mix(in oklab, #d85f3e 55%, var(--border)); color: #b3482c; }
+
+/* ---- Overlay layer toggles + provenance status (dashboard map) ----------- */
+.intel-overlays { position: absolute; z-index: 5; top: 104px; left: 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: 300px; }
+.overlay-toggles { display: flex; border: 1px solid var(--border); border-radius: 9px; background: color-mix(in oklab, var(--surface) 92%, transparent); padding: 3px; box-shadow: var(--shadow-card); backdrop-filter: blur(8px); }
+.overlay-toggles button { cursor: pointer; border: 0; border-radius: 6px; background: transparent; padding: 5px 9px; color: var(--muted-foreground); font-size: 8px; font-weight: 700; }
+.overlay-toggles button.active { background: var(--primary); color: var(--primary-foreground); }
+.overlay-status { border: 1px solid var(--border); border-radius: 8px; background: color-mix(in oklab, var(--surface) 92%, transparent); padding: 5px 9px; color: var(--muted-foreground); font-size: 8px; font-weight: 700; line-height: 1.45; white-space: normal; box-shadow: var(--shadow-card); backdrop-filter: blur(8px); }
+.overlay-status.overlay-warn { border-style: dashed; border-color: color-mix(in oklab, #d85f3e 55%, var(--border)); color: #b3482c; }
+@media (max-width: 540px) {
+  .intel-overlays { top: 136px; max-width: calc(100% - 28px); }
+}

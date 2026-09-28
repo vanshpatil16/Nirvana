@@ -50,8 +50,19 @@ import {
   type ParcelFeature,
 } from "@/services/parcelService";
 import { getDefaultProvider, getImageryConfig } from "@/services/sentinelService";
+import {
+  cadastreLayerFor,
+  getParcelProvider,
+  isWiredLayer,
+  tileJsonUrl,
+  vectorLayerIds,
+  vectorLayerIdsFromUrl,
+  type CadastreLayer,
+  type CadastreProvider,
+} from "@/services/cadastre";
+import { ParcelProvenance } from "@/components/ui/provenance";
 import type { MapAction, ActionChip } from "@/copilot/actions";
-import { highlightChange, setOverlay, type OverlayId } from "./copilot-map";
+import { highlightChange, setOverlay, stateAt, type OverlayId } from "./copilot-map";
 import { AnalysingSteps, type CopilotMeta } from "./CopilotBlocks";
 import { CopilotAnswer } from "./CopilotAnswer";
 
@@ -70,6 +81,8 @@ interface LocationContext {
   areaAcres: number | null;
   landUse: string;
   source: string;
+  /** Registry id in src/data/data-sources.ts — drives the provenance block. */
+  sourceId?: string | null;
   hasParcelGeometry: boolean;
 }
 
@@ -80,6 +93,8 @@ interface AIResponse {
   riskAssessment: string;
   evidence: { label: string; type: string }[];
   limitation: string;
+  /** Structured evidence classes: OBSERVED / DERIVED / LEGAL EVIDENCE / ... */
+  evidenceBreakdown?: { section: string; detail: string }[];
   suggestedFollowups: string[];
   /** NL-GIS Copilot metadata (plan, data, evidence, chips…) */
   copilot?: CopilotMeta | undefined;
@@ -103,6 +118,83 @@ const OVERLAY_FOR: Record<LayerToggle, OverlayId> = {
   disputes: "disputes",
 };
 
+/** Query hits can be Polygon or MultiPolygon — the selection pipeline wants one Polygon (largest part). */
+function toSinglePolygon(geometry: unknown): { type: "Polygon"; coordinates: number[][][] } | null {
+  const g = geometry as { type?: unknown; coordinates?: unknown } | null;
+  if (!g || typeof g.type !== "string") return null;
+  if (g.type === "Polygon" && Array.isArray(g.coordinates)) {
+    return { type: "Polygon", coordinates: g.coordinates as number[][][] };
+  }
+  if (g.type === "MultiPolygon" && Array.isArray(g.coordinates)) {
+    let best: number[][][] | null = null;
+    let bestArea = -1;
+    for (const poly of g.coordinates as number[][][][]) {
+      const ring = poly[0];
+      if (!ring || ring.length < 4) continue;
+      const area = Math.abs(ringArea(ring));
+      if (area > bestArea) {
+        bestArea = area;
+        best = poly;
+      }
+    }
+    return best ? { type: "Polygon", coordinates: best } : null;
+  }
+  return null;
+}
+
+/** Signed shoelace area (planar degrees²) — only used to pick the largest part. */
+function ringArea(ring: number[][]): number {
+  let s = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    s += (ring[j]?.[0] ?? 0) * (ring[i]?.[1] ?? 0) - (ring[i]?.[0] ?? 0) * (ring[j]?.[1] ?? 0);
+  }
+  return s / 2;
+}
+
+/**
+ * Run `fn` once the style can accept sources/layers.
+ *
+ * `map.isStyleLoaded()` can be false while initial tiles are still in flight
+ * *after* the one-shot `load` event has already fired — waiting on `load`
+ * again would then never resolve, so poll as well. Returns a cancel function.
+ */
+function onMapReady(map: MapInstance, fn: () => void): () => void {
+  let done = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  // The inline style's own layers appearing is the real signal that sources can
+  // be added — `isStyleLoaded()` also stays false while initial tiles stream.
+  const ready = () => map.isStyleLoaded() || !!map.getLayer("parcels-fill");
+  const finish = () => {
+    if (done || !ready()) return;
+    done = true;
+    cleanup();
+    fn();
+  };
+  const onLoad = () => finish();
+  const poll = () => {
+    if (done) return;
+    finish();
+    if (!done) timer = setTimeout(poll, 120);
+  };
+  function cleanup() {
+    map.off("load", onLoad);
+    if (timer !== undefined) clearTimeout(timer);
+    timer = undefined;
+  }
+  if (map.isStyleLoaded()) {
+    fn();
+    return () => {};
+  }
+  map.on("load", onLoad);
+  poll();
+  return cleanup;
+}
+
+/** Registry id provenance for a cadastral release (only wired releases get one). */
+function cadastreRegistryId(provider: CadastreProvider): string {
+  return provider.id === "maharashtra" ? "cadastral-mrsac-maharashtra" : "cadastral-india-states";
+}
+
 /** One chat-transcript entry rendered in the AI sidebar (user query or AI answer). */
 interface ChatTurn {
   id: number;
@@ -122,8 +214,49 @@ interface FlyToAction {
   reason: string | null;
 }
 
-const DEFAULT_CENTER: [number, number] = [73.7898, 19.9975]; // Nashik belt
-const DEFAULT_ZOOM = 12;
+const DEFAULT_CENTER: [number, number] = [73.01, 19.066]; // Vashi, Mumbai metro (MRSAC cadastral coverage)
+const DEFAULT_ZOOM = 13;
+
+const CAD_SOURCE = "cadastre";
+const CAD_FILL_LAYER = "cadastre-fill";
+const CAD_LINE_LAYER = "cadastre-line";
+
+/** Real hydro / flood-history vector layers (provenance-labelled, toggled from the layers panel). */
+interface OverlayDef {
+  id: "rivers" | "waterbodies" | "floods";
+  label: string;
+  sourceId: string;
+  layerId: string;
+  tileJson: string;
+  attribution: string;
+}
+
+const MAP_OVERLAYS: OverlayDef[] = [
+  {
+    id: "rivers",
+    label: "Rivers",
+    sourceId: "overlay-rivers",
+    layerId: "overlay-rivers",
+    tileJson: "https://indianopenmaps.com/rivers/wris/tiles.json",
+    attribution: "WRIS rivers · Datameet · CC0",
+  },
+  {
+    id: "waterbodies",
+    label: "Waterbodies",
+    sourceId: "overlay-waterbodies",
+    layerId: "overlay-waterbodies",
+    tileJson: "https://indianopenmaps.com/waterbodies/wris/tiles.json",
+    attribution: "WRIS waterbodies · Datameet · CC0",
+  },
+  {
+    id: "floods",
+    label: "Flood history",
+    sourceId: "overlay-floods",
+    layerId: "overlay-floods",
+    tileJson: "https://indianopenmaps.com/not-so-open/floods/all-india/1998-2022/ndem/tiles.json",
+    attribution: "NDEM flood inundation 1998–2022 · Datameet · CC0",
+  },
+];
 
 const PROMPT_PLACEHOLDERS = [
   "Find land owned by Ramesh Kumar, Bengaluru...",
@@ -150,6 +283,16 @@ export function MapFirstHome() {
     disputes: false,
   });
   const [layersOpen, setLayersOpen] = useState(false);
+
+  // Real-data overlays (WRIS hydro, NDEM flood history) + cadastre status note
+  const [overlays, setOverlays] = useState<Record<OverlayDef["id"], boolean>>({
+    rivers: false,
+    waterbodies: false,
+    floods: false,
+  });
+  const [cadastreNote, setCadastreNote] = useState<string | null>(null);
+  /** State/UT under the viewport — picks which cadastral release to wire up. */
+  const [viewportState, setViewportState] = useState<string | null>(null);
 
   // Animated placeholder state (Current enters from down, Prev exits up)
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
@@ -534,7 +677,16 @@ export function MapFirstHome() {
     map.on("load", () => {
       // Fetch initial parcels around default center
       loadParcelsForBBox(map, DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
+      setViewportState(stateAt(DEFAULT_CENTER[0], DEFAULT_CENTER[1]));
     });
+
+    // Track which state/UT is under the viewport so the cadastral release
+    // follows the map (same behaviour as clicking a state on the dashboard).
+    const onMoveEnd = () => {
+      const c = map.getCenter();
+      setViewportState(stateAt(c.lng, c.lat));
+    };
+    map.on("moveend", onMoveEnd);
 
     // Map click handler
     map.on("click", async (e) => {
@@ -570,6 +722,8 @@ export function MapFirstHome() {
   // Maharashtra import only), so a click can select them. Other sources are
   // hit-tested exactly as before.
   const cadastralParcelsRef = useRef<ParcelCollection | null>(null);
+  // Wired cadastral release currently rendered on the map (drives click provenance).
+  const cadastreRef = useRef<{ provider: CadastreProvider; layer: CadastreLayer } | null>(null);
 
   // Load parcels around bbox
   const loadParcelsForBBox = async (map: MapInstance, lon: number, lat: number, span = 0.05) => {
@@ -649,6 +803,72 @@ export function MapFirstHome() {
     // geocode + bundled demo parcels).
     const parcelsLoaded = loadParcelsForBBox(map, lon, lat);
 
+    // A real cadastral polygon under the point owns the click — OSM/demo
+    // geometry must never shadow cadastre.
+    const cadHit = map.getLayer(CAD_FILL_LAYER)
+      ? map.queryRenderedFeatures(map.project([lon, lat]), { layers: [CAD_FILL_LAYER] })[0]
+      : undefined;
+    if (cadHit) {
+      const geometry = toSinglePolygon(cadHit.geometry);
+      const props = (cadHit.properties ?? {}) as Record<string, unknown>;
+      const str = (k: string) => (typeof props[k] === "string" && props[k] ? (props[k] as string) : null);
+      const parcelId =
+        str("CCODE") ??
+        str("Parcel_num") ??
+        (typeof props["OBJECTID"] === "number" ? `CAD-${props["OBJECTID"]}` : null);
+      const ctx = cadastreRef.current;
+      if (geometry && parcelId && ctx) {
+        const parcel: ParcelFeature = {
+          type: "Feature",
+          properties: {
+            parcelId,
+            surveyNumber: str("SNo") ?? str("Survey_Number"),
+            landuse: "cadastral",
+            name: null,
+            source: `${ctx.layer.label} · ${ctx.provider.stateName} · real cadastral polygons`,
+            ...(str("VIL_NAME") || str("V_Name")
+              ? { village: (str("VIL_NAME") ?? str("V_Name")) as string }
+              : {}),
+            ...(str("THENAME") || str("New_Mandal")
+              ? { taluka: (str("THENAME") ?? str("New_Mandal")) as string }
+              : {}),
+            ...(str("DTENAME") || str("New_District")
+              ? { district: (str("DTENAME") ?? str("New_District")) as string }
+              : {}),
+            state: ctx.provider.stateName,
+            sourceId: cadastreRegistryId(ctx.provider),
+            providerId: ctx.provider.id,
+          },
+          geometry,
+        };
+        const acres = parcelAcres(parcel);
+        setSelectedParcel(parcel);
+        if (map.getSource("selected-parcel")) {
+          (map.getSource("selected-parcel") as maplibregl.GeoJSONSource).setData({
+            type: "FeatureCollection",
+            features: [parcel],
+          });
+        }
+        setSelectedLocation({
+          lat,
+          lon,
+          state: parcel.properties.state ?? ctx.provider.stateName,
+          district: parcel.properties.district ?? "—",
+          taluka: parcel.properties.taluka ?? "—",
+          village: parcel.properties.village ?? "—",
+          parcelId,
+          surveyNumber: parcel.properties.surveyNumber,
+          areaAcres: acres > 0 ? Number(acres.toFixed(2)) : null,
+          landUse: "Cadastral parcel",
+          source: parcel.properties.source,
+          sourceId: cadastreRegistryId(ctx.provider),
+          hasParcelGeometry: true,
+        });
+        setLoadingLocation(false);
+        return;
+      }
+    }
+
     // Reverse geocode to get District, Taluka, Village (fallbacks match the
     // Nashik-belt default view when the geocoder is unreachable)
     let stateName = "Maharashtra";
@@ -713,6 +933,7 @@ export function MapFirstHome() {
         areaAcres: acres > 0 ? Number(acres.toFixed(2)) : null,
         landUse: foundParcel.properties.landuse || "Agriculture",
         source: foundParcel.properties.source || "OpenStreetMap Cadastral",
+        sourceId: foundParcel.properties.sourceId ?? null,
         hasParcelGeometry: true,
       });
     } else {
@@ -736,6 +957,7 @@ export function MapFirstHome() {
         areaAcres: null,
         landUse: "General / Unclassified",
         source: "GeoCoordinate Reverse Geocode",
+        sourceId: null,
         hasParcelGeometry: false,
       });
     }
@@ -944,6 +1166,7 @@ export function MapFirstHome() {
           riskAssessment: string;
           evidence: { label: string; type: string }[];
           limitation: string;
+          evidenceBreakdown?: { section: string; detail: string }[];
           suggestedFollowups: string[];
         };
       };
@@ -1027,6 +1250,7 @@ export function MapFirstHome() {
         riskAssessment={reply.riskAssessment}
         framework={reply.framework}
         limitation={reply.limitation}
+        evidenceBreakdown={reply.evidenceBreakdown}
         meta={reply.copilot}
         onChip={onChip}
       />
@@ -1092,6 +1316,21 @@ export function MapFirstHome() {
         </div>
       )}
 
+      {/* Structured evidence classes — observed vs derived vs legal record. */}
+      {(reply.evidenceBreakdown?.length ?? 0) > 0 && (
+        <div>
+          <h4 className="font-bold text-slate-900 text-xs mb-1.5">Evidence classes</h4>
+          <ul className="space-y-1">
+            {reply.evidenceBreakdown!.map((b, idx) => (
+              <li key={idx} className="flex items-baseline gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 py-1.5">
+                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-slate-600">{b.section}</span>
+                <span className="text-slate-600 leading-snug select-text">{b.detail}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {reply.evidence.length > 0 && (
         <div>
           <h4 className="font-bold text-slate-900 text-xs mb-1.5">Verified sources</h4>
@@ -1138,10 +1377,213 @@ export function MapFirstHome() {
         void setOverlay(map, OVERLAY_FOR[key], activeLayers[key], overlayRegion);
       }
     };
-    if (map.isStyleLoaded()) apply();
-    else map.once("load", apply);
+    return onMapReady(map, apply);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLayers]);
+  // The "Cadastral Parcels" checkbox also governs the real cadastral layer.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const vis = activeLayers.parcels ? "visible" : "none";
+    for (const id of [CAD_FILL_LAYER, CAD_LINE_LAYER]) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
+    }
+  }, [activeLayers.parcels]);
+
+  // State-aware cadastre layer: real parcel polygons for whatever state/UT is
+  // under the viewport, an honest "not connected" note otherwise.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    let cancelled = false;
+    let detach: (() => void) | null = null;
+
+    const cleanup = () => {
+      cadastreRef.current = null;
+      try {
+        if (map.getLayer(CAD_LINE_LAYER)) map.removeLayer(CAD_LINE_LAYER);
+        if (map.getLayer(CAD_FILL_LAYER)) map.removeLayer(CAD_FILL_LAYER);
+        if (map.getSource(CAD_SOURCE)) map.removeSource(CAD_SOURCE);
+      } catch {
+        /* map already torn down */
+      }
+    };
+
+    const run = () => {
+      if (cancelled) return;
+      cleanup();
+
+      const provider = getParcelProvider(viewportState);
+      const layer = cadastreLayerFor(provider, null, null);
+      const wired = provider && isWiredLayer(layer) ? layer : null;
+
+      if (!provider || !wired) {
+        setCadastreNote(
+          !viewportState
+            ? null
+            : provider
+              ? `Cadastral for ${viewportState}: raster-only release upstream — not connected here`
+              : `No verified public cadastral geometry for ${viewportState}`,
+        );
+        return;
+      }
+
+      // MapLibre drops vector layers that omit `source-layer`, so read the real
+      // layer id from the release's own TileJSON before adding anything.
+      void vectorLayerIds(wired).then((ids) => {
+        if (cancelled) return;
+        const sourceLayer = ids[0];
+        if (!sourceLayer) {
+          setCadastreNote(`Cadastral layer for ${provider.stateName} is unavailable upstream right now`);
+          return;
+        }
+        try {
+          map.addSource(CAD_SOURCE, { type: "vector", url: tileJsonUrl(wired) });
+          const vis = activeLayers.parcels ? "visible" : "none";
+          map.addLayer(
+            {
+              id: CAD_FILL_LAYER,
+              type: "fill",
+              source: CAD_SOURCE,
+              "source-layer": sourceLayer,
+              minzoom: 11,
+              layout: { visibility: vis },
+              paint: { "fill-color": "#8fe0b0", "fill-opacity": 0.12 },
+            },
+            "selected-parcel-fill",
+          );
+          map.addLayer(
+            {
+              id: CAD_LINE_LAYER,
+              type: "line",
+              source: CAD_SOURCE,
+              "source-layer": sourceLayer,
+              minzoom: 11,
+              layout: { visibility: vis },
+              paint: {
+                "line-color": "#0f7b4f",
+                "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.7, 14, 2] as unknown as maplibregl.ExpressionSpecification,
+                "line-opacity": 0.95,
+              },
+            },
+            "selected-parcel-fill",
+          );
+        } catch {
+          cleanup();
+          setCadastreNote(`Cadastral layer for ${provider.stateName} failed to load`);
+          return;
+        }
+        if (cancelled) {
+          cleanup();
+          return;
+        }
+
+        const onHover = () => {
+          map.getCanvas().style.cursor = "pointer";
+        };
+        const onLeave = () => {
+          map.getCanvas().style.cursor = "";
+        };
+        map.on("mousemove", CAD_FILL_LAYER, onHover);
+        map.on("mouseleave", CAD_FILL_LAYER, onLeave);
+        cadastreRef.current = { provider, layer: wired };
+        setCadastreNote(`${wired.label} · real cadastral polygons · CC0 · zoom to village level`);
+        detach = () => {
+          try {
+            map.off("mousemove", CAD_FILL_LAYER, onHover);
+            map.off("mouseleave", CAD_FILL_LAYER, onLeave);
+          } catch {
+            /* map already torn down */
+          }
+        };
+      });
+    };
+
+    const cancelReady = onMapReady(map, run);
+
+    return () => {
+      cancelled = true;
+      cancelReady();
+      detach?.();
+      cleanup();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewportState]);
+
+  // Real overlay layers (WRIS hydro, NDEM flood history) — provenance-labelled,
+  // toggled from the layers panel. `source-layer` names come from TileJSON.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    let cancelled = false;
+    const run = () => {
+      if (cancelled) return;
+      for (const def of MAP_OVERLAYS) {
+        const want = overlays[def.id];
+        const has = map.getLayer(def.layerId);
+        try {
+          if (want && !has) {
+            if (!map.getSource(def.sourceId)) {
+              map.addSource(def.sourceId, { type: "vector", url: def.tileJson, attribution: def.attribution });
+            }
+            void vectorLayerIdsFromUrl(def.tileJson).then((ids) => {
+              const sourceLayer = ids[0];
+              if (cancelled || map.getLayer(def.layerId) || !sourceLayer) return;
+              const spec: maplibregl.LayerSpecification =
+                def.id === "rivers"
+                  ? ({
+                      id: def.layerId,
+                      type: "line",
+                      source: def.sourceId,
+                      "source-layer": sourceLayer,
+                      minzoom: 4,
+                      paint: {
+                        "line-color": "#4a9fd4",
+                        "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.3, 10, 1.6],
+                        "line-opacity": 0.85,
+                      },
+                    } as unknown as maplibregl.LayerSpecification)
+                  : def.id === "waterbodies"
+                    ? {
+                        id: def.layerId,
+                        type: "fill",
+                        source: def.sourceId,
+                        "source-layer": sourceLayer,
+                        minzoom: 4,
+                        paint: { "fill-color": "#3f8fc7", "fill-opacity": 0.45 },
+                      }
+                    : {
+                        id: def.layerId,
+                        type: "fill",
+                        source: def.sourceId,
+                        "source-layer": sourceLayer,
+                        minzoom: 5,
+                        paint: { "fill-color": "#e2653d", "fill-opacity": 0.32 },
+                      };
+              // Sit below the parcel layers so parcels stay clickable.
+              const before = map.getLayer("parcels-fill") ? "parcels-fill" : undefined;
+              try {
+                map.addLayer(spec, before);
+              } catch {
+                /* raced with teardown */
+              }
+            });
+          } else if (!want && has) {
+            map.removeLayer(def.layerId);
+            if (map.getSource(def.sourceId)) map.removeSource(def.sourceId);
+          }
+        } catch {
+          /* source/layer already gone */
+        }
+      }
+    };
+    const cancelReady = onMapReady(map, run);
+    return () => {
+      cancelled = true;
+      cancelReady();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlays]);
 
   const portal = selectedLocation ? officialPortalFor(selectedLocation.state) : null;
 
@@ -1380,6 +1822,23 @@ export function MapFirstHome() {
         </div>
       )}
 
+      {/* Real-data provenance chips — cadastre status + flood-history honesty.
+          Top-left, and hidden while the location card occupies that corner. */}
+      {!(cardOpen && selectedLocation) &&
+        (cadastreNote || overlays.floods || overlays.rivers || overlays.waterbodies) && (
+          <div className="absolute top-24 left-4 z-20 flex flex-col gap-1.5 max-w-[min(300px,60vw)]">
+            {cadastreNote && <span className="overlay-status">{cadastreNote}</span>}
+            {(overlays.rivers || overlays.waterbodies) && (
+              <span className="overlay-status">WRIS water features · Datameet · CC0</span>
+            )}
+            {overlays.floods && (
+              <span className="overlay-status overlay-warn">
+                Historical flood extent · observed 1998–2022 · not a forecast
+              </span>
+            )}
+          </div>
+        )}
+
       {/* ========================================================================= */}
       {/* FLOATING MAP CONTROLS (Right side stack)                                 */}
       {/* Shifts left with the AI panel; hidden on small screens while it's open.  */}
@@ -1511,6 +1970,39 @@ export function MapFirstHome() {
                 ))}
               </div>
             </div>
+
+            <div>
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                Real Data Layers
+              </span>
+              <div className="space-y-1.5">
+                {MAP_OVERLAYS.map((def) => (
+                  <label key={def.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                    <span className="flex flex-col">
+                      <span className="text-xs font-medium text-slate-700">{def.label}</span>
+                      <span className="text-[10px] text-slate-400">{def.attribution}</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={overlays[def.id]}
+                      onChange={(e) => setOverlays((o) => ({ ...o, [def.id]: e.target.checked }))}
+                      className="rounded text-green-600 focus:ring-green-500"
+                    />
+                  </label>
+                ))}
+              </div>
+
+              {cadastreNote && (
+                <p className="mt-2 text-[10.5px] leading-snug text-emerald-800 bg-emerald-50 border border-emerald-200/80 rounded-lg px-2 py-1.5">
+                  {cadastreNote}
+                </p>
+              )}
+              {overlays.floods && (
+                <p className="mt-1.5 text-[10.5px] leading-snug text-orange-700 bg-orange-50 border border-dashed border-orange-300 rounded-lg px-2 py-1.5">
+                  Historical flood extent · observed 1998–2022 · not a forecast
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1566,7 +2058,27 @@ export function MapFirstHome() {
                   </>
                 ) : null}
               </div>
+
+              <div className="pt-1 border-t border-green-100/90">
+                <span className="text-slate-400 font-medium block mb-1 text-[11px]">Source</span>
+                <span className="text-[11px] font-semibold text-slate-600 leading-snug select-text">
+                  {selectedLocation.source}
+                </span>
+              </div>
             </div>
+
+            {/* Provenance — reliability class, evidence class, licence/coverage rows */}
+            {selectedLocation.hasParcelGeometry ? (
+              <ParcelProvenance
+                sourceId={selectedLocation.sourceId ?? null}
+                hasSurveyNumber={!!selectedLocation.surveyNumber}
+              />
+            ) : (
+              <p className="pv-honesty">
+                No public parcel geometry for this point — only a reverse-geocoded location is shown. No ownership or
+                survey record is implied.
+              </p>
+            )}
 
             {/* Stacked Primary & Secondary Action Buttons (Matching reference image) */}
             <div className="space-y-2 pt-1">

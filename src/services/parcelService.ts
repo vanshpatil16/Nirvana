@@ -26,6 +26,10 @@ export interface ParcelProperties {
   taluka?: string;
   district?: string;
   state?: string;
+  /** Registry id in src/data/data-sources.ts — drives the provenance panel. */
+  sourceId?: string | undefined;
+  /** Cadastre provider id in src/services/cadastre.ts when the geometry is a real cadastral release. */
+  providerId?: string | undefined;
 }
 
 export interface ParcelFeature {
@@ -55,7 +59,7 @@ export function getDemoParcels(): ParcelCollection {
   const raw = demoParcels as unknown as { features?: unknown[] };
   const features = (raw.features ?? []).filter(isParcelFeature).map((f) => ({
     ...f,
-    properties: { ...f.properties, source: DEMO_SOURCE },
+    properties: { ...f.properties, source: DEMO_SOURCE, sourceId: "parcel-demo-bundle" },
   }));
   return { type: "FeatureCollection", features };
 }
@@ -111,6 +115,7 @@ function toParcel(el: OverpassElement): ParcelFeature | null {
       landuse: el.tags?.["landuse"] ?? "unknown",
       name: el.tags?.["name"] ?? el.tags?.["description"] ?? null,
       source: LIVE_SOURCE,
+      sourceId: "parcel-osm-overpass",
     },
     geometry: { type: "Polygon", coordinates: [ring] },
   };
@@ -281,9 +286,16 @@ function normalizeApiFeature(value: unknown): ParcelFeature | null {
       ...(typeof p.taluka === "string" ? { taluka: p.taluka } : {}),
       ...(typeof p.district === "string" ? { district: p.district } : {}),
       ...(typeof p.state === "string" ? { state: p.state } : {}),
+      ...(typeof p.sourceId === "string" ? { sourceId: p.sourceId } : { sourceId: apiSourceId(typeof p.source === "string" ? p.source : "") }),
     },
     geometry: value.geometry,
   };
+}
+
+/** Map the API's source label onto a registry id — only where the match is explicit. */
+function apiSourceId(sourceLabel: string): string | undefined {
+  if (sourceLabel.includes("BhuNaksha")) return "cadastral-vadnerbhairav";
+  return undefined;
 }
 
 /**

@@ -949,6 +949,14 @@ export function RecordVsReality() {
                     </span>
                   </div>
 
+                  {/* Provenance: each row below carries its own evidence class */}
+                  <div className="flex flex-wrap gap-1.5 -mt-2">
+                    <span className="pv-kpi-tag pv-tag-observed">observed · satellite imagery</span>
+                    <span className="pv-kpi-tag">legal evidence · state land record</span>
+                    <span className="pv-kpi-tag pv-tag-derived">derived · classification</span>
+                    <span className="pv-kpi-tag pv-tag-synthetic">demo parcel dataset</span>
+                  </div>
+
                   {/* Status Warning Banner */}
                   {currentParcel.mismatchDetected ? (
                     <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-lg p-3.5 space-y-1">
@@ -991,11 +999,17 @@ export function RecordVsReality() {
                       <span className="font-semibold text-foreground">{currentParcel.district}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-border/40">
-                      <span className="text-muted-foreground font-medium">Official Land Use</span>
+                      <span className="text-muted-foreground font-medium">
+                        Official Land Use{" "}
+                        <span className="pv-kpi-tag">legal evidence</span>
+                      </span>
                       <span className="font-semibold text-foreground">{currentParcel.officialLandUse}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-border/40">
-                      <span className="text-muted-foreground font-medium">Detected Land Use</span>
+                      <span className="text-muted-foreground font-medium">
+                        Detected Land Use{" "}
+                        <span className="pv-kpi-tag pv-tag-derived">derived</span>
+                      </span>
                       <span
                         className={`font-semibold ${
                           currentParcel.mismatchDetected ? "text-rose-600 dark:text-rose-400" : "text-emerald-600"

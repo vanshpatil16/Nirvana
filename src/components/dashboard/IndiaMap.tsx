@@ -42,7 +42,17 @@ import {
 } from "@/services/parcelService";
 import { DEMO_PRESETS, reverseGeocode, searchPlaces, type PlaceResult, type ReversePlace } from "@/services/geocodeService";
 import { fetchWeatherSummary, todayForecast, type WeatherStation, type WeatherSummary } from "@/services/weatherService";
-
+import {
+  cadastreLayerFor,
+  getParcelProvider,
+  isWiredLayer,
+  tileJsonUrl,
+  vectorLayerIds,
+  vectorLayerIdsFromUrl,
+  type CadastreLayer,
+  type CadastreProvider,
+} from "@/services/cadastre";
+import { getDataSource } from "@/data/data-sources";
 const INDIA_BOUNDS: [[number, number], [number, number]] = [
   [66.5, 5.0],
   [98.5, 37.5],
@@ -62,6 +72,46 @@ const PARCEL_LINE_LAYER = "parcels-line";
 const PARCEL_LABEL_LAYER = "parcel-labels";
 const SELECTED_FILL_LAYER = "selected-parcel-fill";
 const SELECTED_LINE_LAYER = "selected-parcel-line";
+
+const CAD_SOURCE = "cadastre";
+const CAD_FILL_LAYER = "cadastre-fill";
+const CAD_LINE_LAYER = "cadastre-line";
+
+interface OverlayDef {
+  id: "rivers" | "waterbodies" | "floods";
+  label: string;
+  sourceId: string;
+  layerId: string;
+  tileJson: string;
+  attribution: string;
+}
+
+const MAP_OVERLAYS: OverlayDef[] = [
+  {
+    id: "rivers",
+    label: "Rivers",
+    sourceId: "overlay-rivers",
+    layerId: "overlay-rivers",
+    tileJson: "https://indianopenmaps.com/rivers/wris/tiles.json",
+    attribution: "WRIS rivers · Datameet · CC0",
+  },
+  {
+    id: "waterbodies",
+    label: "Waterbodies",
+    sourceId: "overlay-waterbodies",
+    layerId: "overlay-waterbodies",
+    tileJson: "https://indianopenmaps.com/waterbodies/wris/tiles.json",
+    attribution: "WRIS waterbodies · Datameet · CC0",
+  },
+  {
+    id: "floods",
+    label: "Flood history",
+    sourceId: "overlay-floods",
+    layerId: "overlay-floods",
+    tileJson: "https://indianopenmaps.com/not-so-open/floods/all-india/1998-2022/ndem/tiles.json",
+    attribution: "NDEM flood inundation 1998–2022 · Datameet · CC0",
+  },
+];
 
 // Point MapLibre at a bundler-resolved worker URL. Without this, the library
 // guesses the worker path from import.meta.url, which breaks under Vite's
@@ -319,6 +369,40 @@ function ringHitsCircle(ring: number[][], clon: number, clat: number, radiusM: n
   });
 }
 
+function ringArea(ring: number[][]): number {
+  let s = 0;
+  for (let i = 0; i < ring.length - 1; i++) {
+    const [x0, y0] = ring[i] as [number, number];
+    const [x1, y1] = ring[i + 1] as [number, number];
+    s += x0 * y1 - x1 * y0;
+  }
+  return Math.abs(s / 2);
+}
+
+/** Query hits can be Polygon or MultiPolygon — the selection pipeline wants one Polygon (largest part). */
+function toSinglePolygon(geometry: unknown): { type: "Polygon"; coordinates: number[][][] } | null {
+  const g = geometry as { type?: unknown; coordinates?: unknown } | null;
+  if (!g || typeof g.type !== "string") return null;
+  if (g.type === "Polygon" && Array.isArray(g.coordinates)) {
+    return { type: "Polygon", coordinates: g.coordinates as number[][][] };
+  }
+  if (g.type === "MultiPolygon" && Array.isArray(g.coordinates)) {
+    let best: number[][][] | null = null;
+    let bestArea = -1;
+    for (const poly of g.coordinates as number[][][][]) {
+      const ring = poly[0];
+      if (!ring || ring.length < 4) continue;
+      const area = ringArea(ring);
+      if (area > bestArea) {
+        bestArea = area;
+        best = poly;
+      }
+    }
+    return best ? { type: "Polygon", coordinates: best } : null;
+  }
+  return null;
+}
+
 export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection, onSimSnapshot, actionRequest, onActionHandled, panel, panelOpen = false }: IndiaMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
@@ -369,6 +453,15 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
   const [parcelsNote, setParcelsNote] = useState<string | null>(null);
   const [selectedParcel, setSelectedParcel] = useState<ParcelFeature | null>(null);
   const [parcelState, setParcelState] = useState<string | null>(null);
+
+  // --- State-aware cadastre layer + real overlay layers (provenance-labelled) ---
+  const [cadastreNote, setCadastreNote] = useState<string | null>(null);
+  const [overlays, setOverlays] = useState<Record<OverlayDef["id"], boolean>>({
+    rivers: false,
+    waterbodies: false,
+    floods: false,
+  });
+  const cadastreRef = useRef<{ provider: CadastreProvider; layer: CadastreLayer } | null>(null);
 
   // --- Connected-experience state (map ↔ panel ↔ AI ↔ simulation) ---
   const [locationSel, setLocationSel] = useState<{ lat: number; lon: number; rev: ReversePlace | null } | null>(null);
@@ -531,7 +624,11 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     }
   };
 
-  const emitSel = (snap: SelectionSnapshot | null) => onSelectionRef.current?.(snap);
+  const emitSeq = useRef(0);
+  const emitSel = (snap: SelectionSnapshot | null) => {
+    emitSeq.current += 1;
+    onSelectionRef.current?.(snap);
+  };
 
   const drawSimOverlay = (buffer: number[][][] | null, affectedIds: string[]) => {
     const map = mapRef.current;
@@ -700,18 +797,33 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       setSelectedParcelData(null);
     }
     setLocationSel({ lat, lon, rev: null });
-    emitSel({
-      kind: "location",
-      parcel: null,
-      lat,
-      lon,
-      village: null,
-      taluka: null,
-      district: null,
-      stateName,
-      placeLabel: name,
-    });
-    void resolveLocation(lat, lon, stateName);
+    // Selection is emitted only once the camera settles: opening the panel
+    // fires its own padding easeTo, which would otherwise cut the flyTo short
+    // and strand the map at country zoom. A sequence guard drops the pending
+    // emit if the user has clicked somewhere else meanwhile.
+    const seq = (() => {
+      emitSeq.current += 1;
+      return emitSeq.current;
+    })();
+    let emitted = false;
+    const emitPlace = () => {
+      if (emitted || emitSeq.current !== seq) return;
+      emitted = true;
+      emitSel({
+        kind: "location",
+        parcel: null,
+        lat,
+        lon,
+        village: null,
+        taluka: null,
+        district: null,
+        stateName,
+        placeLabel: name,
+      });
+      void resolveLocation(lat, lon, stateName);
+    };
+    mapRef.current?.once("moveend", emitPlace);
+    window.setTimeout(emitPlace, 1800);
     void loadParcelsAround(lon, lat);
   };
 
@@ -816,6 +928,7 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     map.addControl(new maplibregl.FullscreenControl(), "top-right");
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 80, unit: "metric" }), "bottom-left");
     mapRef.current = map;
+    if (import.meta.env.DEV) (window as unknown as { __map?: maplibregl.Map }).__map = map;
 
     map.on("error", (event) => {
       const err = event as unknown as { sourceId?: string; error?: { status?: number; message?: string } };
@@ -996,15 +1109,28 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
         if (map) map.getCanvas().style.cursor = "";
       });
 
+      const parcelHitLayers = () => {
+        const layers = [PARCEL_FILL_LAYER, PARCEL_LINE_LAYER, SELECTED_LINE_LAYER, SELECTED_FILL_LAYER];
+        if (map.getLayer(CAD_FILL_LAYER)) layers.push(CAD_FILL_LAYER, CAD_LINE_LAYER);
+        return layers;
+      };
+
       const parcelHitAt = (point: [number, number]) => {
         if (!map) return false;
         const hits = map.queryRenderedFeatures(point, {
-          layers: [PARCEL_FILL_LAYER, PARCEL_LINE_LAYER, SELECTED_LINE_LAYER, SELECTED_FILL_LAYER],
+          layers: parcelHitLayers(),
         });
         return hits.length > 0;
       };
 
       const onParcelClick = (event: maplibregl.MapLayerMouseEvent) => {
+        if (!map) return;
+        // A real cadastral polygon under the point owns the click — its own
+        // handler selects it (OSM geometry must never shadow cadastre).
+        if (map.getLayer(CAD_FILL_LAYER)) {
+          const cad = map.queryRenderedFeatures(event.point, { layers: [CAD_FILL_LAYER] });
+          if (cad.length > 0) return;
+        }
         const feature = event.features?.[0];
         if (!feature || !map) return;
         const props = feature.properties as Record<string, unknown> | null;
@@ -1113,7 +1239,7 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       map.on("click", (event) => {
         const hits = map?.queryRenderedFeatures(event.point, { layers: [FILL_LAYER] });
         const parcelHits = map?.queryRenderedFeatures(event.point, {
-          layers: [PARCEL_FILL_LAYER, PARCEL_LINE_LAYER, SELECTED_LINE_LAYER, SELECTED_FILL_LAYER],
+          layers: parcelHitLayers(),
         });
         if ((!hits || hits.length === 0) && (!parcelHits || parcelHits.length === 0) && map) {
           // Click-anywhere: select the geographic location itself.
@@ -1288,6 +1414,251 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     map.setPaintProperty(CLIMATE_HEAT_LAYER, "heatmap-intensity", weatherMetric === "rainfall" ? 1.3 : 1.05);
   }, [weatherMetric]);
 
+  // State-aware cadastre layer: real parcel polygons when the selected state
+  // has a verified vector release, honest "not connected" states otherwise.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (status !== "ready" || !map) return;
+    const provider = getParcelProvider(selected);
+    const layer = cadastreLayerFor(provider, null, null);
+    const wired = provider && isWiredLayer(layer) ? layer : null;
+    let cancelled = false;
+    let detach: (() => void) | null = null;
+
+    const cleanup = () => {
+      cadastreRef.current = null;
+      try {
+        if (map.getLayer(CAD_LINE_LAYER)) map.removeLayer(CAD_LINE_LAYER);
+        if (map.getLayer(CAD_FILL_LAYER)) map.removeLayer(CAD_FILL_LAYER);
+        if (map.getSource(CAD_SOURCE)) map.removeSource(CAD_SOURCE);
+      } catch {
+        /* map already torn down */
+      }
+    };
+    cleanup();
+
+    if (!provider || !wired) {
+      setCadastreNote(
+        !selected
+          ? null
+          : provider
+            ? `Cadastral for ${selected}: raster-only release upstream — not connected here`
+            : `No verified public cadastral geometry for ${selected}`,
+      );
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // MapLibre drops vector layers that omit `source-layer` (validation error
+    // fires as a swallowed error event), so read the real layer id from the
+    // release's own TileJSON before adding anything.
+    const sourceLayers = vectorLayerIds(wired);
+
+    sourceLayers.then((ids: string[]) => {
+      if (cancelled) return;
+      const sourceLayer = ids[0];
+      if (!sourceLayer) {
+        setCadastreNote(`Cadastral layer for ${provider.stateName} is unavailable upstream right now`);
+        return;
+      }
+      try {
+        map.addSource(CAD_SOURCE, { type: "vector", url: tileJsonUrl(wired) });
+        map.addLayer(
+          {
+            id: CAD_FILL_LAYER,
+            type: "fill",
+            source: CAD_SOURCE,
+            "source-layer": sourceLayer,
+            minzoom: 11,
+            paint: { "fill-color": "#8fe0b0", "fill-opacity": 0.1 },
+          },
+          SELECTED_FILL_LAYER,
+        );
+        map.addLayer(
+          {
+            id: CAD_LINE_LAYER,
+            type: "line",
+            source: CAD_SOURCE,
+            "source-layer": sourceLayer,
+            minzoom: 11,
+            paint: {
+              "line-color": "#f2fff7",
+              "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.6, 14, 1.9] as unknown as maplibregl.ExpressionSpecification,
+              "line-opacity": 0.95,
+            },
+          },
+          SELECTED_FILL_LAYER,
+        );
+      } catch {
+        cleanup();
+        setCadastreNote(`Cadastral layer for ${provider.stateName} failed to load`);
+        return;
+      }
+      if (cancelled) {
+        cleanup();
+        return;
+      }
+
+      const registryId = provider.id === "maharashtra" ? "cadastral-mrsac-maharashtra" : "cadastral-india-states";
+      const onClick = (event: maplibregl.MapLayerMouseEvent) => {
+      const hit = event.features?.[0];
+      if (!hit) return;
+      const geometry = toSinglePolygon(hit.geometry);
+      if (!geometry) return;
+      const props = (hit.properties ?? {}) as Record<string, unknown>;
+      const str = (k: string) => (typeof props[k] === "string" && props[k] ? (props[k] as string) : null);
+      const parcelId =
+        str("CCODE") ??
+        str("Parcel_num") ??
+        (typeof props["OBJECTID"] === "number" ? `CAD-${props["OBJECTID"]}` : null);
+      if (!parcelId) return;
+      const parcel: ParcelFeature = {
+        type: "Feature",
+        properties: {
+          parcelId,
+          surveyNumber: null,
+          landuse: "cadastral",
+          name: null,
+          source: `${wired.label} · ${provider.stateName} · real cadastral polygons`,
+          ...(str("VIL_NAME") || str("V_Name")
+            ? { village: (str("VIL_NAME") ?? str("V_Name")) as string }
+            : {}),
+          ...(str("THENAME") || str("New_Mandal")
+            ? { taluka: (str("THENAME") ?? str("New_Mandal")) as string }
+            : {}),
+          ...(str("DTENAME") || str("New_District")
+            ? { district: (str("DTENAME") ?? str("New_District")) as string }
+            : {}),
+          state: provider.stateName,
+          sourceId: registryId,
+          providerId: provider.id,
+        },
+        geometry,
+      };
+      const center = map.getCenter();
+      const [pcLon, pcLat] = parcelCenter(parcel);
+      const st = stateAt(center.lng, center.lat) ?? stateAt(pcLon, pcLat) ?? provider.stateName;
+      setParcelState(st);
+      setSelectedParcel(parcel);
+      setSelectedParcelData(parcel);
+      setLocationSel(null);
+      map.getCanvas().style.cursor = "pointer";
+      closeSim(true);
+      onSimSnapshotRef.current?.(null);
+      emitSel({
+        kind: "parcel",
+        parcel,
+        lat: pcLat,
+        lon: pcLon,
+        village: parcel.properties.village ?? null,
+        taluka: parcel.properties.taluka ?? null,
+        district: parcel.properties.district ?? null,
+        stateName: st,
+        placeLabel: placeRef.current?.name ?? null,
+      });
+    };
+      const onHover = () => {
+        map.getCanvas().style.cursor = "pointer";
+      };
+      const onLeave = () => {
+        map.getCanvas().style.cursor = "";
+      };
+      map.on("click", CAD_FILL_LAYER, onClick);
+      map.on("click", CAD_LINE_LAYER, onClick);
+      map.on("mousemove", CAD_FILL_LAYER, onHover);
+      map.on("mouseleave", CAD_FILL_LAYER, onLeave);
+      cadastreRef.current = { provider, layer: wired };
+      setCadastreNote(`${wired.label} · real cadastral polygons · CC0 · zoom to village level`);
+      detach = () => {
+        try {
+          map.off("click", CAD_FILL_LAYER, onClick);
+          map.off("click", CAD_LINE_LAYER, onClick);
+          map.off("mousemove", CAD_FILL_LAYER, onHover);
+          map.off("mouseleave", CAD_FILL_LAYER, onLeave);
+        } catch {
+          /* map already torn down */
+        }
+      };
+    });
+
+    return () => {
+      cancelled = true;
+      detach?.();
+      cleanup();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, status]);
+
+  // Real overlay layers (WRIS hydro, NDEM flood history) — provenance-labelled,
+  // toggled from the overlays control. Same `source-layer` requirement as the
+  // cadastre layers: names come from each release's TileJSON.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (status !== "ready" || !map) return;
+    let cancelled = false;
+    for (const def of MAP_OVERLAYS) {
+      const want = overlays[def.id];
+      const has = map.getLayer(def.layerId);
+      try {
+        if (want && !has) {
+          if (!map.getSource(def.sourceId)) {
+            map.addSource(def.sourceId, { type: "vector", url: def.tileJson, attribution: def.attribution });
+          }
+          vectorLayerIdsFromUrl(def.tileJson).then((ids) => {
+            const sourceLayer = ids[0];
+            if (cancelled || map.getLayer(def.layerId) || !sourceLayer) return;
+            const spec: maplibregl.LayerSpecification =
+              def.id === "rivers"
+                ? ({
+                    id: def.layerId,
+                    type: "line",
+                    source: def.sourceId,
+                    "source-layer": sourceLayer,
+                    minzoom: 4,
+                    paint: {
+                      "line-color": "#4a9fd4",
+                      "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.3, 10, 1.6],
+                      "line-opacity": 0.85,
+                    },
+                  } as unknown as maplibregl.LayerSpecification)
+                : def.id === "waterbodies"
+                  ? {
+                      id: def.layerId,
+                      type: "fill",
+                      source: def.sourceId,
+                      "source-layer": sourceLayer,
+                      minzoom: 4,
+                      paint: { "fill-color": "#3f8fc7", "fill-opacity": 0.45 },
+                    }
+                  : {
+                      id: def.layerId,
+                      type: "fill",
+                      source: def.sourceId,
+                      "source-layer": sourceLayer,
+                      minzoom: 5,
+                      paint: { "fill-color": "#e2653d", "fill-opacity": 0.32 },
+                    };
+            try {
+              map.addLayer(spec, "states-label");
+            } catch {
+              /* raced with teardown */
+            }
+          });
+        } else if (!want && has) {
+          map.removeLayer(def.layerId);
+          if (map.getSource(def.sourceId)) map.removeSource(def.sourceId);
+        }
+      } catch {
+        /* source/layer already gone */
+      }
+    }
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlays, status]);
+
   // Side-panel action requests (chips live outside the map; execution stays inside).
   useEffect(() => {
     if (!actionRequest) return;
@@ -1416,6 +1787,41 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
         <button className={baseMode === "map" ? "active" : ""} onClick={() => switchBaseMode("map")}>
           <MapIcon /> Map
         </button>
+      </div>
+
+      <div className="intel-overlays">
+        <div className="overlay-toggles" role="group" aria-label="Overlay layers">
+          <button
+            type="button"
+            className={overlays.rivers ? "active" : ""}
+            aria-pressed={overlays.rivers}
+            onClick={() => setOverlays((o) => ({ ...o, rivers: !o.rivers }))}
+          >
+            Rivers
+          </button>
+          <button
+            type="button"
+            className={overlays.waterbodies ? "active" : ""}
+            aria-pressed={overlays.waterbodies}
+            onClick={() => setOverlays((o) => ({ ...o, waterbodies: !o.waterbodies }))}
+          >
+            Waterbodies
+          </button>
+          <button
+            type="button"
+            className={overlays.floods ? "active" : ""}
+            aria-pressed={overlays.floods}
+            onClick={() => setOverlays((o) => ({ ...o, floods: !o.floods }))}
+          >
+            Flood history
+          </button>
+        </div>
+        {cadastreNote && <span className="overlay-status">{cadastreNote}</span>}
+        {overlays.floods && (
+          <span className="overlay-status overlay-warn">
+            Historical flood extent · observed 1998–2022 · not a forecast
+          </span>
+        )}
       </div>
 
       {baseMode === "satellite" && (
@@ -1595,6 +2001,24 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
                 <td>—</td>
                 <td>—</td>
               </tr>
+              {["cadastral-mrsac-maharashtra", "cadastral-vadnerbhairav", "wris-water-features", "ndem-flood-inundation", "imd-weather", "parcel-osm-overpass"].map((id) => {
+                const s = getDataSource(id);
+                if (!s) return null;
+                return (
+                  <tr key={id}>
+                    <td>
+                      {s.name} <span className="pv-kpi-tag">{s.reliabilityClass}</span>
+                    </td>
+                    <td>
+                      {s.provider}
+                      {s.license ? ` · ${s.license}` : ""}
+                    </td>
+                    <td>{s.temporalCoverage ?? "—"}</td>
+                    <td>{s.geography}</td>
+                    <td>{s.lastVerified ?? "—"}</td>
+                  </tr>
+                );
+              })}
               {INTEL_SOURCES.map((row) => (
                 <tr key={row.dataset}>
                   <td>{row.dataset}</td>

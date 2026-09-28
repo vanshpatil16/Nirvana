@@ -357,15 +357,28 @@ export interface CopilotAnswerProps {
   riskAssessment: string;
   framework: string[];
   limitation: string;
+  /** Structured evidence classes returned by the agent (may be absent). */
+  evidenceBreakdown?: { section: string; detail: string }[] | undefined;
   meta: CopilotMeta;
   onChip: (c: ActionChip) => void;
 }
+
+const BREAKDOWN_TONE: Record<string, string> = {
+  OBSERVED: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  DERIVED: "border-sky-200 bg-sky-50 text-sky-800",
+  "LEGAL EVIDENCE": "border-indigo-200 bg-indigo-50 text-indigo-800",
+  INTERPRETATION: "border-amber-200 bg-amber-50 text-amber-800",
+  LIMITATIONS: "border-rose-200 bg-rose-50 text-rose-800",
+  SOURCES: "border-slate-200 bg-slate-50 text-slate-700",
+};
+const DEFAULT_BREAKDOWN_TONE = BREAKDOWN_TONE["SOURCES"];
 
 export function CopilotAnswer({
   summary,
   riskAssessment,
   framework,
   limitation,
+  evidenceBreakdown,
   meta,
   onChip,
 }: CopilotAnswerProps) {
@@ -476,6 +489,26 @@ export function CopilotAnswer({
             {meta.applied!.join(" · ")}
           </span>
         </p>
+      )}
+
+      {/* structured evidence classes — what is proven vs inferred */}
+      {(evidenceBreakdown?.length ?? 0) > 0 && (
+        <div className="space-y-1">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">
+            Evidence classes
+          </span>
+          <ul className="space-y-1">
+            {evidenceBreakdown!.map((b, i) => (
+              <li
+                key={`${b.section}-${i}`}
+                className={`flex items-start gap-2 rounded-lg border px-2.5 py-1.5 ${BREAKDOWN_TONE[b.section] ?? DEFAULT_BREAKDOWN_TONE}`}
+              >
+                <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-wide">{b.section}</span>
+                <span className="min-w-0 flex-1 text-[11.5px] leading-snug">{b.detail}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* sources at a glance */}

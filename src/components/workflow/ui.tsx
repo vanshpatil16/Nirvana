@@ -346,6 +346,8 @@ export function ChapterHead({ id, lang, right }: { id: ChapterId; lang: Lang; ri
           <span className="sep" />
           <span className={`wf-avatar xs ${c.role}`}>{role.initials}</span>
           {role.label}
+          <span className="sep" />
+          <Prov kind={c.prov} />
         </span>
         <h1 lang={lang}>{c.title[lang]}</h1>
       </div>

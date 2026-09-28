@@ -64,7 +64,7 @@ function Sparkline({ values, tone }: { values: readonly number[]; tone: "good" |
 function KPIGrid() {
   return (
     <section className="kpi-grid" aria-label="National land intelligence indicators">
-      {kpis.map(({ value, label, change, upIsGood, icon: Icon, series }) => {
+      {kpis.map(({ value, label, change, upIsGood, icon: Icon, series, evidence }) => {
         const tone = upIsGood === null ? "neutral" : (change > 0) === upIsGood ? "good" : "bad";
         return (
           <article className="kpi-card" key={label}>
@@ -78,6 +78,7 @@ function KPIGrid() {
             <div className="kpi-foot">
               <b className={`kpi-delta ${tone}`}>{change > 0 ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%</b>
               <small>vs 2023</small>
+              <span className="pv-kpi-tag pv-tag-synthetic">{evidence}</span>
             </div>
           </article>
         );

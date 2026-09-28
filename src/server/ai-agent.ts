@@ -143,6 +143,25 @@ const SUBMIT_ANSWER_TOOL = {
         type: "string",
         description: 'One sentence data caveat — only when a real caveat applies, otherwise "".',
       },
+      evidenceBreakdown: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            section: { type: "string" },
+            detail: { type: "string" },
+          },
+          required: ["section", "detail"],
+        },
+        description:
+          "For substantive land answers, break the claim down into evidence classes, " +
+          'each as {"section","detail"} with section EXACTLY one of: OBSERVED ' +
+          "(what platform data / imagery actually shows), DERIVED (computed from " +
+          'those inputs), LEGAL EVIDENCE (official record: 7/12, Bhulekh, orders), ' +
+          "INTERPRETATION (your reading of it), LIMITATIONS (what this cannot prove), " +
+          "SOURCES (where to verify officially). Include only sections that apply; " +
+          "[] for greetings or capability questions. Never invent sources.",
+      },
       suggestedFollowups: {
         type: "array",
         items: { type: "string" },
@@ -262,6 +281,16 @@ const AnswerSchema = z.object({
     .max(400)
     .nullish()
     .transform((v) => (v ?? "").trim()),
+  evidenceBreakdown: z
+    .array(
+      z.object({
+        section: z.enum(["OBSERVED", "DERIVED", "LEGAL EVIDENCE", "INTERPRETATION", "LIMITATIONS", "SOURCES"]),
+        detail: z.string().min(1).max(400),
+      }),
+    )
+    .max(6)
+    .nullish()
+    .transform((v) => v ?? []),
   suggestedFollowups: z
     .array(z.string().min(1))
     .max(5)
@@ -357,6 +386,7 @@ Answer rules:
   · riskAssessment: 1-2 sentences beginning Low, Moderate, or High — only when the user asks about risk (dispute, flood, environmental, conversion, encumbrance, financial). For greetings/how-to use "".
   · evidence: for substantive land answers cite 1-3 sources you actually relied on (7/12 & Bhulekh extracts, MahaBhumi/Bhu-Naksha, CRZ notification, IMD, District Collector orders); use [] only for greetings or capability questions.
   · limitation: only when a genuine data caveat applies — use "" otherwise.
+  · evidenceBreakdown: for substantive land answers, split the claim into its evidence classes so the user can see what is proven versus inferred — sections OBSERVED (platform data / imagery), DERIVED (computed from those inputs), LEGAL EVIDENCE (official record), INTERPRETATION (your reading), LIMITATIONS (what it cannot prove), SOURCES (where to verify officially). Include only the sections that apply; [] for greetings/capability questions.
   Never pad these sections with generic filler to fill the card, but never drop a section the answer genuinely relies on either.
 - suggestedFollowups: 2-3 concrete questions the user could ask next.`;
 
@@ -487,6 +517,7 @@ function fallbackAnswer(message: string, prose: string, actions: FlyToAction[]):
     evidence: [],
     limitation:
       "This reply was assembled without a full model response — verify details against certified records.",
+    evidenceBreakdown: [],
     suggestedFollowups: [
       "Show me the plots in Mira Road",
       "What approvals are needed for NA conversion here?",
@@ -710,7 +741,8 @@ Rules for this answer:
 7. The map is updated automatically for this plan; don't call show_area.
 9. provenance "document" is verbatim text from real Acts and policies in the Policy Lab library. When you state what a law or policy says, use ONLY those quotes: paraphrase them faithfully (translate if answering in Hindi/Marathi) and cite them inline as "(Act short name, clause, p. N)" — omit the page when it is null. Never invent section numbers, pages, figures or provisions that are not in the quotes; if the quotes don't cover the question, say the library doesn't cover it.
 10. A quote with grounding "inferred" is a Policy Lab modelling value, not something the document states — say so if you mention it. "derived" means it follows from the text but isn't stated as a figure.
-11. Policy Lab simulations run on simulated land data; if the user asks about a policy's impact, point them to the Policy Lab and say the impact figures there are simulated.`;
+11. Policy Lab simulations run on simulated land data; if the user asks about a policy's impact, point them to the Policy Lab and say the impact figures there are simulated.
+12. Fill evidenceBreakdown with the sections that genuinely apply (OBSERVED / DERIVED / LEGAL EVIDENCE / INTERPRETATION / LIMITATIONS / SOURCES), each one sentence grounded in the data above. OBSERVED and DERIVED must trace to PLATFORM DATA RESULTS; LEGAL EVIDENCE only for verbatim document quotes; SOURCES only names the real verification channel the user can check — never invent one.`;
 }
 
 async function explain(params: {
@@ -863,6 +895,7 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
         // Sources come from the data layer, not from the model
         evidence: evidence.map((e) => ({ label: e.label, type: e.provenance })),
         limitation: answer.answer.limitation,
+        evidenceBreakdown: answer.answer.evidenceBreakdown,
         suggestedFollowups: followups,
       },
       spoken: answer.answer.spoken,

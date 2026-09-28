@@ -42,6 +42,41 @@ const CLASS_LABEL: Record<LandClass, string> = {
   other: "other",
 };
 
+function ringContains(ring: number[][], x: number, y: number): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i]?.[0] ?? 0;
+    const yi = ring[i]?.[1] ?? 0;
+    const xj = ring[j]?.[0] ?? 0;
+    const yj = ring[j]?.[1] ?? 0;
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Which state/UT contains this point, using the same india-states.json the
+ * dashboard uses — so cadastre layer names always match the release registry.
+ */
+export function stateAt(lon: number, lat: number): string | null {
+  const src = statesGeoJSON as unknown as {
+    features: { properties: { name: string }; geometry: { type: string; coordinates: unknown } }[];
+  };
+  for (const f of src.features) {
+    const coords = f.geometry.coordinates;
+    if (f.geometry.type === "MultiPolygon" && Array.isArray(coords)) {
+      for (const poly of coords as number[][][][]) {
+        const outer = poly[0];
+        if (outer && ringContains(outer, lon, lat)) return f.properties.name;
+      }
+    } else if (f.geometry.type === "Polygon" && Array.isArray(coords)) {
+      const outer = (coords as number[][][])[0];
+      if (outer && ringContains(outer, lon, lat)) return f.properties.name;
+    }
+  }
+  return null;
+}
+
 function statesData(): GeoJSONSourceSpecification["data"] {
   const src = statesGeoJSON as unknown as {
     type: string;

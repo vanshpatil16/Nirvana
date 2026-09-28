@@ -35,12 +35,14 @@ export const navItems = [
 /**
  * Headline indicators (demo). `series` is a 2017–2024 annual demo series whose
  * last step matches `change`; `upIsGood` sets whether a rise is shown as good.
+ * `evidence` is the provenance class shown on the card — every indicator here
+ * is a synthetic demo series, never an official statistical release.
  */
 export const kpis = [
-  { value: "684,832", label: "Villages mapped", change: 2.4, upIsGood: true, icon: LandPlot, series: [590, 612, 628, 641, 652, 661, 668.8, 684.8] },
-  { value: "421,309", label: "Land-use changes", change: 12.6, upIsGood: null, icon: ArrowRightLeft, series: [300, 318, 331, 339, 352, 361, 374.2, 421.3] },
-  { value: "14,203", label: "Active land disputes", change: -8.1, upIsGood: false, icon: Gavel, series: [13.1, 14.0, 14.9, 15.6, 16.1, 15.9, 15.5, 14.2] },
-  { value: "231", label: "High-risk districts", change: 9.3, upIsGood: false, icon: CloudLightning, series: [168, 176, 183, 190, 197, 204, 211, 231] },
+  { value: "684,832", label: "Villages mapped", change: 2.4, upIsGood: true, icon: LandPlot, series: [590, 612, 628, 641, 652, 661, 668.8, 684.8], evidence: "synthetic demo series" },
+  { value: "421,309", label: "Land-use changes", change: 12.6, upIsGood: null, icon: ArrowRightLeft, series: [300, 318, 331, 339, 352, 361, 374.2, 421.3], evidence: "synthetic demo series" },
+  { value: "14,203", label: "Active land disputes", change: -8.1, upIsGood: false, icon: Gavel, series: [13.1, 14.0, 14.9, 15.6, 16.1, 15.9, 15.5, 14.2], evidence: "synthetic demo series" },
+  { value: "231", label: "High-risk districts", change: 9.3, upIsGood: false, icon: CloudLightning, series: [168, 176, 183, 190, 197, 204, 211, 231], evidence: "synthetic demo series" },
 ] as const;
 
 export const mapLayers = [

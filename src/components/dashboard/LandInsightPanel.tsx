@@ -5,6 +5,7 @@ import { LAND_CLASS_ORDER, yearShares } from "@/data/land-scenario";
 import { LULC_CLASSES } from "@/components/land-difference/lulcRaster";
 import { MOSAIC_YEARS } from "@/services/temporal";
 import { officialPortalFor, parcelAcres } from "@/services/parcelService";
+import { ParcelProvenance } from "@/components/ui/provenance";
 import type { MapAction, SelectionSnapshot, SimSnapshot } from "./IndiaMap";
 
 /**
@@ -191,6 +192,7 @@ export function LandInsightPanel({ selection, sim, theme, year, onAction, onThem
         ["Parcel ID", p.properties.parcelId.replace(/^OSM-/, "")],
         ["Land use", p.properties.landuse],
         ["Area", acres !== null ? `${acres.toFixed(1)} ac · ${(acres * 0.404686).toFixed(2)} ha` : "Data unavailable"],
+        ["Survey number", p.properties.surveyNumber ?? "Not in this source"],
         ...(p.properties.taluka ?? selection.taluka ? [["Taluka", (p.properties.taluka ?? selection.taluka)!] as [string, string]] : []),
       ]
     : [];
@@ -208,7 +210,11 @@ export function LandInsightPanel({ selection, sim, theme, year, onAction, onThem
 
       <div className="insight-body">
         {stat && (
-          <section className="insight-kpis" aria-label={`${state} indicators`}>
+          <>
+            <div className="pv-badges">
+              <span className="pv-kpi-tag pv-tag-synthetic">State indicators · synthetic demo series</span>
+            </div>
+            <section className="insight-kpis" aria-label={`${state} indicators`}>
             {INDICATORS.map((ind) => {
               const v = ind.value(stat);
               const avg = nationalAvg(ind);
@@ -226,6 +232,7 @@ export function LandInsightPanel({ selection, sim, theme, year, onAction, onThem
               );
             })}
           </section>
+          </>
         )}
 
         {parcelRows.length > 0 && (
@@ -237,23 +244,36 @@ export function LandInsightPanel({ selection, sim, theme, year, onAction, onThem
           </section>
         )}
 
+        {p && (
+          <ParcelProvenance sourceId={p.properties.sourceId} hasSurveyNumber={!!p.properties.surveyNumber} />
+        )}
+
         {stat && state && (
           <section className="insight-section">
-            <h4>{active.label} · {MOSAIC_YEARS[0]}–{MOSAIC_YEARS[MOSAIC_YEARS.length - 1]}</h4>
+            <h4>
+              {active.label} · {MOSAIC_YEARS[0]}–{MOSAIC_YEARS[MOSAIC_YEARS.length - 1]}
+              <span className="pv-kpi-tag pv-tag-synthetic">synthetic</span>
+            </h4>
             <TrendChart ind={active} state={state} stat={stat} year={year} />
           </section>
         )}
 
         {state && (
           <section className="insight-section">
-            <h4>Land-use mix · {state} {year}</h4>
+            <h4>
+              Land-use mix · {state} {year}
+              <span className="pv-kpi-tag pv-tag-synthetic">synthetic</span>
+            </h4>
             <LandMix state={state} year={year} />
           </section>
         )}
 
         {stat && state && (
           <section className="insight-section">
-            <h4>How {state} compares</h4>
+            <h4>
+              How {state} compares
+              <span className="pv-kpi-tag pv-tag-synthetic">synthetic</span>
+            </h4>
             <Benchmarks state={state} stat={stat} active={theme} />
           </section>
         )}
@@ -262,7 +282,10 @@ export function LandInsightPanel({ selection, sim, theme, year, onAction, onThem
 
         {sim && (
           <section className="insight-section insight-sim">
-            <h4>Scenario analysis · local estimate</h4>
+            <h4>
+              Scenario analysis · local estimate
+              <span className="pv-kpi-tag pv-tag-modeled">modeled geometry</span>
+            </h4>
             <dl className="insight-rows">
               <div><dt>Proposed use</dt><dd>{sim.params.use}</dd></div>
               <div><dt>Buffer</dt><dd>{sim.params.bufferM.toLocaleString("en-IN")} m</dd></div>
