@@ -25,7 +25,7 @@ export const navItems = [
   { label: "Disputes & Conflicts", icon: Scale },
   { label: "Policy Lab", icon: FlaskConical, href: "/policy-lab" },
   { label: "Research Hub", icon: BookOpen, href: "/research-hub" },
-  { label: "AI Research Copilot", icon: Beaker },
+  { label: "AI Research Copilot", icon: Beaker, href: "/copilot" },
   { label: "Innovation Portal", icon: Sprout, href: "/innovation-portal" },
   { label: "Collaborative Workspaces", icon: Users, href: "/collaborativehub" },
   { label: "Data & APIs", icon: Database },

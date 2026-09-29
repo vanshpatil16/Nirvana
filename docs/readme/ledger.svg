@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" width="1280" height="400" role="img" aria-label="Honesty ledger: what is real, what is modelled, what is not connected">
+<style>
+  .stamp{opacity:0;transform:scale(2.4);animation:stamp .55s cubic-bezier(.3,1.6,.5,1) forwards}
+  @keyframes stamp{to{opacity:1;transform:scale(1)}}
+</style>
+<rect width="1280" height="400" rx="22" fill="#f3efe4"/>
+<g font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <g>
+    <rect x="32" y="28" width="392" height="344" rx="22" fill="#fbf8f1" stroke="#e2dccd"/>
+    <text x="62" y="104" fill="#10251a" font-family="Georgia, 'Times New Roman', serif" font-size="26">Observed</text>
+    <circle cx="66" cy="146" r="5" fill="#39c47a"/><text x="82" y="151" fill="#34473c" font-size="15">Sentinel-2 cloudless — EOX / Copernicus</text><circle cx="66" cy="180" r="5" fill="#39c47a"/><text x="82" y="185" fill="#34473c" font-size="15">10 m land cover — Esri / Impact Observatory</text><circle cx="66" cy="214" r="5" fill="#39c47a"/><text x="82" y="219" fill="#34473c" font-size="15">2,457 BhuNaksha plot outlines</text><circle cx="66" cy="248" r="5" fill="#39c47a"/><text x="82" y="253" fill="#34473c" font-size="15">Act text — 14 instruments, 152 citations</text><circle cx="66" cy="282" r="5" fill="#39c47a"/><text x="82" y="287" fill="#34473c" font-size="15">Live weather — 43 IMD stations</text><circle cx="66" cy="316" r="5" fill="#39c47a"/><text x="82" y="321" fill="#34473c" font-size="15">Buildings &amp; roads — OpenStreetMap</text>
+    <g transform="translate(360.0 58) rotate(-7)">
+      <g class="stamp" style="animation-delay:0.40s">
+        <rect x="-32.0" y="-17" width="64.0" height="34" rx="8" fill="none" stroke="#1f8a5b" stroke-width="3"/>
+        <text x="0" y="6" text-anchor="middle" fill="#1f8a5b" font-size="15" font-weight="900" letter-spacing="2.5">REAL</text>
+      </g>
+    </g>
+  </g>
+  <g>
+    <rect x="448" y="28" width="392" height="344" rx="22" fill="#fbf8f1" stroke="#e2dccd"/>
+    <text x="478" y="104" fill="#10251a" font-family="Georgia, 'Times New Roman', serif" font-size="26">Simulated, labelled so</text>
+    <circle cx="482" cy="146" r="5" fill="#e3a832"/><text x="498" y="151" fill="#34473c" font-size="15">Policy Lab impact on land use</text><circle cx="482" cy="180" r="5" fill="#e3a832"/><text x="498" y="185" fill="#34473c" font-size="15">Land Difference scenario model</text><circle cx="482" cy="214" r="5" fill="#e3a832"/><text x="498" y="219" fill="#34473c" font-size="15">Workflow federation &amp; causal panel</text><circle cx="482" cy="248" r="5" fill="#e3a832"/><text x="498" y="253" fill="#34473c" font-size="15">Dashboard KPI series</text>
+    <g transform="translate(753.0 58) rotate(5)">
+      <g class="stamp" style="animation-delay:0.75s">
+        <rect x="-55.0" y="-17" width="110.0" height="34" rx="8" fill="none" stroke="#b0650c" stroke-width="3"/>
+        <text x="0" y="6" text-anchor="middle" fill="#b0650c" font-size="15" font-weight="900" letter-spacing="2.5">MODELLED</text>
+      </g>
+    </g>
+  </g>
+  <g>
+    <rect x="864" y="28" width="392" height="344" rx="22" fill="#fbf8f1" stroke="#e2dccd"/>
+    <text x="894" y="104" fill="#10251a" font-family="Georgia, 'Times New Roman', serif" font-size="26">Missing — and we say so</text>
+    <circle cx="898" cy="146" r="5" fill="#e0553d"/><text x="914" y="151" fill="#34473c" font-size="15">7/12 Record of Rights</text><circle cx="898" cy="180" r="5" fill="#e0553d"/><text x="914" y="185" fill="#34473c" font-size="15">IGR registration records</text><circle cx="898" cy="214" r="5" fill="#e0553d"/><text x="914" y="219" fill="#34473c" font-size="15">State RoR APIs (none publish one)</text>
+    <g transform="translate(1140.25 58) rotate(-5)">
+      <g class="stamp" style="animation-delay:1.10s">
+        <rect x="-83.75" y="-17" width="167.5" height="34" rx="8" fill="none" stroke="#c0392b" stroke-width="3"/>
+        <text x="0" y="6" text-anchor="middle" fill="#c0392b" font-size="15" font-weight="900" letter-spacing="2.5">NOT CONNECTED</text>
+      </g>
+    </g>
+  </g></g>
+</svg>

@@ -1,28 +1,40 @@
 import { lazy } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
-const MapFirstHome = lazy(() =>
-  import("@/components/home/MapFirstHome").then((m) => ({ default: m.MapFirstHome })),
+const Landing = lazy(() =>
+  import("@/components/landing/Landing").then((m) => ({ default: m.Landing })),
 );
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "BHUMI-NITI — AI-Native Map-First Land Intelligence" },
+      { title: "BHUMI-NITI — Every plot of land has two stories" },
       {
         name: "description",
         content:
-          "Interactive AI-native land intelligence platform. Click any parcel or coordinate in India to inspect cadastral boundaries, land use, risk and legal regulations.",
+          "Bhumi-Niti reads the land record and the satellite side by side, finds where they disagree, and turns the fix into evidence — in English, हिंदी and मराठी.",
       },
-      { property: "og:title", content: "BHUMI-NITI — Map-First Land Intelligence" },
+      { property: "og:title", content: "BHUMI-NITI — Every plot of land has two stories" },
       {
         property: "og:description",
         content:
-          "Interactive AI-native land intelligence platform connecting spatial GIS, legal records and AI governance.",
+          "Evidence infrastructure for Indian land governance: verify, ask, protect, simulate, prove.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&display=swap",
+      },
+      {
+        rel: "preload",
+        href: "/landing/vadnerbhairav.json",
+        as: "fetch",
+        crossOrigin: "anonymous",
+      },
+    ],
   }),
-  component: MapFirstHome,
+  component: Landing,
 });

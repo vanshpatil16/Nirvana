@@ -436,7 +436,7 @@ export function CopilotScreen({
           </ol>
           <div className="wf-how-foot">
             <Prov kind="simulated">Scripted replay</Prov>
-            <a href="/" className="wf-link">
+            <a href="/copilot" className="wf-link">
               Ask the live Copilot on the map <ArrowRight size={13} />
             </a>
           </div>

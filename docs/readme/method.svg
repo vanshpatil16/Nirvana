@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 330" width="1280" height="330" role="img" aria-label="The method: Verify, Ask, Protect, Simulate, Prove, Capsule, Loop">
+<style>.flow{animation:flow 1.4s linear infinite}@keyframes flow{to{stroke-dashoffset:-20}}</style>
+<rect width="1280" height="330" rx="22" fill="#03110a"/>
+<g font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <text x="40" y="40" fill="#bfe9cf" font-size="12.5" font-weight="700" letter-spacing="2.5">SEVEN MOVES FROM DOUBT TO EVIDENCE</text>
+  <path d="M110 122 C198 122 199 178 287 178 C375 178 375 122 463 122 C551 122 552 178 640 178 C728 178 728 122 816 122 C904 122 905 178 993 178 C1081 178 1082 122 1170 122" fill="none" stroke="#ffffff" stroke-opacity=".12" stroke-width="2"/>
+  <path class="flow" d="M110 122 C198 122 199 178 287 178 C375 178 375 122 463 122 C551 122 552 178 640 178 C728 178 728 122 816 122 C904 122 905 178 993 178 C1081 178 1082 122 1170 122" fill="none" stroke="#0b3d24" stroke-width="2.5" stroke-dasharray="6 14"/>
+  
+  <g>
+    <circle cx="110" cy="122" r="34" fill="#03110a" stroke="#0b3d24" stroke-width="2"/>
+    <circle cx="110" cy="122" r="34" fill="none" stroke="#e8891d" stroke-width="3" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.000;0.020;0.120;1" dur="8.4s" repeatCount="indefinite"/>
+    </circle>
+    <text x="110" y="129" text-anchor="middle" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="21">01</text>
+    <text x="110" y="70" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">Verify</text>
+    <text x="110" y="90" text-anchor="middle" fill="#ffffff" fill-opacity=".55" font-size="13">find the break</text>
+  </g>
+  <g>
+    <circle cx="287" cy="178" r="34" fill="#03110a" stroke="#0b3d24" stroke-width="2"/>
+    <circle cx="287" cy="178" r="34" fill="none" stroke="#e8891d" stroke-width="3" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.142;0.163;0.263;1" dur="8.4s" repeatCount="indefinite"/>
+    </circle>
+    <text x="287" y="185" text-anchor="middle" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="21">02</text>
+    <text x="287" y="242" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">Ask</text>
+    <text x="287" y="262" text-anchor="middle" fill="#ffffff" fill-opacity=".55" font-size="13">any language</text>
+  </g>
+  <g>
+    <circle cx="463" cy="122" r="34" fill="#03110a" stroke="#0b3d24" stroke-width="2"/>
+    <circle cx="463" cy="122" r="34" fill="none" stroke="#e8891d" stroke-width="3" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.285;0.306;0.406;1" dur="8.4s" repeatCount="indefinite"/>
+    </circle>
+    <text x="463" y="129" text-anchor="middle" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="21">03</text>
+    <text x="463" y="70" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">Protect</text>
+    <text x="463" y="90" text-anchor="middle" fill="#ffffff" fill-opacity=".55" font-size="13">records stay home</text>
+  </g>
+  <g>
+    <circle cx="640" cy="178" r="34" fill="#03110a" stroke="#0b3d24" stroke-width="2"/>
+    <circle cx="640" cy="178" r="34" fill="none" stroke="#e8891d" stroke-width="3" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.428;0.449;0.549;1" dur="8.4s" repeatCount="indefinite"/>
+    </circle>
+    <text x="640" y="185" text-anchor="middle" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="21">04</text>
+    <text x="640" y="242" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">Simulate</text>
+    <text x="640" y="262" text-anchor="middle" fill="#ffffff" fill-opacity=".55" font-size="13">who loses?</text>
+  </g>
+  <g>
+    <circle cx="816" cy="122" r="34" fill="#03110a" stroke="#0b3d24" stroke-width="2"/>
+    <circle cx="816" cy="122" r="34" fill="none" stroke="#e8891d" stroke-width="3" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.570;0.591;0.691;1" dur="8.4s" repeatCount="indefinite"/>
+    </circle>
+    <text x="816" y="129" text-anchor="middle" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="21">05</text>
+    <text x="816" y="70" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">Prove</text>
+    <text x="816" y="90" text-anchor="middle" fill="#ffffff" fill-opacity=".55" font-size="13">−8 days, not −10</text>
+  </g>
+  <g>
+    <circle cx="993" cy="178" r="34" fill="#03110a" stroke="#0b3d24" stroke-width="2"/>
+    <circle cx="993" cy="178" r="34" fill="none" stroke="#e8891d" stroke-width="3" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.713;0.734;0.834;1" dur="8.4s" repeatCount="indefinite"/>
+    </circle>
+    <text x="993" y="185" text-anchor="middle" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="21">06</text>
+    <text x="993" y="242" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">Capsule</text>
+    <text x="993" y="262" text-anchor="middle" fill="#ffffff" fill-opacity=".55" font-size="13">re-runnable</text>
+  </g>
+  <g>
+    <circle cx="1170" cy="122" r="34" fill="#03110a" stroke="#0b3d24" stroke-width="2"/>
+    <circle cx="1170" cy="122" r="34" fill="none" stroke="#e8891d" stroke-width="3" opacity="0">
+      <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.856;0.877;0.977;1" dur="8.4s" repeatCount="indefinite"/>
+    </circle>
+    <text x="1170" y="129" text-anchor="middle" fill="#ffffff" font-family="Georgia, 'Times New Roman', serif" font-size="21">07</text>
+    <text x="1170" y="70" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">Loop</text>
+    <text x="1170" y="90" text-anchor="middle" fill="#ffffff" fill-opacity=".55" font-size="13">next question</text>
+  </g>
+  <circle r="7" fill="#e8891d"><animateMotion dur="8.4s" repeatCount="indefinite" path="M110 122 C198 122 199 178 287 178 C375 178 375 122 463 122 C551 122 552 178 640 178 C728 178 728 122 816 122 C904 122 905 178 993 178 C1081 178 1082 122 1170 122" keyPoints="0;1" keyTimes="0;1" calcMode="linear"/></circle>
+  <circle r="16" fill="#e8891d" fill-opacity=".18"><animateMotion dur="8.4s" repeatCount="indefinite" path="M110 122 C198 122 199 178 287 178 C375 178 375 122 463 122 C551 122 552 178 640 178 C728 178 728 122 816 122 C904 122 905 178 993 178 C1081 178 1082 122 1170 122"/></circle>
+  <text x="1240" y="306" text-anchor="end" fill="#ffffff" fill-opacity=".45" font-size="12.5">every capsule feeds the next cycle ↺</text>
+</g>
+</svg>

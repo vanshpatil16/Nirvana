@@ -92,7 +92,7 @@ export const ROLES: Role[] = [
     description: "Look up your land and ask questions in plain language",
     icon: UserRound,
     color: "#0B7A4B",
-    home: { label: "Ask Bhumi", href: "/" },
+    home: { label: "Ask Bhumi", href: "/copilot" },
   },
 ];
 

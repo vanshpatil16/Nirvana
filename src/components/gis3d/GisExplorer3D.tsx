@@ -725,7 +725,7 @@ export function GisExplorer3D({ search }: Props) {
             <div style={{ marginTop: 18 }}>
               <a
                 className="g3d-cta"
-                href="/"
+                href="/dashboard"
                 style={{
                   background: "#e7b84b",
                   color: "#17231d",

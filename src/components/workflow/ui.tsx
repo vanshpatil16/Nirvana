@@ -369,7 +369,7 @@ export function Footer() {
         <kbd>←</kbd>
         <kbd>→</kbd> chapters
       </span>
-      <a href="/">← Main workspace</a>
+      <a href="/copilot">← Main workspace</a>
     </footer>
   );
 }
