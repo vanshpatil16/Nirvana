@@ -22,13 +22,12 @@ export const navItems = [
   { label: "GIS Explorer", icon: Map, href: "/gis-explorer" },
   { label: "Record vs Reality", icon: MapPinned, href: "/record-vs-reality" },
   { label: "Land Difference", icon: Layers, href: "/landdifference" },
-  { label: "Disputes & Conflicts", icon: Scale },
   { label: "Policy Lab", icon: FlaskConical, href: "/policy-lab" },
   { label: "Research Hub", icon: BookOpen, href: "/research-hub" },
   { label: "AI Research Copilot", icon: Beaker, href: "/copilot" },
   { label: "Innovation Portal", icon: Sprout, href: "/innovation-portal" },
   { label: "Collaborative Workspaces", icon: Users, href: "/collaborativehub" },
-  { label: "Data & APIs", icon: Database },
+  { label: "Data & APIs", icon: Database, href: "/data-apis" },
   { label: "Impact & Monitoring", icon: Network },
 ];
 
