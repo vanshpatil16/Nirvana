@@ -8,13 +8,13 @@ const MapFirstHome = lazy(() =>
 export const Route = createFileRoute("/copilot")({
   head: () => ({
     meta: [
-      { title: "Ask Bhumi — Copilot | BHUMI-NITI" },
+      { title: "Ask Bhumi — Copilot | NIRVANA" },
       {
         name: "description",
         content:
           "Interactive AI-native land intelligence platform. Click any parcel or coordinate in India to inspect cadastral boundaries, land use, risk and legal regulations.",
       },
-      { property: "og:title", content: "BHUMI-NITI — Map-First Land Intelligence" },
+      { property: "og:title", content: "NIRVANA — Map-First Land Intelligence" },
       {
         property: "og:description",
         content:

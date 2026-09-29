@@ -301,7 +301,7 @@ export function ScenarioControls({
           ))}
         </div>
         <p className="ld-note">
-          Scenario outputs are model estimates from Bhumi-Niti&apos;s demonstration land-use model,
+          Scenario outputs are model estimates from Nirvana&apos;s demonstration land-use model,
           not official predictions.
         </p>
       </div>

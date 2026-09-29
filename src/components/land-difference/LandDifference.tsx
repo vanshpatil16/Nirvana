@@ -379,8 +379,8 @@ export function LandDifference() {
         <aside className={`sidebar ${drawer ? "open" : ""} shrink-0 z-50`}>
           <div className="sidebar-top">
             <div className="brand">
-              <span className="brand-mark" aria-hidden="true"><img src={logo} alt="BHUMI-NITI Logo" width={38} height={38} /></span>
-              <div><strong>BHUMI-NITI</strong><b>भूमि-नीति</b></div>
+              <span className="brand-mark" aria-hidden="true"><img src={logo} alt="NIRVANA Logo" width={38} height={38} /></span>
+              <div><strong>NIRVANA</strong><b>निर्वाण</b></div>
             </div>
             <Button variant="ghost" size="icon" className="sidebar-close" onClick={() => setDrawer(false)}><X /></Button>
             <p>National Platform for Research & Policy Innovation</p>

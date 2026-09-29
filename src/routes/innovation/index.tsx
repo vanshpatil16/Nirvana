@@ -10,13 +10,13 @@ const InnovationHome = lazy(() =>
 export const Route = createFileRoute("/innovation/")({
   head: () => ({
     meta: [
-      { title: "Innovation Portal — BHUMI-NITI" },
+      { title: "Innovation Portal — NIRVANA" },
       {
         name: "description",
         content:
           "Where land-governance ideas become tested solutions. Discover challenges, build with evidence, pilot in the real world.",
       },
-      { property: "og:title", content: "Innovation Portal — BHUMI-NITI" },
+      { property: "og:title", content: "Innovation Portal — NIRVANA" },
       {
         property: "og:description",
         content: "Challenge → Evidence → Build → Pilot → Measure → Policy Learning.",

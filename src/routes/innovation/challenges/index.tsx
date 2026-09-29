@@ -27,7 +27,7 @@ export const Route = createFileRoute("/innovation/challenges/")({
   }),
   head: () => ({
     meta: [
-      { title: "Challenges — BHUMI-NITI Innovation Portal" },
+      { title: "Challenges — NIRVANA Innovation Portal" },
       {
         name: "description",
         content:

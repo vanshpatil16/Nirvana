@@ -3,7 +3,7 @@
 > National digital platform for research, policy innovation and evidence-based land governance.
 > Built to `BHUMI_NITI_Innovation_Portal_Specification.docx`.
 
-The Innovation Portal is the execution layer between the BHUMI-NITI Research Hub, GIS intelligence,
+The Innovation Portal is the execution layer between the NIRVANA Research Hub, GIS intelligence,
 datasets, policy simulations and the multilingual AI Copilot. It is deliberately **not** a hackathon
 page: challenges, evidence, builds, pilots, measurements and policy learning are one connected
 lifecycle rather than a set of unrelated cards.

@@ -1,221 +1,595 @@
 <div align="center">
 
-<img src="docs/readme/hero.svg" alt="BHUMI-NITI — 2,457 real land-record plot outlines of Vadnerbhairav, Nashik, drawn and coloured by the gap between the map and the 7/12 record" width="100%" />
+<img src="public/logo.png" alt="Nirvana logo" width="112" />
+
+# निर्वाण · NIRVANA
+
+**National Platform for Research & Policy Innovation in Land Governance**
+
+_Land · Data · Policy · India — a map-first workspace for cadastral parcels, disputes,
+climate risk, applied research and a **voice-first AI land analyst**._
 
 <br />
 
-**[Live app](https://nirvana-sih.vercel.app)** &nbsp;·&nbsp; **[Land Stack API](https://bhumi-niti-landstack.onrender.com/docs)** &nbsp;·&nbsp; [The idea](#the-idea) &nbsp;·&nbsp; [The method](#the-method) &nbsp;·&nbsp; [The platform](#the-platform) &nbsp;·&nbsp; [Run it](#run-it)
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=21&duration=3400&pause=900&color=1B5E20&center=true&vCenter=true&width=760&lines=Ask+land+questions+in+plain+language;Globe+in+3D+with+camera+presets+and+360%C2%B0+orbit;Storeys+on+every+building,+floor+separation+on+demand;Evidence-based+policy+for+a+Viksit+Bharat" alt="Typing tagline" />
 
-<sub>React 19 · TanStack Start · MapLibre · CesiumJS · three.js + GSAP · OpenRouter · FastAPI · OGC API Features · STAC</sub>
+<br />
+
+[![Frontend](https://img.shields.io/badge/live-nirvana--sih.vercel.app-006B46?style=for-the-badge&logo=vercel&logoColor=white)](https://nirvana-sih.vercel.app)
+[![Land Stack API](https://img.shields.io/badge/Land_Stack_API-onrender-E7B84B?style=for-the-badge&logo=fastapi&logoColor=white)](https://bhumi-niti-landstack.onrender.com/health?probe=false)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![TanStack Start](https://img.shields.io/badge/TanStack_Start-1.0-DC3664?style=flat-square)
+![CesiumJS](https://img.shields.io/badge/CesiumJS-1.145-1B5E20?style=flat-square)
+![MapLibre](https://img.shields.io/badge/MapLibre_GL-6-3867A5?style=flat-square)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.121-009688?style=flat-square&logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Vercel](https://img.shields.io/badge/hosted-Vercel-000?style=flat-square&logo=vercel&logoColor=white)
+![Render](https://img.shields.io/badge/api-Render-46E3A7?style=flat-square&logo=render&logoColor=white)
+![OGC](https://img.shields.io/badge/OGC_API--Features-1.0-1B5E20?style=flat-square)
+![STAC](https://img.shields.io/badge/STAC_API-1.0-7A9A01?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-67_pytest_%2B_23_live-006B46?style=flat-square)
+
+<br />
+
+**[Mission](#mission)** · **[Coverage](#requirement-coverage)** · **[Features](#features)** ·
+**[3D GIS](#3d-gis-explorer--gis-explorer-3d)** · **[Land Stack API](#-land-stack-api)** ·
+**[Architecture](#architecture)** · **[Data](#data-honesty)** · **[Quick Start](#quick-start)** ·
+**[API](#api-reference)** · **[Deploy](#deployment)** · **[Roadmap](#roadmap)**
 
 </div>
 
-<br />
+---
 
-<a id="the-idea"></a>
+## 🎬 Animated Architecture
 
-## The idea
+<p align="center">
+  <img src="docs/readme/architecture-animated.svg" alt="Animated architecture: users reach the Vercel frontend and the Render Land Stack API, which fan out to data, AI services and open geospatial standards" width="100%" />
+  <br />
+  <sub><b>Two services, one platform.</b> Green pulses are the Vercel experience layer, gold pulses the Render integration gateway, blue the open standards and AI services.</sub>
+</p>
 
-Every plot of land in India has two stories. One is written in the record — the 7/12 extract, the mutation register, the cadastral map. The other is on the ground, visible from orbit every five days. **Land disputes live in the distance between the two.**
+---
 
-Bhumi-Niti reads both side by side, finds where they disagree, and turns the fix into evidence a policymaker can defend — in English, हिंदी or मराठी.
+<a id="mission"></a>
 
-The picture above is not an illustration. It is Vadnerbhairav village in Chandwad taluka, Nashik: **every one of its 2,457 official BhuNaksha plot outlines**, coloured by how far each drawn plot drifts from the area written in its 7/12 record.
+## 🎯 Mission
 
-<img src="docs/readme/gap.svg" alt="1,036 plots within 10 percent, 853 off by 10 to 30 percent, 557 off by 30 percent or more" width="100%" />
+Land is a **finite, strategic resource** underpinning economic development,
+environmental sustainability, food security, urban expansion and social equity.
+Yet India's land-administration ecosystem is largely *implementation-oriented* —
+little institutional focus on **applied research, policy experimentation and
+evidence-based innovation**.
 
-<sub>A screening signal, not a verdict: roads, channels and pot-kharaba explain part of the gap. Telling which is the platform’s job. Source and method: <code>src/data/cadastral/README.md</code>.</sub>
+Nirvana is a **national knowledge ecosystem** where researchers, policymakers,
+academies and government agencies meet to collect evidence, run policy experiments
+and publish findings — not an official record system.
 
-<br />
+### The gap we close
 
-<a id="the-method"></a>
+| Problem today | What Nirvana does |
+| --- | --- |
+| Data exists in silos, barely used | A federated API that speaks open standards |
+| Research and policy live in separate portals | One repository + collaborative workspaces |
+| No way to *test* a policy before announcing it | Policy Lab simulation + scenario modelling |
+| Map tools show data without saying how trustworthy it is | Every payload carries source, licence, evidence grade |
+| Building footprints are flat, meaningless boxes | 3D buildings with storeys and floor separation |
+| Land records are state silos with no public API | A 36-jurisdiction discovery index + the sanctioned RBIH route |
 
-## The method
+---
 
-<img src="docs/readme/method.svg" alt="Seven moves: Verify, Ask, Protect, Simulate, Prove, Capsule, Loop" width="100%" />
+<a id="requirement-coverage"></a>
 
-| | Move | What happens | Where |
-|---|---|---|---|
-| 01 | **Verify** | Each plot gets an integrity score from record-vs-satellite drift, area and owner mismatch, stale mutations and pending cases. High scores go to a field officer. | `/workflow` · `/record-vs-reality` |
-| 02 | **Ask** | A question in Hindi, Marathi or English becomes a validated JSON query plan. The model never writes the answer’s numbers — or any SQL. | `/copilot` |
-| 03 | **Protect** | The plan travels to state nodes; only aggregates come back, and any cell under five parcels stays home. Asking for owner names is refused by schema. | `/workflow` |
-| 04 | **Simulate** | Levers on conversion caps, flood buffers and resurvey coverage — with a distributional lens that shows who loses, and a legal engine that vetoes what the law forbids. | `/policy-lab` · `/landdifference` |
-| 05 | **Prove** | The KPI is hash-locked **before** the data is seen, then measured against matched districts. −10 days of before/after becomes −8 days of causal evidence. | `/workflow` |
-| 06 | **Capsule** | Data versions, commit, parameters and citations sealed into one re-runnable capsule. | `/workflow` |
-| 07 | **Loop** | The capsule lands in the research base and seeds the next question. | `/research-hub` |
+## ✅ Requirement Coverage
 
-<br />
+Every point of the problem statement, and where it lives:
 
-<a id="the-platform"></a>
+| # | Requirement | Status | Where |
+| --- | --- | --- | --- |
+| 1 | National repository for research, policy, datasets, legal docs | 🟡 | Innovation Portal + Innovation Home |
+| 2 | AI-powered search & recommendation | 🟡 | Ask Bhumi agent (`src/server/ai-agent.ts`) |
+| 3 | Collaborative workspaces for researchers & agencies | ✅ | `/innovation/workspace/$projectId` |
+| 4 | Interactive GIS: land use, climate, infrastructure, policy | ✅ | MapLibre national map + Cesium 3D globe |
+| 5 | Advanced analytics & decision support | 🟡 | Policy Lab, Land-Difference, climate timeline |
+| 6 | Policy simulation before implementation | ✅ | `/policy-lab` (evaluate existing / simulate new) |
+| 7 | Centralised digital repository | 🟡 | Research Hub, Innovation Hub |
+| 8 | AI search & recommendation engine | 🟡 | Ask Bhumi + copilot |
+| 9 | Collaborative workspaces | ✅ | Workspace + Copilot screens |
+| 10 | Interactive GIS visualisation | ✅ | GIS Explorer 2D + 3D |
+| 11 | Advanced analytics & decision support | 🟡 | Evidence panels, provenance engine |
+| 12 | Policy simulation modules | ✅ | Policy Lab |
+| 13 | Integration: satellite, land records, socio-economic, geospatial | ✅ | **Land Stack API** federates ISRO, OSM, data.gov.in, RBIH |
+| 14 | AI research tools: trend, synthesis, predictive, scenario | 🟡 | Copilot + simulation engine |
+| 15 | Innovation portal: hackathons, grants, pilots, competitions | ✅ | Challenges → pilots → impact → submit |
+| 16 | Dashboards: research, policy KPIs, land use, climate, disputes | ✅ | Dashboard + 3D scenario drawer + Research Hub |
+| 17 | Secure role-based access | ✅ | 5-role model (see [Security](#security--privacy)) |
+| 18 | **APIs for integration with government/GIS systems** | ✅ | **Land Stack API** — OGC + STAC, see below |
 
-## The platform
+🟡 = working prototype, 🟠 = partial, ✅ = complete. The platform is a serious
+prototype; nothing here substitutes for statutory records.
 
-| Route | What it is |
-|---|---|
-| **`/`** | The story — a scroll-driven 3D dive from India to Maharashtra to the real Vadnerbhairav cadastre (three.js + GSAP ScrollTrigger), then real Sentinel-2 change imagery, the method and the ledger. |
-| **`/dashboard`** | The national picture — 43 live IMD stations, climate risk, change timelines. Its sidebar leads to most of the routes below. |
-| **`/copilot`** | **Ask Bhumi** — map-first, trilingual NL-GIS copilot. Plans, validates, queries, cites the Act, speaks the answer and moves the map. |
-| **`/gis-explorer-3d`** | CesiumJS globe of India with real OSM buildings, four GPU styles, storey counts and an exploded floor stack. |
-| **`/policy-lab`** | 14 real instruments — Land Revenue Code, Tenancy Act, MR&TP Act, UDCPR, industrial and logistics policy — read clause by clause (152 citations), with simulated impact. Upload a policy PDF and Gemini extracts its provisions with quotes. |
-| **`/research-hub`** | Evidence repository, live collaborative manuscripts, review. |
-| **`/workflow`** | The seven moves above as a working, clickable demo. |
-| **`/record-vs-reality`** | Field capture: geo-tagged photos, GPS, and a 7/12 cross-check. |
-| **`/landdifference`** | Land-use change 2018 → 2024 by state, with scenario levers. |
-| **`/innovation-portal`** · **`/collaborativehub`** | Challenges, pilots and grants; shared workspaces. |
+---
 
-### Ask Bhumi, in five steps
+<a id="features"></a>
 
-1. **Detect** — the language is detected locally (English, हिंदी, मराठी, Hinglish), with no model call.
-2. **Plan** — the model is forced to call `plan_query`: intent, place, years, land classes, datasets. It is not allowed to answer yet.
-3. **Validate** — the plan is checked against what the platform can actually answer: places resolved, years clamped, follow-ups inherit context (“now compare it with Nashik”).
-4. **Query** — data is fetched server-side and tagged `live`, `platform`, `demo`, `document` or `unavailable`. Questions about law are matched against the Policy Lab library and answered only from verbatim clauses, with section and page.
-5. **Explain & act** — the model words the answer in the user’s language from those results alone; the server builds the evidence list; the map flies, highlights change or switches layers; the reply is spoken (ElevenLabs, browser voice fallback).
+## ✨ Features
 
-<br />
+<table>
+<tr>
+<td width="50%">
 
-<a id="the-ledger"></a>
+### 🗣️ Ask Bhumi — voice-first AI
 
-## What’s real, what’s modelled, what’s missing
+Speak or type; the query **auto-submits on silence**. An OpenRouter tool-loop agent
+answers with a structured risk / framework / evidence card, **narrates the reply**
+via the Web Speech API, and **flies the map** to the place you asked about.
 
-<img src="docs/readme/ledger.svg" alt="Real: Sentinel-2, Esri land cover, BhuNaksha outlines, Act text, IMD, OSM. Modelled: Policy Lab impact, scenario model, workflow federation and causal panel, dashboard KPIs. Not connected: 7/12 Record of Rights, IGR registrations, state RoR APIs." width="100%" />
+</td>
+<td width="50%">
 
-Every screen carries the same labels. Nothing missing is filled in: an unconnected source says *not connected* and where to verify officially.
+### 🌐 3D globe with real OSM buildings
 
-<br />
+CesiumJS renders the OSM Buildings tileset and **restyles it in place** across four
+modes (standard / height / footprint / inspection). One tileset, never rebuilt —
+layer toggles only flip `tileset.show`.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🎥 Camera presets + 360° orbit
+
+NORTH, TOP, 45°, ISO, ±45° steps and a true turntable orbit, with a live
+heading/pitch readout. Works at national scale and at plot scale.
+
+</td>
+<td width="50%">
+
+### 🏢 Storeys on every building
+
+A single `buildingFloors` service derives a floor count for **every** building: the
+real `building:levels` tag when OSM carries it, otherwise derived from measured
+height at a documented 3.2 m storey, otherwise a clearly labelled modelled stand-in.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🧱 Floor separation stack
+
+The **FLOOR STACK** shortcut flies to the Patna fixture and opens a 13-slab
+exploded view with an explosion slider and per-floor pills — and says plainly it is
+a **demo model, not a survey**.
+
+</td>
+<td width="50%">
+
+### 🗺️ Real cadastral + WRIS/NDEM layers
+
+State-aware **MRSAC cadastral vector tiles**, plus WRIS rivers/waterbodies and
+NDEM flood-extent overlays — each with licence, coverage and "not a forecast" chips.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🌦️ IMD live weather + climate timeline
+
+43 live IMD stations with a Temperature / Rainfall toggle, and year-scrubbing
+(2018 → 2024) over Sentinel-2 cloudless mosaics.
+
+</td>
+<td width="50%">
+
+### 🏷️ Evidence provenance everywhere
+
+Every dataset, KPI, building and AI claim carries an **evidence class** (observed /
+derived / modelled / synthetic) and a reliability badge — with an explicit
+"Not publicly available" state instead of invented values.
+
+</td>
+</tr>
+</table>
+
+---
+
+<a id="3d-gis-explorer--gis-explorer-3d"></a>
+
+## 🌐 3D GIS Explorer — `/gis-explorer-3d`
+
+```mermaid
+flowchart LR
+    subgraph Globe["Cesium viewer — one tileset, restyled in place"]
+        B["OSM Buildings tileset\n(single, persistent)"]
+        ST["Cesium3DTileStyle\nstandard · height · footprint · inspection"]
+        FX["Floor stack entities\n13 slabs, exploded"]
+        OSM["Ground primitives\nroads · water · protected areas · admin rings"]
+    end
+
+    HOVER["Hover readout\nname · height · floors"] --> ST
+    PICK["Click a building"] --> CARD["Evidence card\nname · id · height · floors · source"]
+    PICK --> TINT["Cyan tint on the live feature\nneighbours dim"]
+    TINT --> CARD
+    CARD --> FX
+    BTN["FLOOR STACK button"] -->|"fly + open + 50% explosion"| FX
+    ORB["ORBIT / presets"] --> CAM["Camera"]
+    CAM --> Globe
+```
+
+| Constraint | How it is respected |
+| --- | --- |
+| One tileset, never rebuilt | Layer toggle only flips `tileset.show`; styles mutate `tileset.style` |
+| No fabricated geometry | Floor counts labelled by basis; the stack is a declared demo fixture |
+| No silent partial answers | A truncated upstream extract carries a `provenance` warning |
+| Cesium out of the SSR bundle | Globe dynamically imported behind an SSR guard |
+
+> **What the tileset does _not_ have:** Ion's OSM Buildings ships no per-feature
+> properties, so per-building colour banding is impossible. The globe therefore uses
+> a deliberate colour per mode and puts per-building detail in the hover readout and
+> evidence card, where it is real.
+
+---
+
+<a id="-land-stack-api"></a>
+
+## 🔌 Land Stack API — the integration gateway
+
+> **Repo:** [`github.com/OmkarKudalkar23/landstack-api`](https://github.com/OmkarKudalkar23/landstack-api)
+> · **Live:** `https://bhumi-niti-landstack.onrender.com` · **Docs:** `/docs`
+
+This is PS point 18 — *"APIs for seamless integration with existing government
+platforms, research databases, GIS systems, and digital governance initiatives"* —
+implemented as a **FastAPI** service federating land data behind two open
+geospatial standards.
+
+```mermaid
+flowchart TB
+    C["Any OGC / STAC client\nQGIS · Kepler · Cesium · notebook"]
+    subgraph GW["Land Stack API · FastAPI · Render"]
+        M["Rate limit → Request id → CORS"]
+        E["RFC 7807 problem errors · JSON logs"]
+        P["Provenance on every payload"]
+        R["Roles: public → researcher → policymaker → government → admin"]
+        S1["OGC API - Features 1.0"]
+        S2["STAC API 1.0"]
+        S3["Platform routes\nsearch · sources · datasets · geocode · webhooks"]
+        M --> E --> P
+        P --> S1 & S2 & S3
+    end
+    C --> M
+    R -.->|"government role only"| RBIH
+    subgraph Sources["Upstreams"]
+        DGI["data.gov.in\nOGD Platform · API key"]
+        BH["ISRO Bhuvan\nOGC WMS/WMTS · LULC"]
+        OSM["Overpass + Nominatim\nOpenStreetMap · ODbL"]
+        SBP["State RoR portals\n36 jurisdictions · discovery only"]
+    end
+    S1 --> OSM & BH & SBP
+    S3 --> DGI & OSM
+    S1 --> RBIH
+```
+
+**What it deliberately does not do**
+
+| Not built | Why |
+| --- | --- |
+| State Bhulekh scrapers | Captcha-walled, legally exposed, personal data, brittle |
+| PostGIS database | No requirement at this scale; adds a failure mode to a gateway |
+| Vector features from Bhuvan | Bhuvan WMS is raster — fabricating features would be a correctness lie |
+| OAuth2 issuance | It is a **resource server**, not an identity provider |
+
+**Research that shaped it** — the DILRMP 3.0 mandate for a *"Federated Secure
+API-Architecture based Land Stack"* with ULPIN as the common parcel identifier, and
+the finding that **no State or UT publishes an official public API for Records of
+Rights** — lives in that repo's `docs/RESEARCH.md`.
+
+---
 
 <a id="architecture"></a>
 
-## How it fits together
+## 🏗️ Architecture
 
-<img src="docs/readme/stack.svg" alt="Browser routes call edge API handlers, which call external sources; the Land Stack API is a separate FastAPI gateway" width="100%" />
+### The whole system
 
-Two independent deployments. This repository is the app (Vercel). **[`landstack-api`](https://github.com/OmkarKudalkar23/landstack-api)** is a FastAPI gateway (Render) that speaks OGC API Features 1.0 and STAC 1.0 over data.gov.in, ISRO Bhuvan, OpenStreetMap, RBIH Land Record Services and a 36-jurisdiction Record-of-Rights index — with roles, API keys and a provenance envelope on every payload. They compose by URL and key when wired.
+```mermaid
+flowchart TB
+    subgraph Users["Users"]
+        U1["🔬 Researchers"]
+        U2["🏛️ Policymakers"]
+        U3["👨‍🌾 Field officers"]
+    end
+    subgraph Frontend["Frontend · Vercel · nirvana-sih.vercel.app"]
+        R["React 19 + TanStack Start\ncode-split routes · shared loader"]
+        MAP["MapLibre national map"]
+        GLOBE["Cesium 3D globe\nbuildings · floors · orbit"]
+        INNO["Innovation portal"]
+        EDGE["nitro edge server\n/api/ai · /api/weather · /api/tts"]
+    end
+    subgraph Gateway["Land Stack API · Render"]
+        OGC["OGC API - Features 1.0"]
+        STAC["STAC API 1.0"]
+        FED["Federated adapters\n+ provenance + roles"]
+    end
+    subgraph Data["Data"]
+        OGD["data.gov.in"]
+        ISRO["ISRO Bhuvan"]
+        OSM["OpenStreetMap"]
+        AI["OpenRouter · Gemini · ElevenLabs"]
+        GOV["IMD · MRSAC · WRIS · NDEM · Sentinel-2"]
+    end
+    U1 & U2 & U3 --> Frontend
+    Frontend --> AI
+    Frontend --> GOV
+    Frontend --> OSM
+    Gateway --> OGD & ISRO & OSM
+    Frontend -.->|"compose later"| Gateway
+```
 
-<br />
+### Request flow on the edge
 
-<a id="run-it"></a>
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant E as nitro edge
+    participant AI as OpenRouter
+    participant M as MapLibre / Cesium
+    B->>E: POST /api/ai
+    E->>AI: tool loop (≤3 rounds)
+    AI-->>E: tool: show_area(lat, lon, zoom)
+    E-->>B: reply + actions[]
+    B->>M: flyTo + load parcels
+    B->>E: POST /api/tts
+    E-->>B: spoken audio
+```
 
-## Run it
+### Why the frontend is code-split
+
+Routes load lazily behind a shared Suspense boundary, so opening one screen doesn't
+download the whole app.
+
+| Route | Chunk avoided |
+| --- | --- |
+| `/policy-lab` | 303 kB |
+| `/workflow` | 100 kB |
+| `/` (map home) | 60 kB |
+| `/gis-explorer-3d` | Cesium stays out of the entry chunk |
+
+---
+
+<a id="data-honesty"></a>
+
+## 🧾 Data honesty
+
+Land data is easy to overstate. The platform therefore attaches a **provenance
+envelope** to every payload that carries data:
+
+```json
+"provenance": {
+  "sources": [{
+    "id": "overpass",
+    "provider": "OpenStreetMap Foundation",
+    "license": "Open Database License (ODbL) 1.0",
+    "evidence": "OBSERVED"
+  }],
+  "warnings": []
+}
+```
+
+| Grade | Meaning |
+| --- | --- |
+| `OBSERVED` | Measured or published by a primary source |
+| `DERIVED` | Computed from observed data by a documented rule |
+| `MODELLED` | Produced by a model; carries model assumptions |
+| `SCENARIO` | Hypothetical, for exploration only |
+| `DEMO` | Placeholder, not real-world data |
+
+- Truncated upstream extracts always carry a **warning**.
+- Collections with uneven State coverage declare `x-availability: "limited"`.
+- Missing fields read **"Not publicly available"** — never invented.
+
+---
+
+<a id="security--privacy"></a>
+
+## 🔐 Security & privacy
+
+Ordered roles, so authorisation is "at or above" rather than a list of special cases:
+
+| Role | Holder | Capabilities |
+| --- | --- | --- |
+| `public` | Anonymous | Browsing, OGC/STAC reads, public datasets |
+| `researcher` | Universities, research bodies | All public, higher rate limits |
+| `policymaker` | Government analysts | Policy corpora, scenario tools |
+| `government` | Revenue / registration | **+ RBIH owner details (personal data)** |
+| `admin` | Platform operator | Key management, sync triggers |
+
+**The personal-data boundary is a hard line.** Exactly one route can return owner
+personal data. It requires the `government` role, is never logged, never cached, and
+its response carries a retention warning. Owner data is governed by the **DPDP Act,
+2023**.
+
+---
+
+<a id="quick-start"></a>
+
+## 🚀 Quick Start
+
+### Frontend
 
 ```sh
-git clone https://github.com/OmkarKudalkar23/bhuniti.git
-cd bhuniti
+git clone https://github.com/vanshpatil16/Bhuniti.git
+cd Bhuniti
 npm install
-cp .env.example .env      # add keys — all optional, see below
-npm run dev               # → http://localhost:8080
+cp .env.example .env       # Windows: copy .env.example .env
+npm run dev                # → http://localhost:8080
 ```
 
-Node **20.19+**. Without keys everything still runs; the AI endpoints answer `503` with a reason and the rest of the platform works on bundled and live public data.
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Dev server with SSR + `/api/*` |
+| `npm run build` | Production build (client + SSR + nitro) |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier write |
+| `npm run typecheck` | strict `tsc --noEmit` |
 
-| Command | |
-|---|---|
-| `npm run dev` | Dev server with SSR and `/api/*` |
-| `npm run build` · `npm run preview` | Production build (client + SSR + nitro) and local preview |
-| `npm run typecheck` · `npm run lint` · `npm run format` | Strict `tsc`, ESLint, Prettier |
-| `python scripts/build_landing_parcels.py` | Rebuild the landing page’s 3D cadastre asset |
-| `python scripts/readme_assets.py` | Rebuild the animated SVGs in this README |
-
-<details>
-<summary><b>Environment variables</b></summary>
-
-<br />
-
-| Variable | Scope | Purpose |
-|---|---|---|
-| `OPENROUTER_API_KEY` | server | Ask Bhumi (`/api/ai`) and the innovation assistant |
-| `OPENROUTER_MODEL` | server | Model for both; default `openai/gpt-4o-mini` |
-| `ELEVENLABS_API_KEY` · `ELEVENLABS_VOICE_ID` · `ELEVENLABS_MODEL` | server | Spoken replies (`/api/tts`); browser voice otherwise |
-| `GEMINI_API_KEY` · `GEMINI_MODEL` | server | Policy PDF reader (`/api/policy/extract`) |
-| `VITE_DEMO_MODE` | client | Prefer the bundled parcel extract (default `true`) |
-| `VITE_SENTINEL_YEAR` | client | Sentinel-2 mosaic year (default `2024`) |
-| `VITE_PARCEL_API_URL` | client | Optional external parcel service |
-
-`.env` is git-ignored; `.env.example` documents every key.
-
-</details>
-
-<details>
-<summary><b>API</b></summary>
-
-<br />
-
-| | Endpoint | |
-|---|---|---|
-| `POST` | `/api/ai` | Copilot: language → plan → validate → query → explain; returns reply, evidence, chips, map actions, spoken text |
-| `POST` | `/api/tts` | ElevenLabs speech (`415` for languages it can’t voice, so the client falls back) |
-| `POST` | `/api/policy/extract` | Gemini reads a policy PDF into quoted, cited provisions |
-| `POST` | `/api/innovation/ai` | Evidence assistant; citations validated, invented ones dropped |
-| `GET` | `/api/parcels?bbox=w,s,e,n` | Cadastral plots for a box; filters `village`, `surveyNumber`, `parcelId` |
-| `GET` | `/api/weather/stations` · `/station?id=` · `/summary` | Live IMD weather |
+### Backend
 
 ```sh
-curl -X POST http://localhost:8080/api/ai -H "content-type: application/json" \
-  -d '{"message":"पुणे में जलवायु जोखिम क्या है?"}'
+git clone https://github.com/OmkarKudalkar23/landstack-api.git
+cd landstack-api
+python -m venv .venv && .venv/Scripts/activate   # or: source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload                     # → http://localhost:8000/docs
+pytest -q                                          # 67 tests, no network needed
 ```
 
-The gateway’s own API is documented at [`/docs`](https://bhumi-niti-landstack.onrender.com/docs).
+---
 
-</details>
+<a id="api-reference"></a>
 
-<details>
-<summary><b>Repository map</b></summary>
+## 🌐 API Reference
 
-<br />
+### Frontend
 
-```text
-src/
-  routes/            file routes — / (story), /copilot, /dashboard, /gis-explorer-3d, /policy-lab, …
-  components/
-    landing/         the story page: three.js cadastre scene, GSAP choreography, method visuals
-    home/            Ask Bhumi map + copilot answer cards
-    dashboard/  gis3d/  policy-lab/  research-hub/  workflow/  record-reality/  land-difference/  innovation/
-  copilot/           language detection, query plan + validation, map actions & chips
-  server/            /api handlers — ai-agent, copilot-data, policy-context, parcel-store, tts, policy-extract, weather
-  data/
-    cadastral/       real Maharashtra plot outlines + provenance README
-    policySimulation/ the Policy Lab library (Acts read clause by clause)
-public/landing/      compact cadastre for the 3D story (227 KB)
-docs/readme/         the animated SVGs on this page
-scripts/             importers and asset builders
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/api/parcels?bbox=w,s,e,n` | Cadastral features for a bbox |
+| `GET` | `/api/weather/stations` | All live IMD stations (43) |
+| `GET` | `/api/weather/station?id=…` | Single station reading |
+| `GET` | `/api/weather/summary` | National rainfall summary |
+| `POST` | `/api/ai` | Land-intelligence agent — tool loop, reply, spoken text, map actions |
+| `POST` | `/api/innovation/ai` | Evidence assistant — 8 tools; **hallucinated citations dropped** |
+| `POST` | `/api/tts` | ElevenLabs speech |
+| `POST` | `/api/policy/extract` | Gemini PDF reader → structured policy quotes |
+
+### Land Stack API
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/` | Landing page / OGC service description |
+| `GET` | `/conformance` · `/conformance/stac` | Conformance classes |
+| `GET` | `/collections` · `/collections/{id}` | Collections with licence, evidence grade, extent |
+| `GET` | `/collections/{id}/items?bbox=…` | Features for a bbox (GeoJSON) |
+| `GET` | `/stac` · `/stac/collections` · `/stac/search` | STAC catalog + cross-collection search |
+| `GET` | `/api/v1/sources` · `/api/v1/sources/health` | Upstreams with auth needs; live health |
+| `GET` | `/api/v1/search?q=…&kind=place\|state` | Federated search |
+| `GET` | `/api/v1/datasets/{id}/records` | data.gov.in record proxy |
+| `GET` | `/api/v1/bhuvan/capabilities` · `/getmap` | Bhuvan WMS catalogue + GetMap URL |
+| `GET` | `/api/v1/geocode` · `/geocode/reverse` | Nominatim geocoding |
+| `GET` | `/api/v1/land-records/index` · `/states/{s}` | State RoR discovery index |
+| `POST` | `/api/v1/land-records/rbih/owner-details` | **Government role only** · personal data |
+| `GET`/`POST` | `/api/v1/webhooks` | Event subscriptions |
+| `GET` | `/health` · `/health?probe=false` · `/ready` | Full probe, fast probe, liveness |
+
+---
+
+<a id="data-sources"></a>
+
+## 📡 Data Sources
+
+| Source | Used for | Access |
+| --- | --- | --- |
+| **IMD** | Live weather, rainfall heat layer | Server proxy, 43 stations |
+| **MRSAC / Datameet** | Real cadastral polygons (state-wise) | Vector tiles, CC0 |
+| **WRIS** | Rivers & waterbodies | Vector tiles, CC0 |
+| **NDEM** | Historical flood inundation 1998–2022 | _Observed extent, not a forecast_ |
+| **OpenStreetMap** | 3D buildings, roads, water, boundaries, geocoding | Keyless, rate-limited, ODbL |
+| **ISRO Bhuvan** | LULC thematic layers, 3D building tileset | OGC WMS/WMTS |
+| **EOX / Copernicus** | Sentinel-2 cloudless mosaics | Tile service |
+| **data.gov.in** | Tabular datasets by resource id | API key (gateway) |
+| **RBIH LRS** | Records of Rights (9 states) | Institutional onboarding; personal data |
+
+> ⚠️ **Prototype data shown for demonstration.** Nothing substitutes for official
+> MahaBhumi / Bhu-Naksha records or court documents. OSM polygons are **not**
+> cadastre. The 3D floor stack is a **declared demo fixture**.
+
+---
+
+<a id="quality"></a>
+
+## ✅ Quality gates
+
+```sh
+# Frontend
+npm run typecheck && npm run lint && npm run build
+# Backend
+pytest -q
 ```
 
-</details>
+Verified with headless-Chrome suites: globe boots, mode switches and layer toggles
+work, floor stacks open exploded with correct slab ordering, selection tinting
+survives a mode change, tooltips carry floor counts, and every route renders with
+**zero page errors**.
 
-<details>
-<summary><b>Data sources</b></summary>
+---
 
-<br />
+<a id="deployment"></a>
 
-| Source | Used for | Status |
-|---|---|---|
-| Maharashtra land records (BhuNaksha), via the BhuMe bundle | 2,457 plot outlines, Vadnerbhairav | real · prototype use, licence for production pending |
-| EOX / Copernicus Sentinel-2 cloudless | imagery 2018–2024 | real |
-| Esri / Impact Observatory | 10 m annual land cover | real |
-| India Code, Government of Maharashtra | Act and policy text in the Policy Lab | real |
-| IMD | 43 live weather stations | real |
-| OpenStreetMap (Overpass, Nominatim) | buildings, roads, water, geocoding | real · ODbL |
-| MRSAC / Datameet, WRIS, NDEM | cadastral tiles, rivers, historical flood extent | real |
-| Land-use scenarios, Policy Lab impact, dashboard KPIs, workflow panels | illustrating the method | modelled — labelled on screen |
+## ☁️ Deployment
 
-Nothing here is an official land record. It does not replace MahaBhumi, Bhu-Naksha, a Tahsildar’s office or a court.
+### Frontend → Vercel
 
-</details>
+- **Live:** [`https://nirvana-sih.vercel.app`](https://nirvana-sih.vercel.app)
+- `vercel.json` + `vite.config.ts` select the **Vercel** nitro preset
+- Secrets: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`
 
-<details>
-<summary><b>Deployment</b></summary>
+### Backend → Render
 
-<br />
+- **Live:** `https://bhumi-niti-landstack.onrender.com` (`/docs` for Swagger)
+- Deployed as a **Blueprint** from `render.yaml`; health check `/ready`
+- `/health?probe=false` returns in <1 s for uptime monitoring
 
-- **App → Vercel.** `vercel.json` and `vite.config.ts` select the nitro Vercel preset; `npm run build` emits `.vercel/output/`. Set the server keys above as project secrets.
-- **Gateway → Render.** Blueprint from `render.yaml`; `/ready` for health, `/health?probe=false` for fast uptime checks.
-- **Lovable.** This repo syncs with its [Lovable project](https://lovable.dev/projects/b07fc0a7-84e0-425d-a58c-6555e94bf0af) — avoid rewriting published history.
+> If a domain sits behind Vercel Authentication, turn it off under
+> **Settings → Deployment Protection**.
 
-</details>
+---
 
-<br />
+<a id="roadmap"></a>
+
+## 🗺️ Roadmap
+
+- 🔗 Compose the two services behind a service URL + API key
+- 🏛️ State open-data adapters (parcel boundaries where published without captcha)
+- 📊 Bhuvan thematic statistics as queryable aggregates
+- 🌏 Multilingual voice for field use
+- 🛰️ Change alerts — scheduled Sentinel-2 diff over watched parcels
+
+---
+
+<a id="acknowledgements"></a>
+
+## 📚 Acknowledgements & references
+
+- **Department of Land Resources** — DILRMP 3.0 (₹565.50 crore, 2026-31): the
+  Federated Secure API-Architecture Land Stack mandate, and ULPIN / Bhu-Aadhaar
+  as the common parcel identifier
+- **Department of Land Resources** — citizen-centric services index (36 State/UT RoR portals)
+- **ISRO / NRSC** — Bhuvan WMS/WMTS service documentation and layer tables
+- **Reserve Bank of India** — RBIH Unified Lending Interface, Land Record Services
+- **data.gov.in / NIC** — OGD Platform API documentation
+- **OGC** — API Features Part 1: Core; **STAC** — API Specification 1.0
+- **OpenStreetMap Foundation** — Overpass and Nominatim usage policies; ODbL 1.0
+- **NIC LRISD** — BHU-NAKSHA technical documentation
+- **[Lovable](https://lovable.dev)** — project scaffolding
+
+---
 
 <div align="center">
 
-<sub><b>BHUMI-NITI · भूमि-नीति</b> — same land, more clarity, better decisions.<br />Built for the Smart India Hackathon.</sub>
+**Crafted for land, data & policy in India 🇮🇳**
+
+[![Frontend](https://img.shields.io/badge/Frontend-nirvana--sih.vercel.app-006B46?style=for-the-badge&logo=vercel&logoColor=white)](https://nirvana-sih.vercel.app)
+[![Backend](https://img.shields.io/badge/Land_Stack_API-onrender-E7B84B?style=for-the-badge&logo=fastapi&logoColor=white)](https://bhumi-niti-landstack.onrender.com/docs)
+[![License](https://img.shields.io/badge/license-all%20rights%20reserved-1B5E20?style=flat-square)](https://github.com/vanshpatil16/Bhuniti)
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0D9F6E,50:1B5E20,100:0D9F6E&height=130&section=footer" alt="wave divider" />
+
+<sub>👋 **Nirvana · निर्वाण** — same land, more clarity, better decisions.</sub>
 
 </div>

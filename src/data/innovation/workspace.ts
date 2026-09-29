@@ -309,7 +309,7 @@ export const WORKSPACE_MODULES: WorkspaceModule[] = [
   {
     id: "gis",
     label: "GIS Workspace",
-    description: "BHUMI-NITI layers, saved map views and study regions.",
+    description: "NIRVANA layers, saved map views and study regions.",
   },
   { id: "tasks", label: "Task Board", description: "Backlog to Done with owners and due dates." },
   {
@@ -686,7 +686,7 @@ export const PROJECTS: Project[] = [
         id: "e-4",
         title: "Forest & protected area mask",
         kind: "GIS Layer",
-        reference: "BHUMI-NITI layer forest-protected, 30 m",
+        reference: "NIRVANA layer forest-protected, 30 m",
         addedBy: "m-vikram",
         addedOn: "14 Feb 2026",
         usedFor: "Escalation rule where change intersects protected land.",
@@ -1467,7 +1467,7 @@ export const PROJECTS: Project[] = [
         id: "e-42",
         title: "Flood extent layers (SAR-derived, demo)",
         kind: "GIS Layer",
-        reference: "BHUMI-NITI derived, district level, 2018–2025 seasons",
+        reference: "NIRVANA derived, district level, 2018–2025 seasons",
         addedBy: "m-bishnu",
         addedOn: "09 Jun 2026",
         usedFor:

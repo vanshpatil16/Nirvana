@@ -1,5 +1,5 @@
 /**
- * Language layer for the Bhumi-Niti Copilot.
+ * Language layer for the Nirvana Copilot.
  *
  * Detection is script- and marker-based (no network call), so it runs the same
  * on the server and in the browser. To add a language: add an entry to

@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 /**
  * Small presentational primitives shared by the Innovation Portal screens.
  * Deliberately CSS-class driven (see styles.css) to match the editorial visual
- * language of the rest of BHUMI-NITI rather than the default shadcard look.
+ * language of the rest of NIRVANA rather than the default shadcard look.
  */
 
 /** A labelled tag chip. `tone` drives the border/background treatment. */

@@ -143,7 +143,7 @@ export const DEMO_BUILDING: DemoBuilding = {
     .length,
   levels: built.levels,
   evidence: {
-    source: "BHUMI-NITI demo fixture",
+    source: "NIRVANA demo fixture",
     kind: "demo",
     date: "Fixture, not an observation",
     confidence:

@@ -31,13 +31,13 @@ export const Route = createFileRoute("/research-hub")({
   }),
   head: () => ({
     meta: [
-      { title: "Research Hub — BHUMI-NITI Land Governance" },
+      { title: "Research Hub — NIRVANA Land Governance" },
       {
         name: "description",
         content:
           "Discover evidence, collaborate across institutions, analyze geospatial data, and turn land governance research into actionable policy.",
       },
-      { property: "og:title", content: "Research Hub — BHUMI-NITI" },
+      { property: "og:title", content: "Research Hub — NIRVANA" },
       { property: "og:description", content: "Research that shapes better land policy." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

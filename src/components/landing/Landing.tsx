@@ -621,7 +621,7 @@ export function Landing() {
     <div className="ld" ref={root}>
       <div className={`ld-curtain ${ready ? "is-gone" : ""}`} aria-hidden="true">
         <img src={logo} alt="" />
-        <span>भूमि-नीति</span>
+        <span>निर्वाण</span>
       </div>
 
       <div className="ld-progress" aria-hidden="true">
@@ -632,8 +632,8 @@ export function Landing() {
         <a href="#top" className="ld-brand">
           <img src={logo} alt="" />
           <span>
-            <b>BHUMI-NITI</b>
-            <small>भूमि-नीति</small>
+            <b>NIRVANA</b>
+            <small>निर्वाण</small>
           </span>
         </a>
         <div className="ld-nav-links">
@@ -664,7 +664,7 @@ export function Landing() {
             Every plot of land has two stories. <em>One is written down. One is on the ground.</em>
           </h1>
           <p className="ld-fade">
-            Bhumi-Niti reads the record and the satellite side by side, finds where they disagree,
+            Nirvana reads the record and the satellite side by side, finds where they disagree,
             and turns the fix into evidence a policymaker can defend.
           </p>
           <div className="ld-hero-ctas ld-fade">
@@ -744,7 +744,7 @@ export function Landing() {
             an office.
           </p>
           <p>
-            <b>Bhumi-Niti lives in that gap.</b>
+            <b>Nirvana lives in that gap.</b>
           </p>
         </div>
       </section>
@@ -886,7 +886,7 @@ export function Landing() {
         <div className="ld-brand">
           <img src={logo} alt="" />
           <span>
-            <b>BHUMI-NITI</b>
+            <b>NIRVANA</b>
             <small>Same land. More clarity. Better decisions.</small>
           </span>
         </div>

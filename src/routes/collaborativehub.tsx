@@ -28,13 +28,13 @@ export const Route = createFileRoute("/collaborativehub")({
   }),
   head: () => ({
     meta: [
-      { title: "Collaborative Hub — BHUMI-NITI Land Governance" },
+      { title: "Collaborative Hub — NIRVANA Land Governance" },
       {
         name: "description",
         content:
           "Shared research workspaces where researchers, officials and GIS analysts co-write, analyse and review land-governance evidence together.",
       },
-      { property: "og:title", content: "Collaborative Hub — BHUMI-NITI" },
+      { property: "og:title", content: "Collaborative Hub — NIRVANA" },
       { property: "og:description", content: "Build land-governance research together." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

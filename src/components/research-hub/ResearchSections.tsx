@@ -1795,7 +1795,7 @@ export function PolicyExperiment({
           })}
         </div>
         <p className="rh-muted" style={{ fontSize: 12, lineHeight: 1.5, margin: "12px 0 0" }}>
-          Scenario outputs are model estimates from Bhumi-Niti's demonstration land-use model, not
+          Scenario outputs are model estimates from Nirvana's demonstration land-use model, not
           official predictions. Variables are % changes relative to each class's current share.{" "}
           <a href="/landdifference" style={{ color: "#075B3A", fontWeight: 700 }}>
             Open the full scenario simulator →
@@ -1911,7 +1911,7 @@ export function BriefBuilder({ ws }: { ws: Workspace }) {
       <article className="rh-brief" aria-label="Policy brief preview">
         <div className="rh-brief-band">
           <div>
-            <b>Bhumi-Niti Research Hub · Department of Land Resources</b>
+            <b>Nirvana Research Hub · Department of Land Resources</b>
             <small>Ministry of Rural Development · Government of India</small>
           </div>
           <span className="stamp">DRAFT · DEMO</span>
@@ -2086,7 +2086,7 @@ export function TranslateFlow({ ws, onBrief }: { ws: Workspace; onBrief: () => v
       Agricultural Preservation Zone — agricultural land <b>+10%</b>, urban expansion <b>−8%</b>,
       forest protection <b>+5%</b> (relative to current shares).
     </>,
-    <>Ran the Bhumi-Niti land-use scenario model for {ws.state} against the 2024 baseline.</>,
+    <>Ran the Nirvana land-use scenario model for {ws.state} against the 2024 baseline.</>,
     <div key="i" className="rh-outcomes" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
       {out.slice(0, 6).map((o) => {
         const good = o.goodWhenDown ? o.value < 0 : o.value > 0;

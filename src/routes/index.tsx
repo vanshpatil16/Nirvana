@@ -8,13 +8,13 @@ const Landing = lazy(() =>
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "BHUMI-NITI — Every plot of land has two stories" },
+      { title: "NIRVANA — Every plot of land has two stories" },
       {
         name: "description",
         content:
-          "Bhumi-Niti reads the land record and the satellite side by side, finds where they disagree, and turns the fix into evidence — in English, हिंदी and मराठी.",
+          "Nirvana reads the land record and the satellite side by side, finds where they disagree, and turns the fix into evidence — in English, हिंदी and मराठी.",
       },
-      { property: "og:title", content: "BHUMI-NITI — Every plot of land has two stories" },
+      { property: "og:title", content: "NIRVANA — Every plot of land has two stories" },
       {
         property: "og:description",
         content:

@@ -28,7 +28,7 @@ import {
 } from "@/data/innovation";
 
 /**
- * The collaborative workspace. This is the screen that makes BHUMI-NITI a
+ * The collaborative workspace. This is the screen that makes NIRVANA a
  * research platform rather than a competition page: the accepted submission
  * keeps its evidence, tasks, experiments, pilot results and decisions in one
  * place, and the module lives in the URL so a reviewer can be sent straight to

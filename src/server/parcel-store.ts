@@ -123,7 +123,7 @@ export function handleParcelsApi(request: Request): Response {
   });
   return Response.json(result, {
     headers: {
-      "X-Data-Source": "BHUMI-NITI cadastral import",
+      "X-Data-Source": "NIRVANA cadastral import",
       "X-Datasets": datasetSlugs().join(","),
       "Cache-Control": "public, max-age=300",
     },

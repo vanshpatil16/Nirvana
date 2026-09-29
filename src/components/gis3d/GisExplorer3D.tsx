@@ -748,7 +748,7 @@ export function GisExplorer3D({ search }: Props) {
     <div className="g3d-root">
       <header className="g3d-top">
         <a className="g3d-back" href="/">
-          <ArrowLeft /> BHUMI-NITI
+          <ArrowLeft /> NIRVANA
         </a>
         <div className="g3d-title">
           <span>3D GIS EXPLORER</span>

@@ -8,13 +8,13 @@ const Dashboard = lazy(() =>
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "BHUMI-NITI Dashboard — National Land Intelligence" },
+      { title: "NIRVANA Dashboard — National Land Intelligence" },
       {
         name: "description",
         content:
           "Evidence-based land intelligence, GIS analysis, research and policy insights for India.",
       },
-      { property: "og:title", content: "BHUMI-NITI — India’s Land Intelligence Platform" },
+      { property: "og:title", content: "NIRVANA — India’s Land Intelligence Platform" },
       {
         property: "og:description",
         content: "A national digital platform connecting land data, evidence, policy and research.",

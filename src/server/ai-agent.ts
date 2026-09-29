@@ -1,5 +1,5 @@
 /**
- * Bhumi-Niti land-intelligence agent — POST /api/ai.
+ * Nirvana land-intelligence agent — POST /api/ai.
  *
  * The Ask Bhumi prompt layer (src/components/home/MapFirstHome.tsx) posts the
  * user's text here — typed, or spoken via the browser's SpeechRecognition
@@ -370,7 +370,7 @@ function readEnv(env: unknown, name: string): string | null {
 // ---------------------------------------------------------------------------
 
 function systemPrompt(context: MapContext | null | undefined): string {
-  const base = `You are Bhumi-Niti AI, the land-intelligence analyst inside the Bhumi-Niti map platform for India. You answer questions about land parcels, survey and mutation records, zoning and land use, NA (non-agricultural) conversion, revenue litigation, CRZ and environmental restrictions, flood and climate risk, satellite land-use change, and Indian land policies.
+  const base = `You are Nirvana AI, the land-intelligence analyst inside the Nirvana map platform for India. You answer questions about land parcels, survey and mutation records, zoning and land use, NA (non-agricultural) conversion, revenue litigation, CRZ and environmental restrictions, flood and climate risk, satellite land-use change, and Indian land policies.
 
 Every turn you work in this order:
 1. If the user asks to see, show, open, go to, explore, find, zoom to, or locate a place — a city, ward, village, locality, area, or its plots — call show_area with that place name and its coordinates (if you know them) so the map flies there and loads the plots around it. Do NOT call show_area when the user is asking about the already-selected parcel ("here", "this plot", "this land") — the map is already there.
@@ -430,7 +430,7 @@ async function callOpenRouter(
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
       "HTTP-Referer": referer,
-      "X-Title": "Bhumi-Niti",
+      "X-Title": "Nirvana",
     },
     body: JSON.stringify({
       model,
@@ -638,7 +638,7 @@ function plannerPrompt(context: MapContext | null, previous: QueryPlan | null): 
   const prev = previous
     ? `Previous analysis (for follow-ups): ${JSON.stringify({ intent: previous.intent, location: previous.location?.name, state: previous.location?.state, from_year: previous.from_year, to_year: previous.to_year, from_class: previous.from_class, to_class: previous.to_class, compare_with: previous.compare_with?.name })}`
     : "There is no previous analysis.";
-  return `You are the query planner of Bhumi-Niti, India's land-governance GIS platform. Convert the user's question into a plan by calling plan_query. Never answer the question.
+  return `You are the query planner of Nirvana, India's land-governance GIS platform. Convert the user's question into a plan by calling plan_query. Never answer the question.
 
 The user may write in English, Hindi, Marathi or another Indian language (or Hinglish). Understand it in any language, but return place names and topic keywords in English.
 

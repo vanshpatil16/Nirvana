@@ -20,7 +20,7 @@ export const Route = createFileRoute("/gis-explorer-3d")({
   }),
   head: () => ({
     meta: [
-      { title: "3D GIS Explorer — BHUMI-NITI" },
+      { title: "3D GIS Explorer — NIRVANA" },
       {
         name: "description",
         content:

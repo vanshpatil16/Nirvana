@@ -222,7 +222,7 @@ export const WIZARD_STEPS: WizardStep[] = [
         label: "GIS / satellite layers",
         type: "textarea",
         rows: 3,
-        placeholder: "Layers you will attach from BHUMI-NITI or elsewhere.",
+        placeholder: "Layers you will attach from NIRVANA or elsewhere.",
       },
       {
         name: "researchPapers",

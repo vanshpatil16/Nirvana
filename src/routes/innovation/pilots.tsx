@@ -10,7 +10,7 @@ const InnovationPilots = lazy(() =>
 export const Route = createFileRoute("/innovation/pilots")({
   head: () => ({
     meta: [
-      { title: "Pilots & Experiments — BHUMI-NITI Innovation Portal" },
+      { title: "Pilots & Experiments — NIRVANA Innovation Portal" },
       {
         name: "description",
         content:

@@ -10,13 +10,13 @@ const RecordVsReality = lazy(() =>
 export const Route = createFileRoute("/record-vs-reality")({
   head: () => ({
     meta: [
-      { title: "Record vs Reality — BHUMI-NITI Land Intelligence" },
+      { title: "Record vs Reality — NIRVANA Land Intelligence" },
       {
         name: "description",
         content:
           "Compare official land records with real-world satellite imagery, field data and ground reports.",
       },
-      { property: "og:title", content: "Record vs Reality — BHUMI-NITI" },
+      { property: "og:title", content: "Record vs Reality — NIRVANA" },
       {
         property: "og:description",
         content: "Official land record vs satellite reality comparison engine.",

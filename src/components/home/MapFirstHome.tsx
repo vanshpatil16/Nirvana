@@ -528,7 +528,7 @@ export function MapFirstHome() {
   };
   const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [aiModel, setAiModel] = useState("Bhumi-Niti AI v2.4 (Land Engine)");
+  const [aiModel, setAiModel] = useState("Nirvana AI v2.4 (Land Engine)");
 
   // Bring the newest question to the top of the transcript so its answer reads
   // from the start (long answers used to open scrolled to their last line).
@@ -1223,12 +1223,12 @@ export function MapFirstHome() {
       const message = err instanceof Error ? err.message : "Unknown error";
       const errorReply: AIResponse = {
         query: textToSubmit,
-        summary: `Couldn't reach the Bhumi-Niti AI service: ${message}`,
+        summary: `Couldn't reach the Nirvana AI service: ${message}`,
         framework: [
           "Service status: The land-intelligence model is reached through the server's OpenRouter connection — check OPENROUTER_API_KEY in .env and retry.",
         ],
         riskAssessment: "Moderate Risk. This is a service interruption, not a land-risk verdict.",
-        evidence: [{ label: "Bhumi-Niti AI gateway", type: "System" }],
+        evidence: [{ label: "Nirvana AI gateway", type: "System" }],
         limitation: "No model answer was produced for this query.",
         suggestedFollowups: ["Try again in a moment", "Show me the plots in Mira Road"],
       };
@@ -1595,7 +1595,7 @@ export function MapFirstHome() {
       <div ref={mapContainer} className="absolute inset-0 w-full h-full cursor-crosshair z-0" />
 
       {/* ========================================================================= */}
-      {/* COLLAPSIBLE SIDEBAR DRAWER (Original Bhumi-Niti Side Navigation)          */}
+      {/* COLLAPSIBLE SIDEBAR DRAWER (Original Nirvana Side Navigation)          */}
       {/* ========================================================================= */}
       {sidebarOpen && (
         <button
@@ -1611,10 +1611,10 @@ export function MapFirstHome() {
       >
         <div className="p-4 flex items-center justify-between border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <img src={logo} alt="Bhumi-Niti" className="w-8 h-8 object-contain" />
+            <img src={logo} alt="Nirvana" className="w-8 h-8 object-contain" />
             <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight text-green-950 leading-none">BHUMI-NITI</span>
-              <span className="text-[10px] text-emerald-700 font-semibold tracking-wide leading-tight">भूमि-नीति</span>
+              <span className="font-extrabold text-sm tracking-tight text-green-950 leading-none">NIRVANA</span>
+              <span className="text-[10px] text-emerald-700 font-semibold tracking-wide leading-tight">निर्वाण</span>
             </div>
           </div>
           <button
@@ -1680,10 +1680,10 @@ export function MapFirstHome() {
           </button>
 
           <div className="flex items-center gap-2.5 pl-1">
-            <img src={logo} alt="Bhumi-Niti" className="w-7 h-7 object-contain" />
+            <img src={logo} alt="Nirvana" className="w-7 h-7 object-contain" />
             <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight text-green-950 leading-none">BHUMI-NITI</span>
-              <span className="text-[10px] text-emerald-700 font-semibold tracking-wide leading-tight">भूमि-नीति</span>
+              <span className="font-extrabold text-sm tracking-tight text-green-950 leading-none">NIRVANA</span>
+              <span className="text-[10px] text-emerald-700 font-semibold tracking-wide leading-tight">निर्वाण</span>
             </div>
           </div>
         </div>
@@ -2119,11 +2119,11 @@ export function MapFirstHome() {
               <div className="flex items-center gap-2.5 min-w-0">
                 <img
                   src={aiBotLogo}
-                  alt="Bhumi-Niti AI bot"
+                  alt="Nirvana AI bot"
                   className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-green-100 shadow-lg shadow-green-600/25"
                 />
                 <div className="min-w-0 leading-tight">
-                  <span className="block font-semibold text-[14px] text-slate-900 truncate">Bhumi-Niti Copilot</span>
+                  <span className="block font-semibold text-[14px] text-slate-900 truncate">Nirvana Copilot</span>
                   <span className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
                     <i className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
                     Land intelligence assistant
@@ -2187,7 +2187,7 @@ export function MapFirstHome() {
                     ) : (
                       <p className="text-xs text-slate-600 leading-snug">{turn.text}</p>
                     )}
-                    <span className="block text-[10px] text-slate-400">Bhumi-Niti Copilot · {turn.at}</span>
+                    <span className="block text-[10px] text-slate-400">Nirvana Copilot · {turn.at}</span>
                   </div>
                 </div>
               ),
@@ -2336,7 +2336,7 @@ export function MapFirstHome() {
               {/* Right Controls: Model Selector & Up Arrow Button */}
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-800 hover:text-slate-900 select-none">
-                  <span>Bhumi-Niti 2.4</span>
+                  <span>Nirvana 2.4</span>
                   <span className="bg-amber-400 text-white font-bold text-[10px] px-2 py-0.5 rounded-md leading-none">
                     Beta
                   </span>

@@ -1,5 +1,5 @@
 /**
- * BHU-NITI evidence workflow — data for the seven story chapters.
+ * NIRVANA evidence workflow — data for the seven story chapters.
  *
  * Every number shown on screen comes from here and matches the SIH
  * consistency sheet exactly. Provenance:

@@ -14,13 +14,13 @@ export const Route = createFileRoute("/policy-lab")({
   }),
   head: () => ({
     meta: [
-      { title: "Policy Lab — BHUMI-NITI Land Governance" },
+      { title: "Policy Lab — NIRVANA Land Governance" },
       {
         name: "description",
         content:
           "Evaluate an implemented land policy against simulated historical data, or configure a hypothetical policy and simulate its modelled effects.",
       },
-      { property: "og:title", content: "Policy Lab — BHUMI-NITI" },
+      { property: "og:title", content: "Policy Lab — NIRVANA" },
       {
         property: "og:description",
         content: "Policy evaluation and scenario simulation for land governance.",

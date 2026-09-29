@@ -22,7 +22,7 @@ export const Route = createFileRoute("/innovation/challenges/$challengeId")({
   },
   head: ({ params }) => ({
     meta: [
-      { title: "Challenge Brief — BHUMI-NITI Innovation Portal" },
+      { title: "Challenge Brief — NIRVANA Innovation Portal" },
       {
         name: "description",
         content: `Problem statement, geography, evidence panel, eligibility and evaluation criteria for challenge ${params.challengeId}.`,

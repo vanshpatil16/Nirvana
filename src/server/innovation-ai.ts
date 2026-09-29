@@ -331,7 +331,7 @@ function systemPrompt(action: AssistantAction, sources: Source[]): string {
     )
     .join("\n");
 
-  return `You are the evidence assistant for the BHUMI-NITI Innovation Portal, a national land-governance research platform. You support researchers, government teams and innovators working on land-use policy.
+  return `You are the evidence assistant for the NIRVANA Innovation Portal, a national land-governance research platform. You support researchers, government teams and innovators working on land-use policy.
 
 YOUR TASK
 ${ACTION_BRIEFS[action]}
@@ -477,7 +477,7 @@ export async function handleInnovationAiApi(request: Request, env?: unknown): Pr
         Authorization: `Bearer ${key}`,
         "Content-Type": "application/json",
         "HTTP-Referer": referer,
-        "X-Title": "BhUMI-NITI Innovation Portal",
+        "X-Title": "Nirvana Innovation Portal",
       },
       body: JSON.stringify({
         model,

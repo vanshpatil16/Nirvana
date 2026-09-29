@@ -49,7 +49,7 @@ export interface EvidenceDataset {
   updated: string;
 }
 
-/** A BHUMI-NITI GIS layer that can be attached to a challenge or workspace (§9). */
+/** A NIRVANA GIS layer that can be attached to a challenge or workspace (§9). */
 export interface GisLayerRef {
   name: string;
   kind: "Satellite" | "Cadastral" | "Land Use" | "Climate Risk" | "Disputes" | "Infrastructure";
@@ -389,7 +389,7 @@ export const CHALLENGES: Challenge[] = [
         },
         {
           name: "Flood extent layers (demo)",
-          provider: "BHUMI-NITI derived from SAR",
+          provider: "NIRVANA derived from SAR",
           coverage: "District level, 2018–2025 flood seasons",
           variables: "Inundation extent, duration, permanent vs seasonal water",
           limitations:
@@ -1077,7 +1077,7 @@ export const CHALLENGES: Challenge[] = [
         },
         {
           name: "Vegetation & soil recovery index (demo)",
-          provider: "BHUMI-NITI derived",
+          provider: "NIRVANA derived",
           coverage: "Watershed level, 2015–present",
           variables: "NDVI recovery, bare-soil fraction, degradation class",
           limitations: "Remote proxy; does not capture groundwater recharge directly.",

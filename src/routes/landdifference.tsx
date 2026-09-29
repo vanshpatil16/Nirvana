@@ -10,13 +10,13 @@ const LandDifference = lazy(() =>
 export const Route = createFileRoute("/landdifference")({
   head: () => ({
     meta: [
-      { title: "Land Difference Intelligence — BHUMI-NITI" },
+      { title: "Land Difference Intelligence — NIRVANA" },
       {
         name: "description",
         content:
           "Compare land-use change across time and geography using satellite imagery, parcel boundaries and policy context.",
       },
-      { property: "og:title", content: "Land Difference Intelligence — BHUMI-NITI" },
+      { property: "og:title", content: "Land Difference Intelligence — NIRVANA" },
       {
         property: "og:description",
         content:

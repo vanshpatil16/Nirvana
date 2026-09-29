@@ -86,7 +86,7 @@ export function CapsuleScreen({ head, onNext }: { head: ReactNode; onNext: () =>
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
   }, [lines]);
 
-  const cite = `BHU-NITI Evidence Capsule ${CAPSULE.id}: “${CAPSULE.title}” (${CAPSULE.created}). ${KPI.hash}.`;
+  const cite = `NIRVANA Evidence Capsule ${CAPSULE.id}: “${CAPSULE.title}” (${CAPSULE.created}). ${KPI.hash}.`;
 
   return (
     <div className="wf-screen">
@@ -163,7 +163,7 @@ export function CapsuleScreen({ head, onNext }: { head: ReactNode; onNext: () =>
                 <i />
                 <i />
               </span>
-              <span>bhu-niti capsule rerun {CAPSULE.id}</span>
+              <span>nirvana capsule rerun {CAPSULE.id}</span>
               <Cpu size={14} />
             </header>
             <div className="wf-console-body" ref={logRef}>
@@ -180,7 +180,7 @@ export function CapsuleScreen({ head, onNext }: { head: ReactNode; onNext: () =>
                   </p>
                 </>
               )}
-              {lines >= 0 && <p className="cmd">$ bhu-niti capsule rerun {CAPSULE.id} --verify</p>}
+              {lines >= 0 && <p className="cmd">$ nirvana capsule rerun {CAPSULE.id} --verify</p>}
               {CAPSULE.rerunLog.slice(0, Math.max(0, lines)).map((l) => (
                 <p key={l} className="ok">
                   <span>✓</span> {l}

@@ -31,7 +31,7 @@ export const Route = createFileRoute("/innovation/workspace/$projectId")({
   }),
   head: ({ params }) => ({
     meta: [
-      { title: "Project Workspace — BHUMI-NITI Innovation Portal" },
+      { title: "Project Workspace — NIRVANA Innovation Portal" },
       {
         name: "description",
         content: `Collaborative workspace for ${params.projectId}: evidence locker, task board, experiment log, pilot tracker and decision log.`,

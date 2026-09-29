@@ -80,7 +80,7 @@ function JsonPlan() {
 function downloadBrief(lang: Lang) {
   const text = ANSWER[lang].map((s) => (typeof s === "number" ? ` [${s}]` : s)).join("");
   const body = [
-    "BHU-NITI — Copilot brief (prototype)",
+    "NIRVANA — Copilot brief (prototype)",
     "",
     `Question (${LANG_NAME[lang]}): ${QUESTION[lang]}`,
     "",
@@ -109,7 +109,7 @@ function downloadBrief(lang: Lang) {
   const url = URL.createObjectURL(new Blob([body], { type: "text/plain;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = "bhu-niti-copilot-brief.txt";
+  a.download = "nirvana-copilot-brief.txt";
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -187,7 +187,7 @@ export function CopilotScreen({
                 <article className="wf-answer">
                   <header>
                     <span>
-                      BHU-NITI Copilot · answered in <b>{LANG_NAME[qLang]}</b>
+                      NIRVANA Copilot · answered in <b>{LANG_NAME[qLang]}</b>
                     </span>
                     <Chip tone="green" icon={<ShieldCheck size={12} />}>
                       Every sentence cited

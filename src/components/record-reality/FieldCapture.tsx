@@ -331,7 +331,7 @@ export function FieldCapture({
     geo
       ? `${fmtCoord(geo)}${geo.source === "parcel" ? " (parcel centroid)" : geo.accuracy ? ` ±${Math.round(geo.accuracy)} m` : ""}`
       : "Location unavailable",
-    `${nowStamp()} · ${role} · Bhumi-Niti field capture`,
+    `${nowStamp()} · ${role} · Nirvana field capture`,
   ];
 
   const capture = () => {

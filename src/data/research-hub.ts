@@ -594,25 +594,25 @@ export const GIS_LAYERS: GisLayer[] = [
   {
     id: "l1",
     name: "Land use / land cover (Sentinel-2)",
-    source: "Bhumi-Niti LULC layer",
+    source: "Nirvana LULC layer",
     topics: ["Land Use", "Agriculture", "Remote Sensing"],
   },
   {
     id: "l2",
     name: "Urban expansion 2018→2024",
-    source: "Bhumi-Niti change layer",
+    source: "Nirvana change layer",
     topics: ["Urbanization", "Land Use"],
   },
   {
     id: "l3",
     name: "Climate risk by state",
-    source: "Bhumi-Niti climate layer",
+    source: "Nirvana climate layer",
     topics: ["Climate"],
   },
   {
     id: "l4",
     name: "Land dispute density",
-    source: "Bhumi-Niti disputes layer",
+    source: "Nirvana disputes layer",
     topics: ["Land Disputes"],
   },
   {
@@ -901,7 +901,7 @@ export const RESEARCHERS: Researcher[] = [
     id: "arjun",
     name: "Arjun Menon",
     initials: "AM",
-    institution: "Bhumi-Niti GIS Cell",
+    institution: "Nirvana GIS Cell",
     role: "GIS analyst",
     state: "Maharashtra",
     expertise: ["Cadastral Mapping", "Remote Sensing"],

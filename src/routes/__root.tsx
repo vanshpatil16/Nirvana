@@ -78,13 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "BHUMI-NITI" },
+      { title: "NIRVANA" },
       {
         name: "description",
         content: "National Platform for Research & Policy Innovation in Land Governance",
       },
-      { name: "author", content: "BHUMI-NITI" },
-      { property: "og:title", content: "BHUMI-NITI" },
+      { name: "author", content: "NIRVANA" },
+      { property: "og:title", content: "NIRVANA" },
       {
         property: "og:description",
         content: "National Platform for Research & Policy Innovation in Land Governance",

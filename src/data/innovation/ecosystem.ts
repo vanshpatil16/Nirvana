@@ -195,7 +195,7 @@ export const RESEARCH_BRIDGE: BridgeResource[] = [
     id: "br-flood",
     kind: "GIS Layer",
     title: "Flood frequency & return-period surface",
-    source: "BHUMI-NITI derived from IMD & SAR",
+    source: "NIRVANA derived from IMD & SAR",
     year: 2025,
     linkedTo: ["flood-resilient-planning"],
     contribution: "Converts rainfall frequency into a land-use suitability input for planning.",

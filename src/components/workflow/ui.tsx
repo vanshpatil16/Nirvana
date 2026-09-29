@@ -182,7 +182,7 @@ export function TopBar({
       <a className="wf-brand" href="/">
         <img src={logo} alt="" />
         <span>
-          <b>BHU-NITI</b>
+          <b>NIRVANA</b>
           <small>Evidence workflow</small>
         </span>
       </a>

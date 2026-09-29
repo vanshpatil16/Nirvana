@@ -16,7 +16,7 @@ export const Route = createFileRoute("/innovation/submit")({
   }),
   head: () => ({
     meta: [
-      { title: "Submit a Solution — BHUMI-NITI Innovation Portal" },
+      { title: "Submit a Solution — NIRVANA Innovation Portal" },
       {
         name: "description",
         content:

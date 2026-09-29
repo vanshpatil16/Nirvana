@@ -379,7 +379,7 @@ export function LiveManuscript() {
           onTouchMove={() => (userScrolled.current = true)}
         >
           <div className="rh-ms-running">
-            Bhumi-Niti Research Hub · Working paper draft · Not for citation
+            Nirvana Research Hub · Working paper draft · Not for citation
           </div>
           <h1>
             Agricultural Land Transition around Maharashtra&apos;s Urban Corridors: Evidence from
@@ -391,7 +391,7 @@ export function LiveManuscript() {
           </p>
           <p className="rh-ms-affil">
             <sup>1</sup>IIT Bombay · <sup>2</sup>Ministry of Rural Development · <sup>3</sup>IISc
-            Bengaluru · <sup>4</sup>Bhumi-Niti GIS Cell
+            Bengaluru · <sup>4</sup>Nirvana GIS Cell
           </p>
 
           <section className="rh-ms-abstract">

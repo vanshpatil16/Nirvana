@@ -42,7 +42,7 @@ interface Props {
 
 function composePrompt(question: string, ctx: AskContext): string {
   const bits = [
-    "You are answering inside BHUMI-NITI's 3D GIS Explorer (Cesium globe over India).",
+    "You are answering inside NIRVANA's 3D GIS Explorer (Cesium globe over India).",
     `Current view: camera bbox [${ctx.bbox?.map((v) => v.toFixed(3)).join(", ") ?? "national"}]`,
     ctx.rangeMeters !== null ? `approx. range ${Math.round(ctx.rangeMeters / 1000)} km` : "",
     `imagery year ${ctx.year}`,

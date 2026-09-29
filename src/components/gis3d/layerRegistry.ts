@@ -28,7 +28,7 @@ const OSM_EVIDENCE = (coverage: string) => ({
 
 const stateIntelEvidence = (source: string, processing: string, field: string) => ({
   source,
-  provider: "BHUMI-NITI demo aggregates (src/data/state-intelligence.ts)",
+  provider: "NIRVANA demo aggregates (src/data/state-intelligence.ts)",
   date: "2024",
   resolution: "State / UT",
   coverage: "National (35 states & UTs)",
@@ -40,11 +40,11 @@ const stateIntelEvidence = (source: string, processing: string, field: string) =
 
 const landMixEvidence = (processing: string) => ({
   source: "Land-mix shares per state (land-scenario model)",
-  provider: "BHUMI-NITI (src/data/land-scenario.ts)",
+  provider: "NIRVANA (src/data/land-scenario.ts)",
   date: "2018–2024 series",
   resolution: "State / UT",
   coverage: "National (35 states & UTs)",
-  license: "Modelled output of BHUMI-NITI land scenario model",
+  license: "Modelled output of NIRVANA land scenario model",
   processing,
   kind: "modelled" as const,
   confidence:
@@ -630,7 +630,7 @@ export const GIS_LAYERS: GisLayerDef[] = [
     legend: [{ label: "Corridor partition", color: "#7f93ad" }],
     evidence: {
       source: "Policy study-region geography partition",
-      provider: "BHUMI-NITI (src/data/policySimulation/geographies.ts)",
+      provider: "NIRVANA (src/data/policySimulation/geographies.ts)",
       date: "Study vintage 2010–2024",
       resolution: "Corridor level",
       coverage: "One modelled study region — not an official notification area",
@@ -824,7 +824,7 @@ export const GIS_LAYERS: GisLayerDef[] = [
     legend: [{ label: "Intervention corridor", color: "#2f7a5f" }],
     evidence: {
       source: "Policy intervention corridors",
-      provider: "BHUMI-NITI policy model (src/data/policySimulation)",
+      provider: "NIRVANA policy model (src/data/policySimulation)",
       date: "Study vintage 2010–2024",
       resolution: "Corridor level",
       coverage: "One modelled study region",
@@ -850,7 +850,7 @@ export const GIS_LAYERS: GisLayerDef[] = [
     legend: [{ label: "Modelled outcome", color: "#7f5af0" }],
     evidence: {
       source: "Policy scenario simulation",
-      provider: "BHUMI-NITI (src/data/land-scenario.ts)",
+      provider: "NIRVANA (src/data/land-scenario.ts)",
       date: "Scenario run on demand",
       resolution: "State / UT",
       coverage: "States in the selected region",
@@ -876,7 +876,7 @@ export const GIS_LAYERS: GisLayerDef[] = [
     legend: [{ label: "Treatment − comparison", color: "#3b6fd4" }],
     evidence: {
       source: "Difference-in-Differences comparison",
-      provider: "BHUMI-NITI land-scenario + state intelligence",
+      provider: "NIRVANA land-scenario + state intelligence",
       date: "2018 → selected year",
       resolution: "State / UT",
       coverage: "Two selected states",
@@ -929,7 +929,7 @@ export const GIS_LAYERS: GisLayerDef[] = [
     legend: [{ label: "Modelled indicator change", color: "#c85a8a" }],
     evidence: {
       source: "Policy impact indicators",
-      provider: "BHUMI-NITI policy simulation",
+      provider: "NIRVANA policy simulation",
       date: "Scenario run on demand",
       resolution: "State / UT",
       coverage: "Selected region",

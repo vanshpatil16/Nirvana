@@ -910,7 +910,7 @@ function Analysis({ ws }: { ws: Workspace }) {
             </table>
           </div>
           <p className="rh-muted" style={{ margin: "8px 0 0", fontSize: 11 }}>
-            From Bhumi-Niti's demonstration land-use model; km² from the state boundary area.
+            From Nirvana's demonstration land-use model; km² from the state boundary area.
           </p>
         </div>
         <div className="rh-card rh-panel">

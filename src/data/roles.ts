@@ -1,5 +1,5 @@
 /**
- * Demo user roles for BHUMI-NITI — the stakeholders of the land-governance
+ * Demo user roles for NIRVANA — the stakeholders of the land-governance
  * research & policy platform. Switching roles is a presentation aid only: it
  * relabels the header and suggests the most relevant module. It does not grant
  * or restrict access (no authentication is wired yet).

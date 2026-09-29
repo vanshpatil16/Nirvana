@@ -1,5 +1,5 @@
 /**
- * Structured query plan for the Bhumi-Niti Copilot.
+ * Structured query plan for the Nirvana Copilot.
  *
  * The LLM only *proposes* a plan (intent, location, years, classes, datasets,
  * map action). `validatePlan` then checks it against what the platform can

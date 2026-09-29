@@ -129,7 +129,7 @@ function writeStore(key: string, value: unknown) {
 }
 
 // ---------------------------------------------------------------------------
-// Shell (same global sidebar + header as the rest of Bhumi-Niti)
+// Shell (same global sidebar + header as the rest of Nirvana)
 // ---------------------------------------------------------------------------
 
 function Shell({
@@ -149,11 +149,11 @@ function Shell({
         <div className="sidebar-top">
           <div className="brand">
             <span className="brand-mark" aria-hidden="true">
-              <img src={logo} alt="BHUMI-NITI Logo" width={38} height={38} />
+              <img src={logo} alt="NIRVANA Logo" width={38} height={38} />
             </span>
             <div>
-              <strong>BHUMI-NITI</strong>
-              <b>भूमि-नीति</b>
+              <strong>NIRVANA</strong>
+              <b>निर्वाण</b>
             </div>
           </div>
           <Button
@@ -680,7 +680,7 @@ function View({
           <section className="rh-hero rh-hero-home" aria-label="Research Hub introduction">
             <div>
               <span className="rh-eyebrow">
-                <Sparkles /> Bhumi-Niti Research Hub
+                <Sparkles /> Nirvana Research Hub
               </span>
               <h1>
                 Research that shapes <em>better land policy.</em>
@@ -702,7 +702,7 @@ function View({
                   <CheckCircle2 /> Every AI claim cites its source
                 </span>
                 <span>
-                  <MapIcon /> Built on the Bhumi-Niti GIS
+                  <MapIcon /> Built on the Nirvana GIS
                 </span>
                 <span>
                   <Landmark /> Linked to policy experiments

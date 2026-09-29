@@ -257,7 +257,7 @@ export function GisPanel({ project }: { project: Project }) {
     <div className="inno-mod">
       <SectionHead
         title="GIS Workspace"
-        description="BHUMI-NITI layers attached to this project, plus the study regions the team has saved."
+        description="NIRVANA layers attached to this project, plus the study regions the team has saved."
         action={
           <div className="inno-link-row">
             <a className="portal-btn-ghost" href="/gis-explorer">

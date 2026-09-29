@@ -34,8 +34,8 @@ function Brand() {
         <img src={logo} alt="" width={38} height={38} />
       </span>
       <div>
-        <strong>BHUMI-NITI</strong>
-        <b>भूमि-नीति</b>
+        <strong>NIRVANA</strong>
+        <b>निर्वाण</b>
       </div>
     </div>
   );

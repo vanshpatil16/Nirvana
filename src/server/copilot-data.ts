@@ -131,7 +131,7 @@ function runLulc(plan: QueryPlan, place: Place | null): DataResult {
         value: `${fmt(a[c])}% → ${fmt(b[c])}% (${signed(b[c] - a[c], 2)} pp)`,
         emphasis: c === fromC || c === toC,
       })),
-      source: "Bhumi-Niti land-use model (demonstration, calibrated to state-level shares)",
+      source: "Nirvana land-use model (demonstration, calibrated to state-level shares)",
       note:
         place && place.name !== region && region !== ALL_INDIA
           ? `${place.name} is summarised at ${region} state level — district-level land-use statistics aren't loaded yet.`
@@ -146,7 +146,7 @@ function runLulc(plan: QueryPlan, place: Place | null): DataResult {
     region,
     headline: `In ${to}, ${where} is about ${fmt(b.agri, 0)}% agriculture, ${fmt(b.forest, 0)}% forest and ${fmt(b.built, 1)}% built-up.`,
     rows: LAND_CLASS_ORDER.map((c) => ({ label: CLASS_LABEL[c], value: `${fmt(b[c])}%` })),
-    source: "Bhumi-Niti land-use model (demonstration)",
+    source: "Nirvana land-use model (demonstration)",
   };
 }
 
@@ -245,7 +245,7 @@ function runStateStat(
               : `${fmt(s.socio)}%`,
         ]),
       },
-      source: "Bhumi-Niti state intelligence snapshot (demo data)",
+      source: "Nirvana state intelligence snapshot (demo data)",
     };
   }
   const s = STATE_STATS[region];
@@ -272,7 +272,7 @@ function runStateStat(
         { label: "Active disputes", value: fmtInt(s.disputes) },
         { label: "National rank", value: `${rank((x) => x.disputes)} / ${entries.length}` },
       ],
-      source: "Bhumi-Niti dispute aggregates (demo data)",
+      source: "Nirvana dispute aggregates (demo data)",
       note: "Case-level dispute records (court / revenue) aren't connected yet.",
     };
   }
@@ -288,7 +288,7 @@ function runStateStat(
         { label: "High-risk districts", value: String(s.highRiskDistricts) },
       ],
       source:
-        "Bhumi-Niti climate vulnerability layer (demo) · live IMD weather available on the Dashboard",
+        "Nirvana climate vulnerability layer (demo) · live IMD weather available on the Dashboard",
     };
   }
   return {
@@ -301,7 +301,7 @@ function runStateStat(
       { label: "Vulnerable households", value: `${fmt(s.socio)}%` },
       { label: "Land-use change since 2015", value: `+${fmt(s.change)}%` },
     ],
-    source: "Bhumi-Niti socio-economic overlay (demo data)",
+    source: "Nirvana socio-economic overlay (demo data)",
   };
 }
 
@@ -330,7 +330,7 @@ function runResearch(plan: QueryPlan, query: string, place: Place | null): DataR
       })),
       ...policies.map((p) => ({ label: "Policy / law", value: p.title })),
     ],
-    source: "Bhumi-Niti Research Hub catalogue (demonstration records)",
+    source: "Nirvana Research Hub catalogue (demonstration records)",
   };
 }
 

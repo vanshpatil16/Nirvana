@@ -22,7 +22,7 @@ export const Route = createFileRoute("/gis-explorer")({
   }),
   head: () => ({
     meta: [
-      { title: "GIS Explorer — BHUMI-NITI Spatial Analysis" },
+      { title: "GIS Explorer — NIRVANA Spatial Analysis" },
       {
         name: "description",
         content: "Detailed spatial analysis workspace for India's land intelligence.",
