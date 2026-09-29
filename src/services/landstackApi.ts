@@ -1,12 +1,16 @@
 /**
  * Thin client for the Land Stack API (the FastAPI integration gateway).
  *
+ * Reads go through the app's own `/api/landstack` proxy rather than straight to
+ * the gateway, because the gateway's CORS allowlist only covers the primary
+ * domain. The proxy is a transport shim only — the gateway still owns data,
+ * auth, rate limits and provenance. `LANDSTACK_BASE_URL` below is used for
+ * display and for plain navigation links (docs, STAC catalog), which are not
+ * subject to CORS.
+ *
  * Everything here is read-only and best-effort: the page that uses it must
  * render even when the gateway is asleep, rate-limited or unconfigured, so every
  * call resolves to `{ ok: false, reason }` rather than throwing.
- *
- * The base URL is a public client value, not a secret. It is overridable at build
- * time so a staging gateway can be pointed at without a code change.
  */
 
 export const LANDSTACK_BASE_URL =
@@ -58,19 +62,28 @@ export interface SourceHealth {
 
 export type Result<T> = { ok: true; data: T; cached?: boolean } | { ok: false; reason: string };
 
-const TIMEOUT_MS = 20_000;
+const TIMEOUT_MS = 25_000;
 
-async function getJson<T>(path: string): Promise<Result<T>> {
+async function getJson<T>(path: string, query?: string): Promise<Result<T>> {
+  const params = new URLSearchParams({ path });
+  if (query) params.set("query", query);
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    const response = await fetch(`${LANDSTACK_BASE_URL}${path}`, {
+    const response = await fetch(`/api/landstack?${params.toString()}`, {
       signal: controller.signal,
       headers: { Accept: "application/json" },
     });
     clearTimeout(timer);
     if (!response.ok) {
-      return { ok: false, reason: `HTTP ${response.status} from the gateway` };
+      let reason = `HTTP ${response.status} from the gateway`;
+      try {
+        const body = (await response.json()) as { error?: string };
+        if (body?.error) reason = body.error;
+      } catch {
+        // Non-JSON error body: keep the status-based message.
+      }
+      return { ok: false, reason };
     }
     return { ok: true, data: (await response.json()) as T };
   } catch (error) {
@@ -79,7 +92,7 @@ async function getJson<T>(path: string): Promise<Result<T>> {
       ok: false,
       reason:
         name === "AbortError"
-          ? "The gateway did not respond within 20s (it may be waking up)."
+          ? "The gateway did not respond within 25s (it may be waking up)."
           : "The gateway is unreachable from here.",
     };
   }
@@ -118,7 +131,8 @@ export function countFeatures(
 ): Promise<Result<{ count: number; sample: unknown }>> {
   const b = bbox.join(",");
   return getJson<{ numberReturned: number; features: unknown[] }>(
-    `/collections/${encodeURIComponent(collectionId)}/items?bbox=${b}&limit=5`,
+    `/collections/${encodeURIComponent(collectionId)}/items`,
+    `bbox=${b}&limit=5`,
   ).then((r) =>
     r.ok
       ? { ok: true, data: { count: r.data.numberReturned, sample: r.data.features[0] ?? null } }

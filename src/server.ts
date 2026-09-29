@@ -8,6 +8,7 @@ import { handleParcelsApi } from "./server/parcel-store";
 import { handleTtsApi } from "./server/tts";
 import { handlePolicyExtract } from "./server/policy-extract";
 import { handleWeatherApi } from "./server/weather-india";
+import { handleLandStackProxy } from "./server/landstack-proxy";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -79,6 +80,11 @@ export default {
       // PDF into structured, cited policy parameters.
       if (url.pathname === "/api/policy/extract") {
         return handlePolicyExtract(request, env);
+      }
+      // Read-only same-origin proxy to the Land Stack API gateway (Render), so
+      // the browser is never subject to the gateway's CORS allowlist.
+      if (url.pathname === "/api/landstack") {
+        return handleLandStackProxy(request);
       }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
