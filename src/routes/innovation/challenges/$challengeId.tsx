@@ -1,6 +1,12 @@
+import { lazy } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { InnovationChallengeDetail } from "@/components/innovation/challenge/InnovationChallengeDetail";
 import { getChallenge } from "@/data/innovation";
+
+const InnovationChallengeDetail = lazy(() =>
+  import("@/components/innovation/challenge/InnovationChallengeDetail").then((m) => ({
+    default: m.InnovationChallengeDetail,
+  })),
+);
 
 export const Route = createFileRoute("/innovation/challenges/$challengeId")({
   /**

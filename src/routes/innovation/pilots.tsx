@@ -1,5 +1,11 @@
+import { lazy } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { InnovationPilots } from "@/components/innovation/pilots/InnovationPilots";
+
+const InnovationPilots = lazy(() =>
+  import("@/components/innovation/pilots/InnovationPilots").then((m) => ({
+    default: m.InnovationPilots,
+  })),
+);
 
 export const Route = createFileRoute("/innovation/pilots")({
   head: () => ({

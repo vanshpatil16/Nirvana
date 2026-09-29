@@ -1,5 +1,11 @@
+import { lazy } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { InnovationImpact } from "@/components/innovation/impact/ImpactDashboard";
+
+const InnovationImpact = lazy(() =>
+  import("@/components/innovation/impact/ImpactDashboard").then((m) => ({
+    default: m.InnovationImpact,
+  })),
+);
 
 export const Route = createFileRoute("/innovation/impact")({
   head: () => ({

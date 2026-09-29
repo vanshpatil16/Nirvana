@@ -1,5 +1,9 @@
+import { lazy } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Workbench } from "@/components/workflow/Workbench";
+
+const Workbench = lazy(() =>
+  import("@/components/workflow/Workbench").then((m) => ({ default: m.Workbench })),
+);
 
 export const Route = createFileRoute("/workflow")({
   head: () => ({
@@ -11,7 +15,10 @@ export const Route = createFileRoute("/workflow")({
           "BHU-NITI four-step evidence workflow: land-record integrity verification, cited AI copilot, policy sandbox simulation and pre-registered causal proof.",
       },
       { property: "og:title", content: "Evidence Workflow — BHU-NITI" },
-      { property: "og:description", content: "Verify → Protect → Simulate → Prove: from mismatch signal to packaged evidence." },
+      {
+        property: "og:description",
+        content: "Verify → Protect → Simulate → Prove: from mismatch signal to packaged evidence.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

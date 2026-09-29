@@ -1,6 +1,10 @@
+import { lazy } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ResearchHub } from "@/components/research-hub/ResearchHub";
 import type { HubView } from "@/components/research-hub/hub-context";
+
+const ResearchHub = lazy(() =>
+  import("@/components/research-hub/ResearchHub").then((m) => ({ default: m.ResearchHub })),
+);
 
 // Views reachable from the Collaborative Hub (others still work via links inside it)
 const VIEWS: HubView[] = [

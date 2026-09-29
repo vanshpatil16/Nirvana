@@ -16,6 +16,10 @@ dist-ssr
 .nitro
 *.local
 
+# Vendored CesiumJS runtime assets (Workers/ThirdParty/Assets/Widgets).
+# Rebuilt from node_modules on `npm install` by scripts/copy-cesium-assets.mjs.
+public/cesium/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
@@ -35,3 +39,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel

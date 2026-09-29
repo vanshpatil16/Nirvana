@@ -1,5 +1,10 @@
+import { lazy } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { PolicyLab, type LabMode } from "@/components/policy-lab/PolicyLab";
+import type { LabMode } from "@/components/policy-lab/PolicyLab";
+
+const PolicyLab = lazy(() =>
+  import("@/components/policy-lab/PolicyLab").then((m) => ({ default: m.PolicyLab })),
+);
 
 const MODES: LabMode[] = ["overview", "existing", "new"];
 

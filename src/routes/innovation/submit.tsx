@@ -1,5 +1,11 @@
+import { lazy } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { InnovationSubmit } from "@/components/innovation/submit/InnovationSubmit";
+
+const InnovationSubmit = lazy(() =>
+  import("@/components/innovation/submit/InnovationSubmit").then((m) => ({
+    default: m.InnovationSubmit,
+  })),
+);
 
 export const Route = createFileRoute("/innovation/submit")({
   validateSearch: (search: Record<string, unknown>) => ({

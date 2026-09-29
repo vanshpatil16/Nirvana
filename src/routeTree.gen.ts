@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CollaborativehubRouteImport } from './routes/collaborativehub'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as GisExplorerRouteImport } from './routes/gis-explorer'
+import { Route as GisExplorer3dRouteImport } from './routes/gis-explorer-3d'
 import { Route as InnovationPortalRouteImport } from './routes/innovation-portal'
 import { Route as LanddifferenceRouteImport } from './routes/landdifference'
 import { Route as PolicyLabRouteImport } from './routes/policy-lab'
@@ -45,6 +46,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const GisExplorerRoute = GisExplorerRouteImport.update({
   id: '/gis-explorer',
   path: '/gis-explorer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GisExplorer3dRoute = GisExplorer3dRouteImport.update({
+  id: '/gis-explorer-3d',
+  path: '/gis-explorer-3d',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InnovationPortalRoute = InnovationPortalRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/collaborativehub': typeof CollaborativehubRoute
   '/dashboard': typeof DashboardRoute
   '/gis-explorer': typeof GisExplorerRoute
+  '/gis-explorer-3d': typeof GisExplorer3dRoute
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
   '/policy-lab': typeof PolicyLabRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/collaborativehub': typeof CollaborativehubRoute
   '/dashboard': typeof DashboardRoute
   '/gis-explorer': typeof GisExplorerRoute
+  '/gis-explorer-3d': typeof GisExplorer3dRoute
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
   '/policy-lab': typeof PolicyLabRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/collaborativehub': typeof CollaborativehubRoute
   '/dashboard': typeof DashboardRoute
   '/gis-explorer': typeof GisExplorerRoute
+  '/gis-explorer-3d': typeof GisExplorer3dRoute
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
   '/policy-lab': typeof PolicyLabRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/collaborativehub'
     | '/dashboard'
     | '/gis-explorer'
+    | '/gis-explorer-3d'
     | '/innovation-portal'
     | '/landdifference'
     | '/policy-lab'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/collaborativehub'
     | '/dashboard'
     | '/gis-explorer'
+    | '/gis-explorer-3d'
     | '/innovation-portal'
     | '/landdifference'
     | '/policy-lab'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/collaborativehub'
     | '/dashboard'
     | '/gis-explorer'
+    | '/gis-explorer-3d'
     | '/innovation-portal'
     | '/landdifference'
     | '/policy-lab'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   CollaborativehubRoute: typeof CollaborativehubRoute
   DashboardRoute: typeof DashboardRoute
   GisExplorerRoute: typeof GisExplorerRoute
+  GisExplorer3dRoute: typeof GisExplorer3dRoute
   InnovationPortalRoute: typeof InnovationPortalRoute
   LanddifferenceRoute: typeof LanddifferenceRoute
   PolicyLabRoute: typeof PolicyLabRoute
@@ -282,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/gis-explorer'
       fullPath: '/gis-explorer'
       preLoaderRoute: typeof GisExplorerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gis-explorer-3d': {
+      id: '/gis-explorer-3d'
+      path: '/gis-explorer-3d'
+      fullPath: '/gis-explorer-3d'
+      preLoaderRoute: typeof GisExplorer3dRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/innovation-portal': {
@@ -383,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   CollaborativehubRoute: CollaborativehubRoute,
   DashboardRoute: DashboardRoute,
   GisExplorerRoute: GisExplorerRoute,
+  GisExplorer3dRoute: GisExplorer3dRoute,
   InnovationPortalRoute: InnovationPortalRoute,
   LanddifferenceRoute: LanddifferenceRoute,
   PolicyLabRoute: PolicyLabRoute,

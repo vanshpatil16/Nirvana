@@ -41,9 +41,25 @@ function loadDotEnv(): void {
 loadDotEnv();
 
 export default defineConfig({
+  // CesiumJS runtime assets (Workers/ThirdParty/Assets/Widgets) are served from
+  // `public/cesium/` — see scripts/copy-cesium-assets.mjs. The bare global
+  // `CESIUM_BASE_URL` is what Cesium's buildModuleUrl() resolves at runtime, so
+  // it must be a compile-time define (the identifier would otherwise be
+  // undefined in a bundled ESM build).
+  vite: {
+    define: {
+      CESIUM_BASE_URL: JSON.stringify("/cesium/"),
+    },
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+  },
+  nitro: {
+    /* Vercel is the deploy target. Outside a Lovable sandbox build the preset
+       here is authoritative; inside one, LOVABLE_NITRO_PRESET wins and the
+       Cloudflare layout is kept so the Lovable preview keeps working. */
+    ...(process.env["LOVABLE"] ? {} : { preset: process.env["NITRO_PRESET"] ?? "vercel" }),
   },
 });

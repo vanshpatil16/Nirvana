@@ -2,17 +2,31 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Layers3, MapPin } from "lucide-react";
 import { THEMES, type ThemeId } from "@/data/state-intelligence";
 
-const THEME_IDS = new Set<string>(["land-use-change", "disputes", "climate-risk", "socio-economic"]);
+const THEME_IDS = new Set<string>([
+  "land-use-change",
+  "disputes",
+  "climate-risk",
+  "socio-economic",
+]);
 
 export const Route = createFileRoute("/gis-explorer")({
   validateSearch: (search: Record<string, unknown>) => ({
-    state: typeof search["state"] === "string" && (search["state"] as string).length > 0 ? (search["state"] as string) : undefined,
-    layer: typeof search["layer"] === "string" && THEME_IDS.has(search["layer"] as string) ? (search["layer"] as ThemeId) : undefined,
+    state:
+      typeof search["state"] === "string" && (search["state"] as string).length > 0
+        ? (search["state"] as string)
+        : undefined,
+    layer:
+      typeof search["layer"] === "string" && THEME_IDS.has(search["layer"] as string)
+        ? (search["layer"] as ThemeId)
+        : undefined,
   }),
   head: () => ({
     meta: [
       { title: "GIS Explorer — BHUMI-NITI Spatial Analysis" },
-      { name: "description", content: "Detailed spatial analysis workspace for India's land intelligence." },
+      {
+        name: "description",
+        content: "Detailed spatial analysis workspace for India's land intelligence.",
+      },
     ],
   }),
   component: GisExplorer,
@@ -58,9 +72,18 @@ function GisExplorer() {
               ? `The ${theme.label} layer is queued for analysis. Layering, parcel tools and temporal analysis arrive in the next milestone.`
               : "Layering, parcel tools and temporal analysis arrive in the next milestone. Drill in from the dashboard map to carry state and theme context here."}
         </p>
-        <Link className="gis-cta" to="/dashboard">
-          Back to national overview
-        </Link>
+        <div className="gis-cta-row">
+          <Link className="gis-cta" to="/dashboard">
+            Back to national overview
+          </Link>
+          <Link
+            className="gis-cta gis-cta-alt"
+            to="/gis-explorer-3d"
+            search={{ state, layer: layer as string | undefined }}
+          >
+            Open the 3D GIS Explorer
+          </Link>
+        </div>
       </section>
     </div>
   );

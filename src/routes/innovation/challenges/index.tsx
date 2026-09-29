@@ -1,8 +1,12 @@
+import { lazy } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  InnovationChallenges,
-  type ChallengeFilters,
-} from "@/components/innovation/challenges/InnovationChallenges";
+import type { ChallengeFilters } from "@/components/innovation/challenges/InnovationChallenges";
+
+const InnovationChallenges = lazy(() =>
+  import("@/components/innovation/challenges/InnovationChallenges").then((m) => ({
+    default: m.InnovationChallenges,
+  })),
+);
 
 /**
  * Filter state lives in the URL so a filtered view can be shared or

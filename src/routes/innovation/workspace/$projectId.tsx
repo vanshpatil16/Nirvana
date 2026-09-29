@@ -1,6 +1,12 @@
+import { lazy } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { InnovationWorkspace } from "@/components/innovation/workspace/InnovationWorkspace";
 import { WORKSPACE_MODULES, getProject } from "@/data/innovation";
+
+const InnovationWorkspace = lazy(() =>
+  import("@/components/innovation/workspace/InnovationWorkspace").then((m) => ({
+    default: m.InnovationWorkspace,
+  })),
+);
 
 const MODULE_IDS = new Set<string>(WORKSPACE_MODULES.map((m) => m.id));
 

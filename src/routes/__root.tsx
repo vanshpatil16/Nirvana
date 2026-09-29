@@ -7,10 +7,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, Suspense, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { RoutePending } from "../components/ui/loading";
 
 function NotFoundComponent() {
   return (
@@ -78,10 +79,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "BHUMI-NITI" },
-      { name: "description", content: "National Platform for Research & Policy Innovation in Land Governance" },
+      {
+        name: "description",
+        content: "National Platform for Research & Policy Innovation in Land Governance",
+      },
       { name: "author", content: "BHUMI-NITI" },
       { property: "og:title", content: "BHUMI-NITI" },
-      { property: "og:description", content: "National Platform for Research & Policy Innovation in Land Governance" },
+      {
+        property: "og:description",
+        content: "National Platform for Research & Policy Innovation in Land Governance",
+      },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "/logo.png" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -96,7 +103,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "shortcut icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -125,7 +135,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      {/* Every route component is code-split, so this boundary is the one place
+          that catches a chunk still in flight and shows the shared loader. */}
+      <Suspense fallback={<RoutePending />}>
+        <Outlet />
+      </Suspense>
     </QueryClientProvider>
   );
 }
