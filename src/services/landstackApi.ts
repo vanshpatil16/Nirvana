@@ -90,13 +90,15 @@ async function getJson<T>(path: string, timeoutMs = TIMEOUT_MS): Promise<Result<
     }
     return { ok: true, data: (await response.json()) as T };
   } catch (error) {
-    const name = error instanceof Error ? error.name : "Error";
+    // Runtimes disagree on the name: browsers use AbortError, some fetch
+    // implementations use TimeoutError. Treat both as a timeout.
+    const name = error instanceof Error ? error.name : "";
+    const timedOut = name === "AbortError" || name === "TimeoutError";
     return {
       ok: false,
-      reason:
-        name === "AbortError"
-          ? `The gateway did not respond within ${Math.round(timeoutMs / 1000)}s.`
-          : "The gateway is unreachable from here.",
+      reason: timedOut
+        ? `The gateway did not respond within ${Math.round(timeoutMs / 1000)}s.`
+        : "The gateway is unreachable from here.",
     };
   }
 }

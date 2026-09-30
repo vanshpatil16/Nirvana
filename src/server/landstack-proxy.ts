@@ -150,19 +150,23 @@ export async function handleLandStackProxy(request: Request): Promise<Response> 
         },
       });
     } catch (error) {
-      const aborted = error instanceof Error && error.name === "AbortError";
-      if (!aborted && attempt < maxAttempts) {
+      // Node/undici surfaces a signal timeout as `TimeoutError`, while some
+      // runtimes use `AbortError` for the same thing. Treat both as a timeout,
+      // otherwise a slow upstream is mislabelled as "unreachable" and retried.
+      const name = error instanceof Error ? error.name : "";
+      const timedOut = name === "AbortError" || name === "TimeoutError";
+      if (!timedOut && attempt < maxAttempts) {
         // Connection-level failure: one quick retry often lands.
         await new Promise((r) => setTimeout(r, 300));
         continue;
       }
       return json(
         {
-          error: aborted
+          error: timedOut
             ? `The Land Stack gateway took longer than ${Math.round(budget / 1000)}s on this query. It is still working — try again shortly.`
             : "The Land Stack gateway is unreachable.",
         },
-        aborted ? 504 : 502,
+        timedOut ? 504 : 502,
       );
     }
   }
