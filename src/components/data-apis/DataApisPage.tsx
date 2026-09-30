@@ -115,23 +115,24 @@ export function DataApisPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [probe, setProbe] = useState<Record<string, string>>({});
+  const [checking, setChecking] = useState(false);
+  const [healthError, setHealthError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setErrors({});
     const next: Record<string, string> = {};
 
-    const [src, hl, col, lri] = await Promise.all([
+    // Health is deliberately excluded: it takes ~25s even with probe=false, so
+    // it is an explicit user action instead of blocking first paint.
+    const [src, col, lri] = await Promise.all([
       fetchSources(),
-      fetchSourceHealth(),
       fetchCollections(),
       fetchLandRecordsIndex(),
     ]);
 
     if (src.ok) setSources(src.data);
     else next["sources"] = src.reason;
-    if (hl.ok) setHealth(hl.data);
-    else next["health"] = hl.reason;
     if (col.ok) setCollections(col.data);
     else next["collections"] = col.reason;
     if (lri.ok) setRecords(lri.data);
@@ -145,14 +146,26 @@ export function DataApisPage() {
     void load();
   }, [load]);
 
-  // A click-to-verify affordance: prove a collection returns real features.
+  const checkHealth = async () => {
+    setChecking(true);
+    setHealthError(null);
+    const res = await fetchSourceHealth();
+    if (res.ok) setHealth(res.data);
+    else setHealthError(res.reason);
+    setChecking(false);
+  };
+  // A click-to-verify affordance: prove what a collection actually returns for a
+  // bbox. Zero features is a valid answer and is reported as such, not as a
+  // failure — the gateway does not fabricate coverage it does not have.
   const tryCollection = async (id: string) => {
     setProbe((p) => ({ ...p, [id]: "loading" }));
     const res: Result<{ count: number; sample: unknown }> = await countFeatures(id, DEMO_BBOX);
     setProbe((p) => ({
       ...p,
       [id]: res.ok
-        ? `${res.data.count} feature${res.data.count === 1 ? "" : "s"} in the demo bbox`
+        ? res.data.count === 0
+          ? "0 features in this bbox — real, not fabricated coverage"
+          : `${res.data.count} feature${res.data.count === 1 ? "" : "s"} returned`
         : res.reason,
     }));
   };
@@ -243,32 +256,56 @@ export function DataApisPage() {
         <Panel
           title="Source health"
           icon={Activity}
-          action={<span className="ds-muted">live · probe=false</span>}
+          action={
+            <button className="ds-btn tiny" onClick={() => void checkHealth()} disabled={checking}>
+              {checking ? (
+                <Loader2 width={12} height={12} className="ds-spin" aria-hidden />
+              ) : (
+                <Activity width={12} height={12} aria-hidden />
+              )}
+              {checking ? "Checking…" : "Check live health"}
+            </button>
+          }
         >
           {!sources ? (
             <Skeleton />
           ) : (
-            <ul className="ds-health">
-              {sources.map((s) => {
-                const status = healthById(s.id);
-                const detail = health?.[s.id]?.detail;
-                return (
-                  <li key={s.id}>
-                    <div className="ds-health-row">
-                      <strong>{s.name}</strong>
-                      <StatusPill status={status} />
-                    </div>
-                    <div className="ds-health-meta">
-                      <span>{s.provider}</span>
-                      <a href={s.url ?? "#"} target="_blank" rel="noreferrer">
-                        {s.url} <ArrowUpRight width={11} height={11} aria-hidden />
-                      </a>
-                    </div>
-                    {detail && status !== "ok" ? <p className="ds-health-note">{detail}</p> : null}
-                  </li>
-                );
-              })}
-            </ul>
+            <>
+              <p className="ds-panel-intro">
+                {health
+                  ? "Live reachability from the gateway's own probe."
+                  : "Shows credential status from the gateway. Live reachability takes ~25s, so it is an explicit check."}
+              </p>
+              {healthError ? (
+                <p className="ds-note warn">
+                  <AlertTriangle width={12} height={12} aria-hidden /> Live check failed:{" "}
+                  {healthError}
+                </p>
+              ) : null}
+              <ul className="ds-health">
+                {sources.map((s) => {
+                  const status = healthById(s.id);
+                  const detail = health?.[s.id]?.detail;
+                  return (
+                    <li key={s.id}>
+                      <div className="ds-health-row">
+                        <strong>{s.name}</strong>
+                        <StatusPill status={status} />
+                      </div>
+                      <div className="ds-health-meta">
+                        <span>{s.provider}</span>
+                        <a href={s.url ?? "#"} target="_blank" rel="noreferrer">
+                          {s.url} <ArrowUpRight width={11} height={11} aria-hidden />
+                        </a>
+                      </div>
+                      {detail && status !== "ok" ? (
+                        <p className="ds-health-note">{detail}</p>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </Panel>
 

@@ -62,14 +62,13 @@ export interface SourceHealth {
 
 export type Result<T> = { ok: true; data: T; cached?: boolean } | { ok: false; reason: string };
 
-const TIMEOUT_MS = 25_000;
+const TIMEOUT_MS = 15_000;
 
-async function getJson<T>(path: string, query?: string): Promise<Result<T>> {
+async function getJson<T>(path: string, timeoutMs = TIMEOUT_MS): Promise<Result<T>> {
   const params = new URLSearchParams({ path });
-  if (query) params.set("query", query);
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const response = await fetch(`/api/landstack?${params.toString()}`, {
       signal: controller.signal,
       headers: { Accept: "application/json" },
@@ -92,7 +91,7 @@ async function getJson<T>(path: string, query?: string): Promise<Result<T>> {
       ok: false,
       reason:
         name === "AbortError"
-          ? "The gateway did not respond within 25s (it may be waking up)."
+          ? `The gateway did not respond within ${Math.round(timeoutMs / 1000)}s.`
           : "The gateway is unreachable from here.",
     };
   }
@@ -105,10 +104,12 @@ export function fetchSources(): Promise<Result<LandStackSource[]>> {
 }
 
 export function fetchSourceHealth(): Promise<Result<Record<string, SourceHealth>>> {
-  // probe=false keeps this instant: it reports configured/unconfigured without
-  // waiting on slow upstreams such as ISRO Bhuvan.
+  // Deliberately not part of the page load: even with `probe=false` the gateway
+  // still touches Bhuvan and Nominatim and takes ~25s. Only call it on request,
+  // with a timeout that can absorb that.
   return getJson<{ sources: Record<string, SourceHealth> }>(
     "/api/v1/sources/health?probe=false",
+    45_000,
   ).then((r) => (r.ok ? { ok: true, data: r.data.sources } : r));
 }
 
@@ -131,8 +132,7 @@ export function countFeatures(
 ): Promise<Result<{ count: number; sample: unknown }>> {
   const b = bbox.join(",");
   return getJson<{ numberReturned: number; features: unknown[] }>(
-    `/collections/${encodeURIComponent(collectionId)}/items`,
-    `bbox=${b}&limit=5`,
+    `/collections/${encodeURIComponent(collectionId)}/items?bbox=${b}&limit=5`,
   ).then((r) =>
     r.ok
       ? { ok: true, data: { count: r.data.numberReturned, sample: r.data.features[0] ?? null } }

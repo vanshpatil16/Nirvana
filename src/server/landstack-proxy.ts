@@ -71,15 +71,15 @@ export async function handleLandStackProxy(request: Request): Promise<Response> 
     return json({ error: "Missing or invalid ?path= parameter." }, 400);
   }
 
-  // Strip any query string the caller smuggled into ?path= so the only thing
-  // forwarded is the allowlisted path; the caller's own params are passed on.
+  // Allowlist on the bare path only, so a caller cannot smuggle a different
+  // route in through the query string. The rest is forwarded verbatim because
+  // upstream parameters such as `probe=false` or `bbox=...` are meaningful.
   const bare = upstreamPath.split("?")[0] ?? upstreamPath;
   if (!isAllowed(bare)) {
     return json({ error: `Path not proxied: ${bare}` }, 403);
   }
 
-  const callerQuery = url.searchParams.get("query") ?? "";
-  const target = `${BASE_URL}${bare}${callerQuery ? `?${callerQuery}` : ""}`;
+  const target = `${BASE_URL}${upstreamPath}`;
   const cacheKey = target;
 
   const hit = cache.get(cacheKey);
