@@ -19,7 +19,7 @@ import {
 
 export const navItems = [
   { label: "Dashboard", icon: BarChart3, href: "/dashboard" },
-  { label: "GIS Explorer", icon: Map, href: "/gis-explorer" },
+  { label: "GIS Explorer", icon: Map, href: "/gis-explorer-3d" },
   { label: "Record vs Reality", icon: MapPinned, href: "/record-vs-reality" },
   { label: "Land Difference", icon: Layers, href: "/landdifference" },
   { label: "Policy Lab", icon: FlaskConical, href: "/policy-lab" },
