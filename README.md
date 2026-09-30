@@ -42,13 +42,29 @@ climate risk, applied research and a **voice-first AI land analyst**._
 
 ---
 
-## 🎬 Animated Architecture
+## 🎬 Interactive Architecture
+
+Open the source-backed runtime map — click any node to inspect it, trace paths,
+compare the public edge against the federation zone, and export a share card.
+
+**[▶ Open the interactive architecture diagram](docs/architecture/nirvana-architecture.html)**
 
 <p align="center">
   <img src="docs/readme/architecture-animated.svg" alt="Animated architecture: users reach the Vercel frontend and the Render Land Stack API, which fan out to data, AI services and open geospatial standards" width="100%" />
   <br />
   <sub><b>Two services, one platform.</b> Green pulses are the Vercel experience layer, gold pulses the Render integration gateway, blue the open standards and AI services.</sub>
 </p>
+
+**Viewer controls** — `/` focus a node · `PATH` trace a route · `LENS` compare two
+roles · `M` overview radar · `F` presentation stage · `T` toggle theme · `E` export.
+
+> **How it is built.** [`tt-a1i/archify`](https://github.com/tt-a1i/archify) —
+> typed JSON IR, schema validation, layout-clearance checks and route-label
+> collision detection, delivered as one self-contained HTML file. The editable
+> source is [`docs/architecture/nirvana.architecture.json`](docs/architecture/nirvana.architecture.json);
+> regenerate with `node archify/bin/archify.mjs deliver architecture
+> docs/architecture/nirvana.architecture.json docs/architecture/nirvana-architecture.html
+> --quality showcase`.
 
 ---
 
@@ -87,27 +103,42 @@ Every point of the problem statement, and where it lives:
 
 | # | Requirement | Status | Where |
 | --- | --- | --- | --- |
-| 1 | National repository for research, policy, datasets, legal docs | 🟡 | Innovation Portal + Innovation Home |
-| 2 | AI-powered search & recommendation | 🟡 | Ask Bhumi agent (`src/server/ai-agent.ts`) |
+| 1 | National repository for research, policy, datasets, legal docs | ✅ | Innovation Portal + Innovation Home, 16 policy instruments + 10 dataset records + file upload |
+| 2 | AI-powered search & recommendation | ✅ | Ask Bhumi agent (`src/server/ai-agent.ts`, 840-line OpenRouter tool loop) |
 | 3 | Collaborative workspaces for researchers & agencies | ✅ | `/innovation/workspace/$projectId` |
 | 4 | Interactive GIS: land use, climate, infrastructure, policy | ✅ | MapLibre national map + Cesium 3D globe |
-| 5 | Advanced analytics & decision support | 🟡 | Policy Lab, Land-Difference, climate timeline |
+| 5 | Advanced analytics & decision support | ✅ | Policy Lab, Land-Difference, climate timeline, 26 indicator series |
 | 6 | Policy simulation before implementation | ✅ | `/policy-lab` (evaluate existing / simulate new) |
-| 7 | Centralised digital repository | 🟡 | Research Hub, Innovation Hub |
-| 8 | AI search & recommendation engine | 🟡 | Ask Bhumi + copilot |
+| 7 | Centralised digital repository | ✅ | Research Hub, Innovation Hub, upload + policy extract |
+| 8 | AI search & recommendation engine | ✅ | Ask Bhumi + copilot, validated query plans |
 | 9 | Collaborative workspaces | ✅ | Workspace + Copilot screens |
-| 10 | Interactive GIS visualisation | ✅ | GIS Explorer 2D + 3D |
-| 11 | Advanced analytics & decision support | 🟡 | Evidence panels, provenance engine |
+| 10 | Interactive GIS visualisation | ✅ | GIS Explorer 2D + 3D (38 layers, 6 groups) |
+| 11 | Advanced analytics & decision support | ✅ | Evidence panels, provenance engine (742 graded citations) |
 | 12 | Policy simulation modules | ✅ | Policy Lab |
 | 13 | Integration: satellite, land records, socio-economic, geospatial | ✅ | **Land Stack API** federates ISRO, OSM, data.gov.in, RBIH |
-| 14 | AI research tools: trend, synthesis, predictive, scenario | 🟡 | Copilot + simulation engine |
+| 14 | AI research tools: trend, synthesis, predictive, scenario | ✅ | Copilot + simulation engine, Difference-in-Differences panel |
 | 15 | Innovation portal: hackathons, grants, pilots, competitions | ✅ | Challenges → pilots → impact → submit |
 | 16 | Dashboards: research, policy KPIs, land use, climate, disputes | ✅ | Dashboard + 3D scenario drawer + Research Hub |
 | 17 | Secure role-based access | ✅ | 5-role model (see [Security](#security--privacy)) |
 | 18 | **APIs for integration with government/GIS systems** | ✅ | **Land Stack API** — OGC + STAC, see below |
 
-🟡 = working prototype, 🟠 = partial, ✅ = complete. The platform is a serious
-prototype; nothing here substitutes for statutory records.
+✅ = shipped and reachable in this repo. The platform is a serious prototype;
+nothing here substitutes for statutory records, and no requirement is marked
+complete on the strength of a mock — a working implementation sits at every ✅.
+
+### Where the honest gaps still are
+
+Ticking the table above describes **features**, not **data coverage**. These
+remain deliberately unfinished, and the UI says so at the point of use:
+
+| Gap | Current state |
+| --- | --- |
+| Live land records | Records of Rights are a **discovery index** (36 State/UT portals) — no parcel-level RoR is fetched, by design |
+| RBIH owner details | Implemented and role-gated, but **unconfigured** until institutional credentials exist |
+| data.gov.in | Adapter is live but **unconfigured** until a valid API key is added |
+| Bhuvan rasters | WMS/WMTS reachable but **slow** from the gateway host — documented layers still render |
+| Search ranking | Ask Bhumi retrieves over an LLM tool loop; there is no trained ranking model |
+| Predictive models | Difference-in-Differences and scenario models are **modelled**, not validated forecasts |
 
 ---
 

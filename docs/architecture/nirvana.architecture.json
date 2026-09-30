@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "NIRVANA — Runtime Architecture",
+    "output": "nirvana-architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "users", "type": "external", "label": "Users", "sublabel": "Officer · Researcher · Citizen", "pos": [30, 300], "size": [118, 62] },
+    { "id": "vercel", "type": "cloud", "label": "Vercel Edge", "sublabel": "Nitro SSR", "pos": [196, 300], "size": [118, 58], "tag": "nirvana-sih.vercel.app" },
+    { "id": "app", "type": "frontend", "label": "NIRVANA App", "sublabel": "TanStack Start", "pos": [362, 300], "size": [122, 62], "tag": "MapLibre · Cesium" },
+    { "id": "bff", "type": "backend", "label": "BFF Endpoints", "sublabel": "/api/ai · tts", "pos": [532, 300], "size": [122, 62], "tag": "Edge functions" },
+    { "id": "proxy", "type": "backend", "label": "Land Stack Proxy", "sublabel": "/api/landstack", "pos": [702, 300], "size": [122, 62], "tag": "read-only allowlist" },
+    { "id": "gateway", "type": "backend", "label": "Land Stack API", "sublabel": "FastAPI · Render", "pos": [900, 300], "size": [122, 62], "tag": "OGC + STAC" },
+
+    { "id": "llm", "type": "external", "label": "OpenRouter", "sublabel": "LLM tool loop", "pos": [532, 160], "size": [122, 58], "tag": "plan, never answer" },
+    { "id": "voice", "type": "external", "label": "ElevenLabs", "sublabel": "Spoken replies", "pos": [702, 160], "size": [122, 58] },
+    { "id": "isro", "type": "external", "label": "ISRO Bhuvan", "sublabel": "WMS · WMTS raster", "pos": [900, 160], "size": [122, 58], "tag": "render-only" },
+
+    { "id": "store", "type": "database", "label": "State RoR Index", "sublabel": "36 portals", "pos": [196, 442], "size": [122, 58], "tag": "discovery only" },
+    { "id": "rbih", "type": "external", "label": "RBIH", "sublabel": "Record of Rights", "pos": [362, 442], "size": [122, 58], "tag": "owner PII" },
+    { "id": "osm", "type": "external", "label": "OpenStreetMap", "sublabel": "Overpass · Nominatim", "pos": [532, 442], "size": [122, 58], "tag": "ODbL 1.0" },
+    { "id": "datagov", "type": "external", "label": "data.gov.in", "sublabel": "OGD catalogue", "pos": [702, 442], "size": [122, 58], "tag": "API key" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Platform boundary — frontend and backend deploy independently", "wraps": ["vercel", "app", "bff", "proxy", "gateway"] },
+    { "kind": "security-group", "label": "Public edge — no PII, no credentials in the browser", "wraps": ["vercel", "app", "bff", "proxy"] },
+    { "kind": "security-group", "label": "Federation zone — third-party upstreams", "wraps": ["isro", "store", "rbih", "osm", "datagov"] }
+  ],
+  "connections": [
+    { "id": "users-to-vercel", "from": "users", "to": "vercel", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "vercel-to-app", "from": "vercel", "to": "app" },
+    { "id": "app-to-bff", "from": "app", "to": "bff" },
+    { "id": "app-to-proxy", "from": "app", "to": "proxy", "label": "same-origin", "variant": "emphasis" },
+    { "id": "proxy-to-gateway", "from": "proxy", "to": "gateway", "label": "OGC · STAC", "variant": "emphasis" },
+
+    { "id": "bff-to-llm", "from": "bff", "to": "llm", "label": "query plan", "variant": "security", "fromSide": "top", "toSide": "bottom", "labelAt": [593, 250] },
+    { "id": "bff-to-voice", "from": "bff", "to": "voice", "label": "TTS", "fromSide": "top", "toSide": "bottom", "labelAt": [690, 275] },
+
+    { "id": "gateway-to-isro", "from": "gateway", "to": "isro", "label": "GetMap", "fromSide": "top", "toSide": "bottom", "labelAt": [961, 250] },
+    { "id": "gateway-to-store", "from": "gateway", "to": "store", "label": "RoR discovery", "fromSide": "bottom", "toSide": "top", "labelAt": [257, 392] },
+    { "id": "gateway-to-rbih", "from": "gateway", "to": "rbih", "label": "owner details", "variant": "security", "fromSide": "bottom", "toSide": "top", "labelAt": [423, 392] },
+    { "id": "gateway-to-osm", "from": "gateway", "to": "osm", "label": "features", "fromSide": "bottom", "toSide": "top", "labelAt": [593, 392] },
+    { "id": "gateway-to-datagov", "from": "gateway", "to": "datagov", "label": "catalogue", "fromSide": "bottom", "toSide": "top", "labelAt": [763, 392] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "One gateway, honest failures", "items": ["Read-only allowlist: credentialed routes return 403", "Per-path timeouts stay inside the serverless ceiling", "429 is passed through as the gateway's own verdict"] },
+    { "dot": "emerald", "title": "What is actually real", "items": ["OSM features, Bhuvan rasters, State portal links", "Every dataset graded OBSERVED / DERIVED / MODELLED / SCENARIO", "IMD weather: 43 stations, cached 45 min per isolate"] },
+    { "dot": "amber", "title": "Personal data stays upstream", "items": ["RBIH owner details require the government role", "DPDP Act 2023 — no owner PII in the browser", "Aggregates only; small cells never leave the state node"] },
+    { "dot": "rose", "title": "Degrades instead of lying", "items": ["Bhuvan unreachable — documented layers only", "data.gov.in and RBIH unconfigured until keys exist", "Gateway health is on-demand, never blocking first paint"] }
+  ]
+}
