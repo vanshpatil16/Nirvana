@@ -31,7 +31,18 @@ const BASE_URL = (
   process.env["LANDSTACK_URL"] || "https://bhumi-niti-landstack.onrender.com"
 ).replace(/\/+$/, "");
 
-const UPSTREAM_TIMEOUT_MS = 20_000;
+/**
+ * Budgets are per path, not global. The health endpoint genuinely takes ~25s
+ * because it still touches ISRO Bhuvan and Nominatim even with probe=false, so
+ * a flat 20s cut would make that one button permanently unusable. Everything
+ * else answers in well under a second once the instance is warm.
+ */
+const HEALTH_PATH = "/api/v1/sources/health";
+const DEFAULT_TIMEOUT_MS = 20_000;
+const HEALTH_TIMEOUT_MS = 45_000;
+
+const timeoutFor = (bare: string) =>
+  bare.startsWith(HEALTH_PATH) ? HEALTH_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
 
 /** Gateway responses are near-static; a short cache keeps the page snappy. */
 const CACHE_OK_MS = 60_000;
@@ -90,42 +101,69 @@ export async function handleLandStackProxy(request: Request): Promise<Response> 
     });
   }
 
-  try {
-    const response = await fetch(target, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    });
-    const body = await response.text();
+  const budget = timeoutFor(bare);
+  // One retry. The gateway sits behind a burst limiter (15) and a per-minute
+  // cap, and Render's free instance can be cold; a single immediate retry
+  // recovers from both without turning this into a request amplifier.
+  const attempts = 2;
 
-    if (cache.size >= cacheSizeCap) {
-      // Cheap FIFO trim; the map is small and per-isolate.
-      const oldest = cache.keys().next().value;
-      if (oldest !== undefined) cache.delete(oldest);
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(target, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(budget),
+      });
+      const body = await response.text();
+
+      // A rate-limit response is the gateway's own verdict, not a failure to
+      // reach it: pass it straight through and do not cache it as our error.
+      if (response.status === 429) {
+        return json(
+          {
+            error:
+              "The Land Stack gateway is rate-limiting requests right now. Wait a moment and try again.",
+          },
+          429,
+        );
+      }
+
+      if (cache.size >= cacheSizeCap) {
+        // Cheap FIFO trim; the map is small and per-isolate.
+        const oldest = cache.keys().next().value;
+        if (oldest !== undefined) cache.delete(oldest);
+      }
+      cache.set(cacheKey, {
+        at: Date.now(),
+        ttl: response.ok ? CACHE_OK_MS : CACHE_FAIL_MS,
+        body,
+        status: response.status,
+      });
+
+      return new Response(body, {
+        status: response.status,
+        headers: {
+          "content-type": response.headers.get("content-type") ?? "application/json;charset=utf-8",
+          "cache-control": response.ok ? "public, max-age=60" : "no-store",
+        },
+      });
+    } catch (error) {
+      const aborted = error instanceof Error && error.name === "AbortError";
+      if (attempt < attempts) {
+        // Small backoff: enough for a burst window to roll over.
+        await new Promise((r) => setTimeout(r, 400));
+        continue;
+      }
+      return json(
+        {
+          error: aborted
+            ? `The Land Stack gateway did not respond within ${Math.round(budget / 1000)}s.`
+            : "The Land Stack gateway is unreachable.",
+        },
+        504,
+      );
     }
-    cache.set(cacheKey, {
-      at: Date.now(),
-      ttl: response.ok ? CACHE_OK_MS : CACHE_FAIL_MS,
-      body,
-      status: response.status,
-    });
-
-    return new Response(body, {
-      status: response.status,
-      headers: {
-        "content-type": response.headers.get("content-type") ?? "application/json;charset=utf-8",
-        "cache-control": response.ok ? "public, max-age=60" : "no-store",
-      },
-    });
-  } catch (error) {
-    const aborted = error instanceof Error && error.name === "AbortError";
-    return json(
-      {
-        error: aborted
-          ? "The Land Stack gateway did not respond in time (it may be waking up)."
-          : "The Land Stack gateway is unreachable.",
-      },
-      504,
-    );
   }
+
+  return json({ error: "The Land Stack gateway could not be reached." }, 504);
 }

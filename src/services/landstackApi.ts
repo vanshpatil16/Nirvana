@@ -62,7 +62,11 @@ export interface SourceHealth {
 
 export type Result<T> = { ok: true; data: T; cached?: boolean } | { ok: false; reason: string };
 
-const TIMEOUT_MS = 15_000;
+/**
+ * Client budgets sit deliberately above the proxy's, so a slow gateway surfaces
+ * the proxy's explanatory error instead of a bare client-side abort.
+ */
+const TIMEOUT_MS = 25_000;
 
 async function getJson<T>(path: string, timeoutMs = TIMEOUT_MS): Promise<Result<T>> {
   const params = new URLSearchParams({ path });
@@ -109,7 +113,7 @@ export function fetchSourceHealth(): Promise<Result<Record<string, SourceHealth>
   // with a timeout that can absorb that.
   return getJson<{ sources: Record<string, SourceHealth> }>(
     "/api/v1/sources/health?probe=false",
-    45_000,
+    55_000,
   ).then((r) => (r.ok ? { ok: true, data: r.data.sources } : r));
 }
 
