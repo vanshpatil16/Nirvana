@@ -576,7 +576,6 @@ survives a mode change, tooltips carry floor counts, and every route renders wit
 - **OGC** — API Features Part 1: Core; **STAC** — API Specification 1.0
 - **OpenStreetMap Foundation** — Overpass and Nominatim usage policies; ODbL 1.0
 - **NIC LRISD** — BHU-NAKSHA technical documentation
-- **[Lovable](https://lovable.dev)** — project scaffolding
 
 ---
 

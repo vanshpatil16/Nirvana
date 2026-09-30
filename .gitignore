@@ -29,6 +29,9 @@ public/cesium/
 .env.*
 !.env.example
 
+# Lovable editor metadata (local only; not part of the repo)
+.lovable/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
