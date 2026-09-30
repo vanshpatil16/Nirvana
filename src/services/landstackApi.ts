@@ -66,7 +66,7 @@ export type Result<T> = { ok: true; data: T; cached?: boolean } | { ok: false; r
  * Client budgets sit deliberately above the proxy's, so a slow gateway surfaces
  * the proxy's explanatory error instead of a bare client-side abort.
  */
-const TIMEOUT_MS = 25_000;
+const TIMEOUT_MS = 20_000;
 
 async function getJson<T>(path: string, timeoutMs = TIMEOUT_MS): Promise<Result<T>> {
   const params = new URLSearchParams({ path });
@@ -108,12 +108,13 @@ export function fetchSources(): Promise<Result<LandStackSource[]>> {
 }
 
 export function fetchSourceHealth(): Promise<Result<Record<string, SourceHealth>>> {
-  // Deliberately not part of the page load: even with `probe=false` the gateway
-  // still touches Bhuvan and Nominatim and takes ~25s. Only call it on request,
-  // with a timeout that can absorb that.
+  // Deliberately not part of the page load, and deliberately short: even with
+  // `probe=false` the gateway still touches Bhuvan and Nominatim, which takes
+  // ~25s from Render. The proxy gives it 12s and the page falls back to
+  // credential status rather than leaving a spinner hanging.
   return getJson<{ sources: Record<string, SourceHealth> }>(
     "/api/v1/sources/health?probe=false",
-    55_000,
+    18_000,
   ).then((r) => (r.ok ? { ok: true, data: r.data.sources } : r));
 }
 

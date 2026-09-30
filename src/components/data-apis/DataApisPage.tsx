@@ -274,12 +274,12 @@ export function DataApisPage() {
               <p className="ds-panel-intro">
                 {health
                   ? "Live reachability from the gateway's own probe."
-                  : "Shows credential status from the gateway. Live reachability takes ~25s, so it is an explicit check."}
+                  : "Shows credential status from the gateway. Live reachability probes ISRO Bhuvan, which is slow from the gateway's host, so it is a short, on-demand check."}
               </p>
               {healthError ? (
                 <p className="ds-note warn">
-                  <AlertTriangle width={12} height={12} aria-hidden /> Live check failed:{" "}
-                  {healthError}
+                  <AlertTriangle width={12} height={12} aria-hidden /> Live check did not return:{" "}
+                  {healthError} Credential status above is still accurate.
                 </p>
               ) : null}
               <ul className="ds-health">

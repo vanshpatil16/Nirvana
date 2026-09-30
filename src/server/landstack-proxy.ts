@@ -32,14 +32,16 @@ const BASE_URL = (
 ).replace(/\/+$/, "");
 
 /**
- * Budgets are per path, not global. The health endpoint genuinely takes ~25s
- * because it still touches ISRO Bhuvan and Nominatim even with probe=false, so
- * a flat 20s cut would make that one button permanently unusable. Everything
- * else answers in well under a second once the instance is warm.
+ * Budgets are per path, not global, and kept well inside the serverless
+ * function ceiling (vercel.json caps the entry at 60s). The health endpoint is
+ * the slow one: it still touches ISRO Bhuvan and Nominatim even with
+ * probe=false, which takes ~25s from Render and is not worth blocking a click
+ * for, so it gets a short budget and the page degrades to credential status
+ * rather than hanging.
  */
 const HEALTH_PATH = "/api/v1/sources/health";
-const DEFAULT_TIMEOUT_MS = 20_000;
-const HEALTH_TIMEOUT_MS = 45_000;
+const DEFAULT_TIMEOUT_MS = 15_000;
+const HEALTH_TIMEOUT_MS = 12_000;
 
 const timeoutFor = (bare: string) =>
   bare.startsWith(HEALTH_PATH) ? HEALTH_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
@@ -100,14 +102,14 @@ export async function handleLandStackProxy(request: Request): Promise<Response> 
       headers: { "content-type": "application/json;charset=utf-8", "x-landstack-cache": "hit" },
     });
   }
-
   const budget = timeoutFor(bare);
-  // One retry. The gateway sits behind a burst limiter (15) and a per-minute
-  // cap, and Render's free instance can be cold; a single immediate retry
-  // recovers from both without turning this into a request amplifier.
-  const attempts = 2;
+  // Retry only when the connection failed outright. A timeout means the
+  // upstream is genuinely still working on it (Overpass-backed bbox queries
+  // routinely take tens of seconds), and retrying would just double the wait,
+  // so timeouts are reported straight away instead.
+  const maxAttempts = 2;
 
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       const response = await fetch(target, {
         method: "GET",
@@ -149,21 +151,21 @@ export async function handleLandStackProxy(request: Request): Promise<Response> 
       });
     } catch (error) {
       const aborted = error instanceof Error && error.name === "AbortError";
-      if (attempt < attempts) {
-        // Small backoff: enough for a burst window to roll over.
-        await new Promise((r) => setTimeout(r, 400));
+      if (!aborted && attempt < maxAttempts) {
+        // Connection-level failure: one quick retry often lands.
+        await new Promise((r) => setTimeout(r, 300));
         continue;
       }
       return json(
         {
           error: aborted
-            ? `The Land Stack gateway did not respond within ${Math.round(budget / 1000)}s.`
+            ? `The Land Stack gateway took longer than ${Math.round(budget / 1000)}s on this query. It is still working — try again shortly.`
             : "The Land Stack gateway is unreachable.",
         },
-        504,
+        aborted ? 504 : 502,
       );
     }
   }
 
-  return json({ error: "The Land Stack gateway could not be reached." }, 504);
+  return json({ error: "The Land Stack gateway could not be reached." }, 502);
 }
