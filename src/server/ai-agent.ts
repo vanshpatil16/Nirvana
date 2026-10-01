@@ -669,12 +669,15 @@ async function planQuery(params: {
   history: { role: "user" | "assistant"; content: string }[];
   context: MapContext | null;
   previous: QueryPlan | null;
-}): Promise<RawPlan> {
+}): Promise<{ raw: RawPlan; schemaValid: boolean; status: "ok" | "schema_invalid" | "upstream_error" }> {
   const messages: ChatMessage[] = [
     { role: "system", content: plannerPrompt(params.context, params.previous) },
     ...params.history.slice(-4).map<ChatMessage>((h) => ({ role: h.role, content: h.content })),
     { role: "user", content: params.message },
   ];
+  // "upstream_error" until the model actually answers: a failed call is an
+  // infrastructure fault, not a schema-invalid plan, and is reported as such.
+  let status: "schema_invalid" | "upstream_error" = "upstream_error";
   try {
     const reply = await callOpenRouter(
       params.key,
@@ -686,12 +689,15 @@ async function planQuery(params: {
     );
     const call = reply.message.tool_calls?.find((c) => c.function?.name === PLAN_QUERY_TOOL.name);
     const parsed = RawPlanSchema.safeParse(safeJson(call?.function?.arguments ?? "{}"));
-    if (parsed.success) return parsed.data;
+    if (parsed.success) return { raw: parsed.data, schemaValid: true, status: "ok" };
+    status = "schema_invalid";
   } catch (error) {
     console.error("[/api/ai] planner failed", error instanceof Error ? error.message : error);
   }
-  // Planner unavailable: fall back to a general answer (validation adds a note)
-  return { intent: "general", uses_map_context: false, refers_to_previous: false };
+  // Planner unavailable or its output failed the schema: fall back to a general
+  // answer (validation adds a note). schemaValid=false is reported to the client
+  // so evaluations can count real planner failures instead of the repaired plan.
+  return { raw: { intent: "general", uses_map_context: false, refers_to_previous: false }, schemaValid: false, status };
 }
 
 function groundingPrompt(plan: QueryPlan, notes: ValidationNote[], data: DataResult[], lang: LanguageInfo): string {
@@ -751,7 +757,7 @@ async function explain(params: {
   referer: string;
   messages: ChatMessage[];
   fallback: string;
-}): Promise<{ answer: Answer; model: string }> {
+}): Promise<{ answer: Answer; model: string; generated: boolean }> {
   try {
     const reply = await callOpenRouter(
       params.key,
@@ -762,15 +768,15 @@ async function explain(params: {
     );
     const call = reply.message.tool_calls?.find((c) => c.function?.name === SUBMIT_ANSWER_TOOL.name);
     const parsed = AnswerSchema.safeParse(safeJson(call?.function?.arguments ?? ""));
-    if (parsed.success) return { answer: parsed.data, model: reply.model };
+    if (parsed.success) return { answer: parsed.data, model: reply.model, generated: true };
     const salvaged = extractAnswer(typeof reply.message.content === "string" ? reply.message.content : "");
-    if (salvaged) return { answer: salvaged, model: reply.model };
+    if (salvaged) return { answer: salvaged, model: reply.model, generated: true };
   } catch (error) {
     console.error("[/api/ai] explain failed", error instanceof Error ? error.message : error);
   }
   // Model unavailable: return the platform's own data headline rather than nothing
   const base = fallbackAnswer("", params.fallback, []);
-  return { answer: base, model: params.model };
+  return { answer: base, model: params.model, generated: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -847,7 +853,7 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
 
     // 2. Intent extraction → structured plan (LLM, forced tool call)
     const previous = (parsed.data.previousPlan ?? null) as QueryPlan | null;
-    const raw = await planQuery({ key, model, referer, message, history: history ?? [], context: context ?? null, previous });
+    const { raw, schemaValid, status: plannerStatus } = await planQuery({ key, model, referer, message, history: history ?? [], context: context ?? null, previous });
     mark("plan");
 
     // 3. Validation against what the platform can answer
@@ -868,6 +874,13 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
     ];
     const answer = await explain({ key, model, referer, messages, fallback: data[0]?.headline ?? "" });
     mark("explain");
+    // Say so when the model did not answer — never pass a fallback off as an AI answer
+    const degraded = plannerStatus === "upstream_error" || !answer.generated;
+    if (degraded)
+      notes.push({
+        level: "warning",
+        text: "The language model is unavailable right now, so this reply is the platform's data only — no AI explanation was generated.",
+      });
 
     // 6. Map actions + chips + follow-ups (deterministic, from the validated plan)
     const actions = mapActionsFor(plan);
@@ -880,11 +893,17 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
       model: answer.model,
       language: { code: lang.code, name: lang.name, native: lang.native, bcp47: lang.bcp47, confidence: detection.confidence, method: detection.method },
       plan,
+      planner: { status: plannerStatus, schemaValid, rawIntent: raw.intent ?? null },
+      answerGenerated: answer.generated,
+      degraded,
       validation: notes,
       data,
       evidence: [
         ...evidence,
-        { label: `AI explanation · ${answer.model}`, detail: "Wording and general context generated by the language model", provenance: "ai" },
+        // only claim an AI explanation when one was actually generated
+        ...(answer.generated
+          ? [{ label: `AI explanation · ${answer.model}`, detail: "Wording and general context generated by the language model", provenance: "ai" }]
+          : []),
       ],
       chips,
       pipeline,

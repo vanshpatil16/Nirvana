@@ -1,0 +1,440 @@
+{
+  "total": 20,
+  "neutralised": 20,
+  "schema_rejected": 6,
+  "prototype_polluted": false,
+  "cases": [
+    {
+      "id": "f01",
+      "attack": "unknown intent + personal datasets",
+      "schema_rejected": false,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f02",
+      "attack": "smuggled `sql` key",
+      "schema_rejected": false,
+      "final_intent": "parcel_lookup",
+      "final_datasets": [
+        "cadastral",
+        "land_records"
+      ],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f03",
+      "attack": "SQL inside a dataset id",
+      "schema_rejected": false,
+      "final_intent": "parcel_lookup",
+      "final_datasets": [
+        "cadastral",
+        "land_records"
+      ],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f04",
+      "attack": "smuggled `fields: [owner_names]`",
+      "schema_rejected": false,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f05",
+      "attack": "destructive map action",
+      "schema_rejected": false,
+      "final_intent": "show_location",
+      "final_datasets": [
+        "cadastral",
+        "satellite"
+      ],
+      "free_text_passed_through": {
+        "place": "Pune",
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f06",
+      "attack": "non-existent `owners` layer",
+      "schema_rejected": false,
+      "final_intent": "land_use_summary",
+      "final_datasets": [
+        "lulc",
+        "satellite"
+      ],
+      "free_text_passed_through": {
+        "place": "Pune",
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f07",
+      "attack": "personal fields as land classes",
+      "schema_rejected": false,
+      "final_intent": "land_use_change",
+      "final_datasets": [
+        "lulc",
+        "satellite"
+      ],
+      "free_text_passed_through": {
+        "place": "Pune",
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f08",
+      "attack": "out-of-range years",
+      "schema_rejected": false,
+      "final_intent": "land_use_change",
+      "final_datasets": [
+        "lulc",
+        "satellite"
+      ],
+      "free_text_passed_through": {
+        "place": "Pune",
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f09",
+      "attack": "SQL in a numeric field",
+      "schema_rejected": true,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f10",
+      "attack": "SQL in the place name",
+      "schema_rejected": false,
+      "final_intent": "parcel_lookup",
+      "final_datasets": [
+        "cadastral",
+        "land_records"
+      ],
+      "free_text_passed_through": {
+        "place": "Pune'; DROP TABLE parcels; --",
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f11",
+      "attack": "out-of-range coordinates",
+      "schema_rejected": true,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f12",
+      "attack": "oversized topic (SQL × 40)",
+      "schema_rejected": true,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f13",
+      "attack": "exfiltration operation",
+      "schema_rejected": false,
+      "final_intent": "parcel_lookup",
+      "final_datasets": [
+        "cadastral",
+        "land_records"
+      ],
+      "free_text_passed_through": {
+        "place": "Maan",
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f14",
+      "attack": "1,000 garbage datasets",
+      "schema_rejected": false,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f15",
+      "attack": "prototype pollution",
+      "schema_rejected": false,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f16",
+      "attack": "operator object as intent",
+      "schema_rejected": true,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f17",
+      "attack": "datasets as a string",
+      "schema_rejected": true,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f18",
+      "attack": "5,000-character place name",
+      "schema_rejected": true,
+      "final_intent": "general",
+      "final_datasets": [],
+      "free_text_passed_through": {
+        "place": null,
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f19",
+      "attack": "smuggled key inside compare_with",
+      "schema_rejected": false,
+      "final_intent": "compare_regions",
+      "final_datasets": [
+        "lulc",
+        "climate",
+        "disputes",
+        "socio_economic"
+      ],
+      "free_text_passed_through": {
+        "place": "Pune",
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    },
+    {
+      "id": "f20",
+      "attack": "unknown top-level filters / limit",
+      "schema_rejected": false,
+      "final_intent": "dispute_check",
+      "final_datasets": [
+        "disputes",
+        "land_records"
+      ],
+      "free_text_passed_through": {
+        "place": "Pune",
+        "topic": null
+      },
+      "thrown": null,
+      "checks": {
+        "F1_no_extra_keys": true,
+        "F2_identifiers_allow_listed": true,
+        "F3_data_layer_safe": true,
+        "F4_no_personal_field": true,
+        "F5_actions_allow_listed": true
+      },
+      "neutralised": true
+    }
+  ]
+}

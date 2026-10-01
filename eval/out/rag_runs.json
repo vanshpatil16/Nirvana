@@ -1,0 +1,890 @@
+{
+  "base_url": "http://localhost:8080",
+  "runs": [
+    {
+      "id": "q01",
+      "llm_answered": true,
+      "ok": true,
+      "http": 200,
+      "ms": 4605,
+      "intent": "policy_research",
+      "datasets": [
+        "policy_library",
+        "research_policy"
+      ],
+      "answer": "Under the Maharashtra Land Revenue Code, permission from the Collector is required to convert agricultural land for non-agricultural purposes.",
+      "summary": "Under the Maharashtra Land Revenue Code, permission from the Collector is required to convert agricultural land for non-agricultural purposes.",
+      "contexts": [
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(1)",
+          "page": 40,
+          "method": "explicit",
+          "quote": "No land used for agricultural shall be used for any non-agricultural purposes; and no land assessed for one non-agricultural purpose shall be used for any other non-agricultural purpose or for the same non-agricultural purpose but in relaxation of any of the conditions imposed at the time of the grant of permission for non-agricultural purpose, except with permission of the Collector."
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(2)",
+          "page": 41,
+          "method": "explicit",
+          "quote": "no such permission shall be necessary for conversion of use of any agricultural land for the personal bona fide residential purpose in non-urban area, or for the micro enterprise as defined in clause (h) of section 2 of the Micro, Small and Medium Enterprises Development Act, 2006 (27 of 2006) and small commercial use like shop, flour mill, grocery shop or chilli grinding machine, operated in such premises in use for the personal bona fide residential purpos e in non-urban area and occupying the area not exceeding forty square meters"
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(1)",
+          "page": 40,
+          "method": "inferred",
+          "quote": "No land used for agricultural shall be used for any non-agricultural purposes; and no land assessed for one non-agricultural purpose shall be used for any other non-agricultural purpose"
+        }
+      ],
+      "cited": [
+        "Land Revenue Code — Section 42(1), p. 40",
+        "Land Revenue Code — Section 42(2), p. 41"
+      ],
+      "error": null
+    },
+    {
+      "id": "q02",
+      "llm_answered": true,
+      "ok": true,
+      "http": 200,
+      "ms": 5027,
+      "intent": "policy_research",
+      "datasets": [
+        "policy_library",
+        "research_policy"
+      ],
+      "answer": "Agricultural land can be used for personal residence or micro enterprises up to forty square meters without needing non-agricultural permission under the Maharashtra Land Revenue Code.",
+      "summary": "Agricultural land can be used for personal residence or micro enterprises up to forty square meters without needing non-agricultural permission under the Maharashtra Land Revenue Code.",
+      "contexts": [
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(1)",
+          "page": 40,
+          "method": "explicit",
+          "quote": "No land used for agricultural shall be used for any non-agricultural purposes; and no land assessed for one non-agricultural purpose shall be used for any other non-agricultural purpose or for the same non-agricultural purpose but in relaxation of any of the conditions imposed at the time of the grant of permission for non-agricultural purpose, except with permission of the Collector."
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(2)",
+          "page": 41,
+          "method": "explicit",
+          "quote": "no such permission shall be necessary for conversion of use of any agricultural land for the personal bona fide residential purpose in non-urban area, or for the micro enterprise as defined in clause (h) of section 2 of the Micro, Small and Medium Enterprises Development Act, 2006 (27 of 2006) and small commercial use like shop, flour mill, grocery shop or chilli grinding machine, operated in such premises in use for the personal bona fide residential purpos e in non-urban area and occupying the area not exceeding forty square meters"
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(1)",
+          "page": 40,
+          "method": "inferred",
+          "quote": "No land used for agricultural shall be used for any non-agricultural purposes; and no land assessed for one non-agricultural purpose shall be used for any other non-agricultural purpose"
+        }
+      ],
+      "cited": [
+        "Land Revenue Code — Section 42(1), p. 40",
+        "Land Revenue Code — Section 42(2), p. 41"
+      ],
+      "error": null
+    },
+    {
+      "id": "q03",
+      "llm_answered": true,
+      "ok": true,
+      "http": 200,
+      "ms": 4101,
+      "intent": "policy_research",
+      "datasets": [
+        "policy_library",
+        "research_policy"
+      ],
+      "answer": "Section 42(2) of the Maharashtra Land Revenue Code restricts permission-free conversion to non-urban areas for personal residential purposes and small enterprises only.",
+      "summary": "Section 42(2) of the Maharashtra Land Revenue Code restricts permission-free conversion to non-urban areas for personal residential purposes and small enterprises only.",
+      "contexts": [
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(1)",
+          "page": 40,
+          "method": "explicit",
+          "quote": "No land used for agricultural shall be used for any non-agricultural purposes; and no land assessed for one non-agricultural purpose shall be used for any other non-agricultural purpose or for the same non-agricultural purpose but in relaxation of any of the conditions imposed at the time of the grant of permission for non-agricultural purpose, except with permission of the Collector."
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(2)",
+          "page": 41,
+          "method": "explicit",
+          "quote": "no such permission shall be necessary for conversion of use of any agricultural land for the personal bona fide residential purpose in non-urban area, or for the micro enterprise as defined in clause (h) of section 2 of the Micro, Small and Medium Enterprises Development Act, 2006 (27 of 2006) and small commercial use like shop, flour mill, grocery shop or chilli grinding machine, operated in such premises in use for the personal bona fide residential purpos e in non-urban area and occupying the area not exceeding forty square meters"
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(1)",
+          "page": 40,
+          "method": "derived",
+          "quote": "except with permission of the Collector"
+        }
+      ],
+      "cited": [
+        "Land Revenue Code — Section 42(1), p. 40",
+        "Land Revenue Code — Section 42(2), p. 41"
+      ],
+      "error": null
+    },
+    {
+      "id": "q04",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 1445,
+      "intent": "policy_research",
+      "datasets": [
+        "policy_library",
+        "research_policy"
+      ],
+      "answer": "Maharashtra Land Revenue Code, 1966 (Maharashtra Act No. XLI of 1966, as amended by Mah. 17 of 2007) is the closest match in the Policy Lab library.",
+      "summary": "Maharashtra Land Revenue Code, 1966 (Maharashtra Act No. XLI of 1966, as amended by Mah. 17 of 2007) is the closest match in the Policy Lab library.",
+      "contexts": [
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(1)",
+          "page": 40,
+          "method": "explicit",
+          "quote": "No land used for agricultural shall be used for any non-agricultural purposes; and no land assessed for one non-agricultural purpose shall be used for any other non-agricultural purpose or for the same non-agricultural purpose but in relaxation of any of the conditions imposed at the time of the grant of permission for non-agricultural purpose, except with permission of the Collector."
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(2)",
+          "page": 41,
+          "method": "explicit",
+          "quote": "no such permission shall be necessary for conversion of use of any agricultural land for the personal bona fide residential purpose in non-urban area, or for the micro enterprise as defined in clause (h) of section 2 of the Micro, Small and Medium Enterprises Development Act, 2006 (27 of 2006) and small commercial use like shop, flour mill, grocery shop or chilli grinding machine, operated in such premises in use for the personal bona fide residential purpos e in non-urban area and occupying the area not exceeding forty square meters"
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(2)(b)",
+          "page": 41,
+          "method": "explicit",
+          "quote": "the area falling within the control line of the National Highways, State Highways, District Roads or Village Roads"
+        }
+      ],
+      "cited": [
+        "Land Revenue Code — Section 42(1), p. 40",
+        "Land Revenue Code — Section 42(2), p. 41",
+        "Land Revenue Code — Section 42(2)(b), p. 41"
+      ],
+      "error": null
+    },
+    {
+      "id": "q05",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 1047,
+      "intent": "policy_research",
+      "datasets": [
+        "policy_library",
+        "research_policy"
+      ],
+      "answer": "Maharashtra Tenancy and Agricultural Lands Act, 1966 (Maharashtra Act No. XXXVI of 1966, as amended to Mah. 24 of 2012) is the closest match in the Policy Lab library.",
+      "summary": "Maharashtra Tenancy and Agricultural Lands Act, 1966 (Maharashtra Act No. XXXVI of 1966, as amended to Mah. 24 of 2012) is the closest match in the Policy Lab library.",
+      "contexts": [
+        {
+          "policy": "Maharashtra Tenancy and Agricultural Lands Act, 1966",
+          "clause": "Protection of tenant in actual possession",
+          "page": 0,
+          "method": "explicit",
+          "quote": "landlord, such tenant shall not be evicted from such dwelling house (with the materials and the site"
+        },
+        {
+          "policy": "Maharashtra Tenancy and Agricultural Lands Act, 1966",
+          "clause": "Ceiling on holdings held as owner or tenant",
+          "page": 0,
+          "method": "explicit",
+          "quote": "him as owner or tenant shall not exceed the ceiling area."
+        },
+        {
+          "policy": "Maharashtra Tenancy and Agricultural Lands Act, 1966",
+          "clause": "Protection of tenant in actual possession",
+          "page": 0,
+          "method": "inferred",
+          "quote": "landlord, such tenant shall not be evicted from such dwelling house"
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(1)",
+          "page": 40,
+          "method": "explicit",
+          "quote": "No land used for agricultural shall be used for any non-agricultural purposes; and no land assessed for one non-agricultural purpose shall be used for any other non-agricultural purpose or for the same non-agricultural purpose but in relaxation of any of the conditions imposed at the time of the grant of permission for non-agricultural purpose, except with permission of the Collector."
+        }
+      ],
+      "cited": [
+        "Tenancy & Agricultural Lands Act — Protection of tenant in actual possession",
+        "Tenancy & Agricultural Lands Act — Ceiling on holdings held as owner or tenant",
+        "Land Revenue Code — Section 42(1), p. 40"
+      ],
+      "error": null
+    },
+    {
+      "id": "q06",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 1108,
+      "intent": "policy_research",
+      "datasets": [
+        "policy_library",
+        "research_policy"
+      ],
+      "answer": "Maharashtra Tenancy and Agricultural Lands Act, 1966 (Maharashtra Act No. XXXVI of 1966, as amended to Mah. 24 of 2012) is the closest match in the Policy Lab library.",
+      "summary": "Maharashtra Tenancy and Agricultural Lands Act, 1966 (Maharashtra Act No. XXXVI of 1966, as amended to Mah. 24 of 2012) is the closest match in the Policy Lab library.",
+      "contexts": [
+        {
+          "policy": "Maharashtra Tenancy and Agricultural Lands Act, 1966",
+          "clause": "Ceiling on holdings held as owner or tenant",
+          "page": 0,
+          "method": "explicit",
+          "quote": "him as owner or tenant shall not exceed the ceiling area."
+        },
+        {
+          "policy": "Maharashtra Tenancy and Agricultural Lands Act, 1966",
+          "clause": "Protection of tenant in actual possession",
+          "page": 0,
+          "method": "explicit",
+          "quote": "landlord, such tenant shall not be evicted from such dwelling house (with the materials and the site"
+        },
+        {
+          "policy": "Maharashtra Tenancy and Agricultural Lands Act, 1966",
+          "clause": "Protection of tenant in actual possession",
+          "page": 0,
+          "method": "inferred",
+          "quote": "landlord, such tenant shall not be evicted from such dwelling house"
+        },
+        {
+          "policy": "Maharashtra Land Revenue Code, 1966",
+          "clause": "Section 42(1)",
+          "page": 40,
+          "method": "explicit",
+          "quote": "No land used for agricultural shall be used for any non-agricultural purposes; and no land assessed for one non-agricultural purpose shall be used for any other non-agricultural purpose or for the same non-agricultural purpose but in relaxation of any of the conditions imposed at the time of the grant of permission for non-agricultural purpose, except with permission of the Collector."
+        }
+      ],
+      "cited": [
+        "Tenancy & Agricultural Lands Act — Ceiling on holdings held as owner or tenant",
+        "Tenancy & Agricultural Lands Act — Protection of tenant in actual possession",
+        "Land Revenue Code — Section 42(1), p. 40"
+      ],
+      "error": null
+    },
+    {
+      "id": "q07",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 1162,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q08",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 301,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q09",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 289,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q10",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 446,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q11",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 519,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q12",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 413,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q13",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 424,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q14",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 419,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q15",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 404,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q16",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 433,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q17",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 521,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q18",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 316,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q19",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 418,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q20",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 335,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q21",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 320,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q22",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 393,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q23",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 319,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q24",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 293,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q25",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 1053,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q26",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 317,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q27",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 349,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q28",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 385,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q29",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 416,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q30",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 316,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q31",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 342,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q32",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 393,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q33",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 418,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q34",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 319,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q35",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 332,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q36",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 399,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q37",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 260,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q38",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 263,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q39",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 424,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q40",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 315,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q41",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 420,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q42",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 322,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q43",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 412,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q44",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 418,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q45",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 341,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q46",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 395,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q47",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 312,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q48",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 317,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q49",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 426,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    },
+    {
+      "id": "q50",
+      "llm_answered": false,
+      "ok": true,
+      "http": 200,
+      "ms": 409,
+      "intent": "general",
+      "datasets": [],
+      "answer": "Here is what could be assembled for that query without a full model answer.",
+      "summary": "Here is what could be assembled for that query without a full model answer.",
+      "contexts": [],
+      "cited": [],
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "item": "rag",
+  "measured": false,
+  "gold_set_size": 50,
+  "retrieval_only": {
+    "measured": true,
+    "what": "Retrieval + citation stage only, no LLM: validatePlan(policy_research) → executePlan(question). Identical to the server path except the planner's optional English `topic` keywords are absent.",
+    "n": 50,
+    "gold_instrument_retrieved": {
+      "count": 49,
+      "of": 50
+    },
+    "gold_supporting_quote_retrieved": {
+      "count": 43,
+      "of": 50
+    },
+    "no_context_retrieved": 1,
+    "citations_total": 163,
+    "citation_precision_clause_level": 0.32515337423312884,
+    "citation_precision_document_level": 0.8895705521472392,
+    "misses": [
+      {
+        "id": "q03",
+        "lang": "en",
+        "expected": "Maharashtra Land Revenue Code, 1966 — Section 42(2), provisos (a)–(c)",
+        "retrieved": [
+          "Maharashtra Land Revenue Code, 1966 — Section 42(1)",
+          "Maharashtra Land Revenue Code, 1966 — Section 42(2)",
+          "Maharashtra Land Revenue Code, 1966 — Section 42(1)"
+        ]
+      },
+      {
+        "id": "q04",
+        "lang": "hi",
+        "expected": "Maharashtra Land Revenue Code, 1966 — Section 42(2)(b)",
+        "retrieved": [
+          "Maharashtra Land Revenue Code, 1966 — Section 42(1)",
+          "Maharashtra Land Revenue Code, 1966 — Section 42(2)",
+          "Maharashtra Land Revenue Code, 1966 — Section 42(1)"
+        ]
+      },
+      {
+        "id": "q09",
+        "lang": "en",
+        "expected": "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Section 2(10)",
+        "retrieved": [
+          "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Section 7(1)",
+          "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Section 2(4)",
+          "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Section 6(1)"
+        ]
+      },
+      {
+        "id": "q14",
+        "lang": "en",
+        "expected": "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Preamble / assent note",
+        "retrieved": [
+          "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Section 7(1)",
+          "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Sections 8 and 8AA",
+          "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Section 2(4)"
+        ]
+      },
+      {
+        "id": "q15",
+        "lang": "en",
+        "expected": "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Section 15",
+        "retrieved": [
+          "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Section 7(1)",
+          "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Sections 8 and 8AA",
+          "Prevention of Fragmentation and Consolidation of Holdings Act, 1947 — Section 2(4)"
+        ]
+      },
+      {
+        "id": "q23",
+        "lang": "mr",
+        "expected": "Maharashtra Regional and Town Planning Act, 1966 — Section 38",
+        "retrieved": []
+      },
+      {
+        "id": "q39",
+        "lang": "en",
+        "expected": "Package Scheme of Incentives 2019 (Maharashtra Industrial Policy) — Table 2 — Eligibility Criteria to LSI",
+        "retrieved": [
+          "Package Scheme of Incentives 2019 (Maharashtra Industrial Policy) — Incentive conditions (e)",
+          "Package Scheme of Incentives 2019 (Maharashtra Industrial Policy) — Incentive conditions (c)",
+          "Package Scheme of Incentives 2019 (Maharashtra Industrial Policy) — Incentive mechanism"
+        ]
+      }
+    ]
+  },
+  "missing": [
+    "47/50 questions were not answered by the language model (upstream LLM failure). No RAG score is reported for an incomplete run."
+  ]
+}

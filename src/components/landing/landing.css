@@ -60,8 +60,16 @@
 .ld-nav-links a { padding: 8px 14px; border-radius: 999px; color: rgba(255, 255, 255, 0.72); font-size: 13.5px; font-weight: 550; transition: color 0.2s, background 0.2s; }
 .ld-nav-links a:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 
+/* Small-screen section rail. Hidden until the desktop nav collapses, then it
+   replaces the lost links and CTA. */
+.ld-jump { display: none; }
+
 /* ---------- THE DIVE ---------- */
-.ld-dive { position: relative; height: 100vh; min-height: 620px; overflow: hidden; background: radial-gradient(1200px 700px at 70% 30%, #0c3a24 0%, transparent 60%), radial-gradient(900px 600px at 15% 90%, #1a2f10 0%, transparent 60%), var(--night); }
+.ld-hero { position: absolute; left: max(6vw, 24px); bottom: 13vh; z-index: 3; max-width: 820px; }
+/* `dvh` tracks the real visible height, so a collapsing mobile address bar does
+   not push the bottom of a section off-screen. The `vh` line stays as a fallback
+   for engines without dvh support. */
+.ld-dive { position: relative; height: 100vh; height: 100dvh; min-height: 560px; overflow: hidden; background: radial-gradient(1200px 700px at 70% 30%, #0c3a24 0%, transparent 60%), radial-gradient(900px 600px at 15% 90%, #1a2f10 0%, transparent 60%), var(--night); }
 .ld-anchor { position: absolute; top: 0; }
 .ld-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ld-vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, rgba(1, 8, 4, 0.72) 100%), linear-gradient(0deg, rgba(3, 17, 10, 0.9), transparent 38%); }
@@ -93,7 +101,7 @@
 .ld-punch em { color: var(--mint); font-style: italic; font-weight: 300; }
 
 /* ---------- CHANGE (real imagery) ---------- */
-.ld-change { position: relative; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); height: 100vh; min-height: 620px; background: var(--night); }
+.ld-change { position: relative; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); height: 100vh; height: 100dvh; min-height: 560px; background: var(--night); }
 .ld-change-media { position: relative; overflow: hidden; }
 .ld-tiles { position: absolute; top: 50%; left: 50%; display: grid; grid-template-columns: repeat(4, 1fr); width: max(100%, calc(100vh * 4 / 3)); aspect-ratio: 4 / 3; transform: translate(-50%, -50%); }
 .ld-tiles img { width: 100%; height: 100%; object-fit: cover; }
@@ -285,7 +293,7 @@
 .ld-ledger-col.gap li::before { border: 2px solid var(--red); }
 
 /* ---------- CTA ---------- */
-.ld-cta { position: relative; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; overflow: hidden; }
+.ld-cta { position: relative; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; min-height: 100dvh; overflow: hidden; }
 .ld-cta-bg { position: absolute; inset: -10% 0; width: 100%; height: 120%; object-fit: cover; }
 .ld-cta-shade { position: absolute; inset: 0; background: linear-gradient(180deg, var(--night-2) 0%, rgba(3, 17, 10, 0.55) 35%, rgba(3, 17, 10, 0.75) 70%, var(--night) 100%); }
 .ld-cta-inner { position: relative; z-index: 2; padding: 0 6vw; }
@@ -329,9 +337,74 @@
 }
 
 /* ---------- responsive ---------- */
+/* ---------- short viewports (landscape phones) ----------
+   Height is the scarce axis here, not width. The narrative was authored for a
+   tall frame: the dive is a full-viewport canvas with the hero floated to its
+   bottom, and the method section is a pinned horizontal track. On a 390px-tall
+   frame the hero sat entirely below the fold. Hand the hero back to normal
+   flow, shorten the fixed heights, and let the track become a vertical stack. */
+@media (max-height: 640px) and (orientation: landscape) {
+  .ld-dive { min-height: 0; }
+  .ld-hero { position: relative; left: auto; right: auto; bottom: auto; max-width: 640px; padding: 96px 24px 0; }
+  .ld-hero h1 { font-size: clamp(30px, 5.4vw, 52px); }
+  .ld-hero p { margin-top: 14px; font-size: 15px; }
+  .ld-hero-ctas { margin-top: 18px; }
+  .ld-cue { display: none; }
+  .ld-cap, .ld-gap { top: auto; bottom: 16px; left: 16px !important; right: 16px !important; width: auto; padding: 16px 18px; transform: none; }
+  .ld-cap p, .ld-gap p { font-size: clamp(20px, 3vw, 26px); }
+  .ld-legend-3d { display: none; }
+  .ld-change, .ld-method, .ld-cta { height: auto; min-height: 0; }
+  .ld-change { grid-template-columns: 1fr; grid-template-rows: 52vh auto; }
+  .ld-cta { min-height: 0; padding: 80px 0 64px; }
+  .ld-jump { display: none; }
+  .ld-method-steps, .ld-method-bar { display: none; }
+  .ld-track { flex-direction: column; width: auto; gap: 20px; padding: 0 24px 60px; }
+  .ld-panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: auto; padding: 26px 28px; gap: 24px; }
+  .ld-panel-num { font-size: 64px; }
+  .ld-panel-viz { min-height: 0; }
+  .ld-cta h2 { font-size: clamp(44px, 9vw, 96px); }
+  .ld-marquee { display: none; }
+  .ld-ledger { padding: 72px 24px; }
+  .ld-foot { padding: 32px 24px 40px; }
+}
+
+/* The section rail carries navigation on anything too narrow for the pill nav.
+   Sits below it, horizontally scrollable, and never overlaps the hero because
+   the hero is bottom-anchored on tall frames. */
+.ld-jump {
+  position: fixed;
+  top: 74px;
+  left: 50%;
+  z-index: 45;
+  display: flex;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(3, 17, 10, 0.66);
+  transform: translateX(-50%);
+  overflow-x: auto;
+  scrollbar-width: none;
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-overflow-scrolling: touch;
+}
+.ld-jump::-webkit-scrollbar { display: none; }
+.ld-jump a {
+  flex: 0 0 auto;
+  padding: 9px 13px;
+  border-radius: 999px;
+  color: rgba(232, 241, 235, 0.82);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ld-jump-cta { color: var(--saffron) !important; font-weight: 700; }
+
 @media (max-width: 1100px) {
   .ld-nav-links { display: none; }
   .ld-nav { justify-content: space-between; }
+  .ld-jump { display: flex; }
   .ld-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ld-card, .ld-card.xl, .ld-card.wide, .ld-card.banner { grid-column: span 2; }
   .ld-card.tall { grid-column: span 1; }
@@ -347,6 +420,13 @@
   .ld-legend-3d { display: none; }
   .ld-change { grid-template-columns: 1fr; grid-template-rows: 58vh auto; height: auto; }
   .ld-change-copy { padding: 44px 24px 56px; }
+  /* The before/after wipe needs a real pixel range; on a narrow portrait frame
+     the year labels and side pills compete for the same strip. */
+  .ld-side { top: 12px; font-size: 11px; }
+  .ld-side.l { left: 12px; }
+  .ld-side.r { right: 12px; }
+  .ld-years { left: 4vw; bottom: 44px; }
+  .ld-tiles { width: max(100%, calc(58vh * 4 / 3)); }
   .ld-method { height: auto; min-height: 0; }
   .ld-method-head { grid-template-columns: 1fr; padding: 90px 24px 20px; }
   .ld-method-steps, .ld-method-bar { display: none; }
@@ -362,8 +442,44 @@
   .ld-foot { grid-template-columns: 1fr; }
   .ld-foot nav { justify-content: flex-start; }
 }
+/* ---------- coarse pointers ----------
+   The layout audit found 24px-tall inline links and 36px nav links. On touch
+   those are below the 44px comfortable target, so give them real hit area
+   without changing the visual weight. */
+@media (pointer: coarse) {
+  .ld-link { padding: 10px 0; }
+  .ld-nav-links a { padding: 11px 14px; }
+  .ld-foot nav a { padding: 10px 0; }
+  .ld-card-go { width: 44px; height: 44px; }
+}
+
 @media (max-width: 560px) {
   .ld-btn { height: 44px; padding: 0 18px; font-size: 14px; }
-  .ld-nav .ld-btn-light { display: none; }
   .ld-card-chat span:nth-child(3) { display: none; }
+  .ld-hero { bottom: 10vh; }
+  .ld-hero h1 { font-size: clamp(34px, 9.2vw, 46px); }
+  .ld-hero p { font-size: 15.5px; }
+  .ld-hero-ctas { margin-top: 22px; }
+  .ld-btn { width: 100%; justify-content: center; }
+  .ld-hero-ctas { flex-direction: column; align-items: stretch; }
+  .ld-cta h2 { font-size: clamp(44px, 15vw, 72px); }
+  .ld-cta-inner { padding: 0 20px; }
+  .ld-ledger-col { padding: 62px 20px 24px; }
+  .ld-stamp { top: 16px; right: 16px; padding: 5px 10px; font-size: 12px; }
+  .ld-platform, .ld-ledger { padding: 72px 20px; }
+  .ld-card { padding: 20px; border-radius: 20px; }
+  .ld-bento { gap: 12px; }
+  .ld-card h3 { font-size: 24px; }
+  .ld-card.xl h3 { font-size: clamp(30px, 8.4vw, 40px); }
+  .ld-card-chat { top: 18px; left: 18px; }
+  .ld-card-chat span { font-size: 13px; padding: 9px 12px; }
+  .ld-panel-num { font-size: 68px; }
+  .ld-panel-copy h3 { font-size: clamp(26px, 7.4vw, 34px); }
+  .ld-panel-copy p { font-size: 15.5px; }
+  .ld-vz, .vz { max-width: 100%; }
+  .ld-count { grid-template-columns: 10px 56px 1fr; gap: 8px; }
+  .ld-count b { font-size: 24px; }
+  .ld-count span { font-size: 12.5px; }
+  .ld-change-copy h2, .ld-title { font-size: clamp(30px, 8.6vw, 40px); }
+  .ld-change-copy p { font-size: 16.5px; }
 }

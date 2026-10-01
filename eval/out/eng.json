@@ -1,0 +1,85 @@
+{
+  "item": "engineering",
+  "measured": true,
+  "unit_tests": {
+    "test_runners_in_package_json": [],
+    "test_files": [],
+    "passed": 0,
+    "failed": 0,
+    "note": "This repo has no unit/integration test suite (no test runner dependency, no test files, no pytest)."
+  },
+  "verification_harnesses": {
+    "verify_sim": {
+      "cmd": "npm run -s verify:sim",
+      "exit": 0,
+      "passed": true,
+      "seconds": 2.4,
+      "tail": [
+        "  PASS  Industrial Policy 2013 · the default bundle is the instrument's own figures",
+        "  PASS  Logistics Policy 2024 · 2 presets produce 2 distinct results — No park policy -0.7%, Full build-out 3.4%",
+        "  PASS  Logistics Policy 2024 · no preset claims to restate the instrument",
+        "  PASS  Logistics Policy 2024 · the default bundle is the instrument's own figures",
+        "",
+        "ALL 288 CHECKS PASSED"
+      ],
+      "checks_passed": 288
+    },
+    "verify_geometry": {
+      "cmd": "npm run -s verify:geometry",
+      "exit": 0,
+      "passed": true,
+      "seconds": 1.7,
+      "tail": [
+        "",
+        "sum of units   ≈ 342518 km²",
+        "region outline ≈ 322462 km²",
+        "declared total = 308053 km²",
+        "coverage       = 106.2% of the outline",
+        "polygons       = 13 / 13 units, max 155 points each"
+      ]
+    }
+  },
+  "typecheck": {
+    "cmd": "npm run -s typecheck",
+    "exit": 0,
+    "passed": true,
+    "seconds": 106.9,
+    "tail": []
+  },
+  "build": {
+    "cmd": "npm run -s build",
+    "exit": 0,
+    "passed": true,
+    "seconds": 24.6,
+    "tail": [
+      "  - vite-tsconfig-paths (16%)",
+      "  - vite:asset (4%)",
+      "  - vite:css-post (4%)",
+      "  - tanstack-start-core:import-protection-transform-cache (3%)",
+      "See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.",
+      "\u001b[39m"
+    ]
+  },
+  "docker": {
+    "compose_files_at_top_level": [],
+    "dockerfiles_at_top_level": [],
+    "docker_compose_up": "not runnable — no compose file exists"
+  },
+  "ci": {
+    "workflows": [
+      ".github/workflows/ci.yml"
+    ],
+    "exists": true
+  },
+  "separate_backend_repo": {
+    "repo": "landstack-api (SEPARATE repository — not this repo)",
+    "path": "C:/Users/OMKARK~1/AppData/Local/Temp/landstack-api",
+    "passed": 67,
+    "failed": 0,
+    "exit": 0,
+    "tail": [
+      "...................................................................      [100%]",
+      "67 passed in 27.23s"
+    ]
+  }
+}

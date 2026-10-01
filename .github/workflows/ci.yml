@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # The repo's own assertion harnesses (Policy Lab engine + geometry).
+      - name: Verify simulation engine
+        run: npm run verify:sim
+
+      - name: Verify geometry
+        run: npm run verify:geometry
+
+      - name: Build
+        run: npm run build
+
+      # Evaluation scripts that need no network or API key: they report which
+      # pitch claims are measurable from this repo and fail loudly on a regression
+      # in the static "no SQL reaches a database" check.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Static evaluation checks
+        run: |
+          python eval/model_eval.py > /dev/null
+          python eval/rules_eval.py > /dev/null
+          python -c "import sys; sys.path.insert(0, 'eval'); import nlgis_eval as n; r = n.static_sql_scan(); print(r); sys.exit(0 if r['ai_written_sql_reaching_db'] == 0 else 1)"

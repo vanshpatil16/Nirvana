@@ -1,0 +1,49 @@
+{
+  "item": "title_integrity_rules",
+  "measured": false,
+  "missing": [
+    "No rule engine: no function in the repo takes an ownership chain, deed list, mutation register or share table and returns rule violations (files with rule-like functions: none).",
+    "No ownership-chain data model: there is no deed / mutation / succession / share record type to run rules over, and no Neo4j or other graph store (the only 'Neo4j' in the repo is a label on a UI chip).",
+    "The 8 'integrity checks' and the Title Risk Score shown on /workflow are hard-coded per parcel in src/components/workflow/data.ts (`failed: [\"Orphaned deed\", \"Ghost transfer\", …]`, `score: 82`). They are not computed."
+  ],
+  "searched": [
+    "src/**/*.ts(x), scripts/*.py for the six rule names and for rule-like function definitions"
+  ],
+  "where_the_rule_names_appear": {
+    "orphaned deed": [
+      "src/components/workflow/data.ts:177: issue: \"Orphaned deed\",",
+      "src/components/workflow/data.ts:358: \"Orphaned deed\",",
+      "src/components/workflow/data.ts:389: failed: [\"Orphaned deed\", \"Ghost transfer\", \"Pending RCCMS\"],"
+    ],
+    "partition": [
+      "src/data/dashboard.ts:68: { name: \"Partition\", value: 2341 },",
+      "src/data/innovation/workspace.ts:841: \"Alerts are partitioned into bands conditioned on geometry age, and the dashboard sorts by predicted yield per inspectio",
+      "src/data/policySimulation/draftFromExtraction.ts:268: partition_restriction: [\"partition\", \"consent\", \"restrict\"],",
+      "src/data/policySimulation/draftFromExtraction.ts:274: subdivision_pressure: [\"sub-division\", \"partition\", \"inheritance\", \"pressure\"],",
+      "src/data/policySimulation/geographies.ts:8: * outline shipped with the product: every study unit is a radially-partitioned",
+      "src/data/policySimulation/geographies.ts:14: const LON_SCALE = 0.86; // cos(19°N) — keeps partition cells visually fair"
+    ],
+    "share over-allocation": [
+      "src/components/workflow/data.ts:185: issue: \"Share over-allocation\",",
+      "src/components/workflow/data.ts:360: \"Share over-allocation\",",
+      "src/components/workflow/data.ts:399: failed: [\"Share over-allocation\", \"Partition mismatch\"],"
+    ],
+    "ghost transfer": [
+      "src/components/workflow/data.ts:220: issue: \"Ghost transfer\",",
+      "src/components/workflow/data.ts:361: \"Ghost transfer\",",
+      "src/components/workflow/data.ts:389: failed: [\"Orphaned deed\", \"Ghost transfer\", \"Pending RCCMS\"],"
+    ],
+    "temporal inversion": [
+      "src/components/workflow/data.ts:215: { id: \"chakan\", name: \"Chakan\", score: 45, issue: \"Temporal inversion\", lon: 73.862, lat: 18.76 },",
+      "src/components/workflow/data.ts:362: \"Temporal inversion\",",
+      "src/components/workflow/data.ts:409: failed: [\"Temporal inversion\"],"
+    ],
+    "dormant succession": [
+      "src/components/workflow/data.ts:363: \"Dormant succession\","
+    ]
+  },
+  "what_would_make_this_measurable": [
+    "A typed ownership-chain model (deeds, mutations, successions, shares with dates and areas) and one pure function per rule returning violations.",
+    "Then this script generates 200 seeded parcels, plants 10 defects per rule, and reports recall / false positives / precision against saved ground truth."
+  ]
+}

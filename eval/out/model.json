@@ -1,0 +1,27 @@
+{
+  "item": "conversion_model",
+  "measured": false,
+  "missing": [
+    "No trained model artefact (searched *.pkl, *.joblib, *.ubj, *.bst, *.onnx, *.model, *.cbm): none found",
+    "No training / inference code importing xgboost or scikit-learn: none found",
+    "No labelled feature table (searched *.parquet, *.csv, *.feather): none found",
+    "xgboost and scikit-learn are not dependencies of this repo (package.json only; no requirements.txt / pyproject.toml)."
+  ],
+  "searched": [
+    "whole repository, excluding node_modules and build output"
+  ],
+  "what_the_repo_contains_instead": {
+    "note": "Every mention of XGBoost is display text or a comment. The 'conversion probability' surface on /workflow is a closed-form function of distance to the city centre and to four hand-placed highway segments (src/components/workflow/SimulateScreen.tsx), labelled in code as a 'Synthetic model surface (stand-in for the XGBoost output…)'. src/data/data-sources.ts states the model metrics are SIMULATED.",
+    "mentions_of_xgboost": [
+      "src/data/data-sources.ts:560: \"SIH hackathon dataset: observation bands, model metrics (XGBoost/SHAP), federation router and guardrail scores are SIMULATED and labelled as such in ",
+      "src/components/workflow/data.ts:10: *   SIMULATED  federation router, XGBoost/SHAP surface, RAGAS score — run in",
+      "src/components/workflow/SimulateScreen.tsx:33: // Synthetic model surface (stand-in for the XGBoost output; trained labels are",
+      "src/components/workflow/SimulateScreen.tsx:639: Agriculture → built-up within {applied.l.horizon} years · XGBoost, trained on real"
+    ]
+  },
+  "what_would_make_this_measurable": [
+    "A labelled table: one row per village/parcel with features and a 2019→2024 agriculture→built-up label, plus a taluka or district column for grouping.",
+    "The label can be built from data this project already uses: Esri / Impact Observatory 10 m annual land cover for 2019 and 2024 (zonal statistics per village or per plot).",
+    "Training code and a saved model, so the same features and labels the model uses can be re-loaded here."
+  ]
+}

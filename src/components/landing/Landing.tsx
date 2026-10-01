@@ -647,6 +647,19 @@ export function Landing() {
         </a>
       </nav>
 
+      {/* Small screens lose the nav links at 1100px and the dashboard CTA at
+          560px, which reduced the header to a bare logo. This is a compact
+          scroll rail so the page stays navigable on a phone. */}
+      <nav className="ld-jump" aria-label="Sections">
+        <a href="#dive">Dive</a>
+        <a href="#method">Method</a>
+        <a href="#platform">Platform</a>
+        <a href="#ledger">Ledger</a>
+        <a href="/dashboard" className="ld-jump-cta">
+          Open
+        </a>
+      </nav>
+
       {/* ============================ THE DIVE ============================ */}
       <section className="ld-dive" id="top">
         <span id="dive" className="ld-anchor" />
@@ -664,8 +677,8 @@ export function Landing() {
             Every plot of land has two stories. <em>One is written down. One is on the ground.</em>
           </h1>
           <p className="ld-fade">
-            Nirvana reads the record and the satellite side by side, finds where they disagree,
-            and turns the fix into evidence a policymaker can defend.
+            Nirvana reads the record and the satellite side by side, finds where they disagree, and
+            turns the fix into evidence a policymaker can defend.
           </p>
           <div className="ld-hero-ctas ld-fade">
             <a href="/dashboard" className="ld-btn ld-btn-saffron">
