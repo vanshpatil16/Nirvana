@@ -27,11 +27,11 @@ import {
   type DemoParcel,
   type SpatialImpact,
   type PolicyContext,
-} from '@/data/land-difference';
+} from "@/data/land-difference";
 
-export type DataMode = 'demo' | 'live';
+export type DataMode = "demo" | "live";
 
-let currentMode: DataMode = 'demo';
+let currentMode: DataMode = "demo";
 
 export function getDataMode(): DataMode {
   return currentMode;
@@ -47,7 +47,7 @@ export async function fetchLandTransitions(
   _toYear: string,
 ): Promise<{ transitions: LandTransition[]; isDemo: boolean }> {
   // Simulate network delay
-  await new Promise(r => setTimeout(r, 400));
+  await new Promise((r) => setTimeout(r, 400));
   return { transitions: LAND_TRANSITIONS, isDemo: true };
 }
 
@@ -56,7 +56,7 @@ export async function fetchChangeKPIs(
   _fromYear: string,
   _toYear: string,
 ): Promise<{ kpis: ChangeKPI[]; isDemo: boolean }> {
-  await new Promise(r => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, 300));
   return { kpis: CHANGE_KPIS, isDemo: true };
 }
 
@@ -64,7 +64,7 @@ export async function fetchParcels(
   _bbox: [number, number, number, number],
   _state: string,
 ): Promise<{ parcels: DemoParcel[]; isDemo: boolean }> {
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise((r) => setTimeout(r, 500));
   return { parcels: DEMO_PARCELS, isDemo: true };
 }
 
@@ -73,14 +73,14 @@ export async function fetchSpatialImpact(
   _fromYear: string,
   _toYear: string,
 ): Promise<{ impact: SpatialImpact; isDemo: boolean }> {
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise((r) => setTimeout(r, 200));
   return { impact: SPATIAL_IMPACT, isDemo: true };
 }
 
 export async function fetchPolicyContext(
   _state: string,
 ): Promise<{ policy: PolicyContext; isDemo: boolean }> {
-  await new Promise(r => setTimeout(r, 150));
+  await new Promise((r) => setTimeout(r, 150));
   return { policy: POLICY_CONTEXT, isDemo: true };
 }
 

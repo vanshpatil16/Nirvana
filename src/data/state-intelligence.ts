@@ -67,7 +67,12 @@ export const THEMES: Record<ThemeId, ThemeDef> = {
   },
 };
 
-export const THEME_ORDER: ThemeId[] = ["land-use-change", "disputes", "climate-risk", "socio-economic"];
+export const THEME_ORDER: ThemeId[] = [
+  "land-use-change",
+  "disputes",
+  "climate-risk",
+  "socio-economic",
+];
 
 export type RiskBand = "Low" | "Moderate" | "High";
 
@@ -97,7 +102,17 @@ const S = (
   highRiskDistricts: number,
   socio: number,
   socioLevel: ThemeLevel,
-): StateStat => ({ change, changeLevel, disputes, disputeLevel, risk, riskLevel, highRiskDistricts, socio, socioLevel });
+): StateStat => ({
+  change,
+  changeLevel,
+  disputes,
+  disputeLevel,
+  risk,
+  riskLevel,
+  highRiskDistricts,
+  socio,
+  socioLevel,
+});
 
 export const STATE_STATS: Record<string, StateStat> = {
   Maharashtra: S(8.4, 2, 1842, 2, "High", 2, 24, 21.4, 1),
@@ -174,11 +189,41 @@ export interface SourceRow {
 }
 
 export const INTEL_SOURCES: SourceRow[] = [
-  { dataset: "State boundaries (demo vintage)", source: "Open community maps", year: "2015", coverage: "National", updated: "2024 (simplified)" },
-  { dataset: "Land-use change aggregates", source: "Demo · land-use datasets", year: "2015–2024", coverage: "National", updated: "2024" },
-  { dataset: "Dispute aggregates", source: "Demo · dispute records", year: "2024", coverage: "National", updated: "2024" },
-  { dataset: "Climate vulnerability", source: "Demo · climate datasets", year: "2024", coverage: "231 districts", updated: "2024" },
-  { dataset: "Socio-economic overlay", source: "Demo · household surveys", year: "2023", coverage: "National", updated: "2024" },
+  {
+    dataset: "State boundaries (demo vintage)",
+    source: "Open community maps",
+    year: "2015",
+    coverage: "National",
+    updated: "2024 (simplified)",
+  },
+  {
+    dataset: "Land-use change aggregates",
+    source: "Demo · land-use datasets",
+    year: "2015–2024",
+    coverage: "National",
+    updated: "2024",
+  },
+  {
+    dataset: "Dispute aggregates",
+    source: "Demo · dispute records",
+    year: "2024",
+    coverage: "National",
+    updated: "2024",
+  },
+  {
+    dataset: "Climate vulnerability",
+    source: "Demo · climate datasets",
+    year: "2024",
+    coverage: "231 districts",
+    updated: "2024",
+  },
+  {
+    dataset: "Socio-economic overlay",
+    source: "Demo · household surveys",
+    year: "2023",
+    coverage: "National",
+    updated: "2024",
+  },
 ];
 
 export const DATA_UPDATED_LABEL = "Showing latest available dataset · Updated 2024";

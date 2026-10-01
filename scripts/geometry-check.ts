@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /** Geometry sanity: units must tile the study region without gaps or overlaps. */
 import {
   GEOGRAPHIES,

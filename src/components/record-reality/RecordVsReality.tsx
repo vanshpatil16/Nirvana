@@ -55,7 +55,9 @@ export function RecordVsReality() {
   const [selectedSurveyNo, setSelectedSurveyNo] = useState<string>(DEFAULT_SURVEY_NO);
 
   // Map view states
-  const [mapMode, setMapMode] = useState<"split" | "swipe" | "overlay" | "map" | "satellite">("split");
+  const [mapMode, setMapMode] = useState<"split" | "swipe" | "overlay" | "map" | "satellite">(
+    "split",
+  );
   const [swipePosition, setSwipePosition] = useState<number>(50); // percentage
   const [overlayOpacity, setOverlayOpacity] = useState<number>(60); // percentage
   const [selectedYear, setSelectedYear] = useState<number>(2024);
@@ -80,7 +82,9 @@ export function RecordVsReality() {
   });
 
   // Evidence state
-  const [evidenceList, setEvidenceList] = useState(PARCEL_DATABASE[selectedSurveyNo]?.fieldEvidence || []);
+  const [evidenceList, setEvidenceList] = useState(
+    PARCEL_DATABASE[selectedSurveyNo]?.fieldEvidence || [],
+  );
   const [evidenceForm, setEvidenceForm] = useState({
     submitterType: "Citizen Report" as "Citizen Report" | "Field Officer" | "Drone Survey",
     author: "Omkar Kudalkar",
@@ -176,7 +180,11 @@ export function RecordVsReality() {
   const handleCapturedEvidence = (ev: CapturedEvidence) => {
     const newEv = {
       id: `ev-${Date.now()}`,
-      date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+      date: new Date().toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
       submitterType: ev.submitterType,
       author: ev.author,
       description: ev.description,
@@ -187,7 +195,9 @@ export function RecordVsReality() {
     };
     setEvidenceList([newEv, ...evidenceList]);
     setShowAddEvidenceModal(false);
-    triggerToast(`Field evidence recorded for Survey ${selectedSurveyNo}${ev.ocrVerified ? " · 7/12 cross-checked" : ""}.`);
+    triggerToast(
+      `Field evidence recorded for Survey ${selectedSurveyNo}${ev.ocrVerified ? " · 7/12 cross-checked" : ""}.`,
+    );
   };
 
   const handleAddEvidence = (e: React.FormEvent) => {
@@ -245,7 +255,12 @@ export function RecordVsReality() {
               const isActive = label === "Record vs Reality";
               if (href) {
                 return (
-                  <a key={label} href={href} className={isActive ? "active" : ""} aria-current={isActive ? "page" : undefined}>
+                  <a
+                    key={label}
+                    href={href}
+                    className={isActive ? "active" : ""}
+                    aria-current={isActive ? "page" : undefined}
+                  >
                     <Icon />
                     <span>{label}</span>
                   </a>
@@ -274,7 +289,11 @@ export function RecordVsReality() {
         </aside>
 
         {drawer && (
-          <button className="drawer-backdrop" onClick={() => setDrawer(false)} aria-label="Close navigation" />
+          <button
+            className="drawer-backdrop"
+            onClick={() => setDrawer(false)}
+            aria-label="Close navigation"
+          />
         )}
 
         <main className="flex-1 overflow-x-clip">
@@ -308,7 +327,12 @@ export function RecordVsReality() {
               <button className="lang">
                 EN <ChevronDown />
               </button>
-              <Button variant="ghost" size="icon" className="notification" aria-label="Notifications">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="notification"
+                aria-label="Notifications"
+              >
                 <Bell />
                 <i />
               </Button>
@@ -329,7 +353,8 @@ export function RecordVsReality() {
                   </h1>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-                  Compare official land records with real-world satellite imagery, field data and ground reports.
+                  Compare official land records with real-world satellite imagery, field data and
+                  ground reports.
                 </p>
               </div>
 
@@ -402,11 +427,13 @@ export function RecordVsReality() {
                     onChange={(e) => handleVillageChange(e.target.value)}
                     className="w-full bg-muted/40 border border-input rounded-md px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-600 font-medium"
                   >
-                    {Object.keys(LOCATION_HIERARCHY[selectedState]?.[selectedDistrict] || {}).map((vil) => (
-                      <option key={vil} value={vil}>
-                        {vil}
-                      </option>
-                    ))}
+                    {Object.keys(LOCATION_HIERARCHY[selectedState]?.[selectedDistrict] || {}).map(
+                      (vil) => (
+                        <option key={vil} value={vil}>
+                          {vil}
+                        </option>
+                      ),
+                    )}
                   </select>
                 </div>
 
@@ -429,7 +456,9 @@ export function RecordVsReality() {
 
               <div className="flex items-center gap-2 pt-2 lg:pt-0">
                 <Button
-                  onClick={() => triggerToast(`Analyzed parcel ${selectedSurveyNo}, ${selectedVillage}`)}
+                  onClick={() =>
+                    triggerToast(`Analyzed parcel ${selectedSurveyNo}, ${selectedVillage}`)
+                  }
                   className="bg-emerald-800 hover:bg-emerald-900 text-white px-6 py-2 text-sm font-semibold rounded-md flex-1 lg:flex-none justify-center gap-2 shadow-sm"
                 >
                   Analyse
@@ -459,7 +488,9 @@ export function RecordVsReality() {
                       <button
                         onClick={() => setMapMode("split")}
                         className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                          mapMode === "split" ? "bg-emerald-800 text-white shadow-xs" : "text-muted-foreground hover:text-foreground"
+                          mapMode === "split"
+                            ? "bg-emerald-800 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
                         Split View
@@ -467,7 +498,9 @@ export function RecordVsReality() {
                       <button
                         onClick={() => setMapMode("swipe")}
                         className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                          mapMode === "swipe" ? "bg-emerald-800 text-white shadow-xs" : "text-muted-foreground hover:text-foreground"
+                          mapMode === "swipe"
+                            ? "bg-emerald-800 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
                         Swipe
@@ -475,7 +508,9 @@ export function RecordVsReality() {
                       <button
                         onClick={() => setMapMode("overlay")}
                         className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                          mapMode === "overlay" ? "bg-emerald-800 text-white shadow-xs" : "text-muted-foreground hover:text-foreground"
+                          mapMode === "overlay"
+                            ? "bg-emerald-800 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
                         Overlay
@@ -487,7 +522,9 @@ export function RecordVsReality() {
                         <button
                           onClick={() => setMapMode("map")}
                           className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                            mapMode === "map" ? "bg-emerald-800 text-white" : "text-muted-foreground hover:text-foreground"
+                            mapMode === "map"
+                              ? "bg-emerald-800 text-white"
+                              : "text-muted-foreground hover:text-foreground"
                           }`}
                         >
                           Map
@@ -495,7 +532,9 @@ export function RecordVsReality() {
                         <button
                           onClick={() => setMapMode("satellite")}
                           className={`px-3 py-1 rounded-md font-medium transition-colors ${
-                            mapMode === "satellite" ? "bg-emerald-800 text-white" : "text-muted-foreground hover:text-foreground"
+                            mapMode === "satellite"
+                              ? "bg-emerald-800 text-white"
+                              : "text-muted-foreground hover:text-foreground"
                           }`}
                         >
                           Satellite
@@ -512,13 +551,22 @@ export function RecordVsReality() {
                         {/* Official Cadastral Map Side */}
                         <div className="relative bg-[#e8eae3] border-b md:border-b-0 md:border-r border-border p-4 flex flex-col justify-between overflow-hidden">
                           <div className="absolute top-3 left-3 z-10 bg-background/90 backdrop-blur-xs border border-border px-3 py-1.5 rounded-lg shadow-xs">
-                            <h3 className="font-semibold text-xs text-foreground">Official Land Record (Bhulekh)</h3>
-                            <p className="text-[10px] text-muted-foreground">Source: {currentParcel.sources.official}</p>
+                            <h3 className="font-semibold text-xs text-foreground">
+                              Official Land Record (Bhulekh)
+                            </h3>
+                            <p className="text-[10px] text-muted-foreground">
+                              Source: {currentParcel.sources.official}
+                            </p>
                           </div>
 
                           {/* Legend — collapsed to a chip so it never covers the parcels */}
                           <div className="rvr-legend absolute bottom-3 left-3 z-10">
-                            <button type="button" className="rvr-legend-btn" onClick={() => setLegendOpen((v) => !v)} aria-expanded={legendOpen}>
+                            <button
+                              type="button"
+                              className="rvr-legend-btn"
+                              onClick={() => setLegendOpen((v) => !v)}
+                              aria-expanded={legendOpen}
+                            >
                               <Layers className="h-3.5 w-3.5" /> Legend
                             </button>
                             {legendOpen && (
@@ -544,8 +592,18 @@ export function RecordVsReality() {
                           {/* Vector Cadastral SVG Mock Map */}
                           <svg className="w-full h-full min-h-[380px]" viewBox="0 0 500 400">
                             <defs>
-                              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+                              <pattern
+                                id="grid"
+                                width="40"
+                                height="40"
+                                patternUnits="userSpaceOnUse"
+                              >
+                                <path
+                                  d="M 40 0 L 0 0 0 40"
+                                  fill="none"
+                                  stroke="#d1d5db"
+                                  strokeWidth="0.5"
+                                />
                               </pattern>
                             </defs>
                             <rect width="100%" height="100%" fill="url(#grid)" />
@@ -615,7 +673,9 @@ export function RecordVsReality() {
                         {/* Satellite Imagery Side */}
                         <div className="relative bg-slate-900 text-white flex flex-col justify-between overflow-hidden">
                           <div className="absolute top-3 left-3 z-10 bg-black/70 backdrop-blur-xs border border-white/20 px-3 py-1.5 rounded-lg">
-                            <h3 className="font-semibold text-xs text-white">Satellite Imagery (Reality)</h3>
+                            <h3 className="font-semibold text-xs text-white">
+                              Satellite Imagery (Reality)
+                            </h3>
                             <p className="text-[10px] text-slate-300">
                               Source: {currentParcel.sources.satellite} ({selectedYear})
                             </p>
@@ -639,20 +699,34 @@ export function RecordVsReality() {
                           </div>
 
                           {/* Background Satellite Canvas Mock */}
-                          <div className="absolute inset-0 bg-cover bg-center brightness-90 contrast-110 transition-all duration-500"
-                               style={{
-                                 backgroundImage: `url(${selectedYear < 2022 ? sat2020 : selectedYear === 2024 ? sat2024 : satelliteMap})`,
-                               }}>
+                          <div
+                            className="absolute inset-0 bg-cover bg-center brightness-90 contrast-110 transition-all duration-500"
+                            style={{
+                              backgroundImage: `url(${selectedYear < 2022 ? sat2020 : selectedYear === 2024 ? sat2024 : satelliteMap})`,
+                            }}
+                          >
                             {/* Overlay SVG Boundary on top of Satellite */}
                             <svg className="w-full h-full" viewBox="0 0 500 400">
                               <path
                                 d="M 220 50 L 420 80 L 450 260 L 240 180 Z"
-                                fill={currentParcel.mismatchDetected ? "rgba(225, 29, 72, 0.25)" : "rgba(34, 197, 94, 0.2)"}
+                                fill={
+                                  currentParcel.mismatchDetected
+                                    ? "rgba(225, 29, 72, 0.25)"
+                                    : "rgba(34, 197, 94, 0.2)"
+                                }
                                 stroke={currentParcel.mismatchDetected ? "#ef4444" : "#22c55e"}
                                 strokeWidth="3.5"
                                 strokeDasharray="6 3"
                               />
-                              <text x="310" y="160" fontSize="16" fontWeight="800" fill="#ffffff" stroke="#000" strokeWidth="0.5">
+                              <text
+                                x="310"
+                                y="160"
+                                fontSize="16"
+                                fontWeight="800"
+                                fill="#ffffff"
+                                stroke="#000"
+                                strokeWidth="0.5"
+                              >
                                 {currentParcel.surveyNo}
                               </text>
                             </svg>
@@ -686,7 +760,12 @@ export function RecordVsReality() {
                           style={{ clipPath: `inset(0 ${100 - swipePosition}% 0 0)` }}
                         >
                           <svg className="w-full h-full" viewBox="0 0 500 400">
-                            <path d="M 220 50 L 420 80 L 450 260 L 240 180 Z" fill="#d4e157" stroke="#fbc02d" strokeWidth="4" />
+                            <path
+                              d="M 220 50 L 420 80 L 450 260 L 240 180 Z"
+                              fill="#d4e157"
+                              stroke="#fbc02d"
+                              strokeWidth="4"
+                            />
                             <text x="310" y="160" fontSize="16" fontWeight="bold" fill="#1b5e20">
                               {currentParcel.surveyNo} (Official)
                             </text>
@@ -733,7 +812,12 @@ export function RecordVsReality() {
                           style={{ opacity: overlayOpacity / 100 }}
                         >
                           <svg className="w-full h-full" viewBox="0 0 500 400">
-                            <path d="M 220 50 L 420 80 L 450 260 L 240 180 Z" fill="#d4e157" stroke="#fbc02d" strokeWidth="4" />
+                            <path
+                              d="M 220 50 L 420 80 L 450 260 L 240 180 Z"
+                              fill="#d4e157"
+                              stroke="#fbc02d"
+                              strokeWidth="4"
+                            />
                             <text x="310" y="160" fontSize="16" fontWeight="bold" fill="#1b5e20">
                               {currentParcel.surveyNo}
                             </text>
@@ -741,7 +825,9 @@ export function RecordVsReality() {
                         </div>
 
                         <div className="absolute top-4 left-4 z-20 bg-background/90 backdrop-blur-xs p-3 rounded-lg border border-border shadow-md space-y-1">
-                          <label className="text-xs font-semibold block">Cadastral Layer Opacity: {overlayOpacity}%</label>
+                          <label className="text-xs font-semibold block">
+                            Cadastral Layer Opacity: {overlayOpacity}%
+                          </label>
                           <input
                             type="range"
                             min="0"
@@ -758,13 +844,17 @@ export function RecordVsReality() {
                     {(mapMode === "map" || mapMode === "satellite") && (
                       <div className="relative h-full min-h-[460px] md:min-h-[500px] p-6">
                         <div className="absolute top-4 left-4 z-10 bg-background/90 px-3 py-1.5 rounded-lg border border-border text-xs font-semibold">
-                          {mapMode === "map" ? "Official Cadastral Map View" : `Satellite Observation View (${selectedYear})`}
+                          {mapMode === "map"
+                            ? "Official Cadastral Map View"
+                            : `Satellite Observation View (${selectedYear})`}
                         </div>
                         <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-muted-foreground/30 rounded-lg">
                           <div className="text-center p-4">
                             <MapIcon className="h-10 w-10 text-emerald-700 mx-auto mb-2" />
                             <h3 className="font-semibold text-sm">Full view mode active</h3>
-                            <p className="text-xs text-muted-foreground">Showing survey {currentParcel.surveyNo} single perspective</p>
+                            <p className="text-xs text-muted-foreground">
+                              Showing survey {currentParcel.surveyNo} single perspective
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -775,7 +865,10 @@ export function RecordVsReality() {
                 {/* Section: Historical Change (Last 5 Years) */}
                 <div className="bg-card border border-border/80 rounded-xl p-4 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="rvr-head"><span>Timeline</span><h3>Historical Change (Last 5 Years)</h3></div>
+                    <div className="rvr-head">
+                      <span>Timeline</span>
+                      <h3>Historical Change (Last 5 Years)</h3>
+                    </div>
                     <span className="rvr-chip">2020 – 2024</span>
                   </div>
 
@@ -785,7 +878,9 @@ export function RecordVsReality() {
                         key={item.year}
                         onClick={() => setSelectedYear(item.year)}
                         className={`text-left border rounded-lg overflow-hidden p-2 transition-all hover:border-emerald-600 ${
-                          selectedYear === item.year ? "border-emerald-700 bg-emerald-950/5 ring-1 ring-emerald-600" : "border-border bg-background"
+                          selectedYear === item.year
+                            ? "border-emerald-700 bg-emerald-950/5 ring-1 ring-emerald-600"
+                            : "border-border bg-background"
                         }`}
                       >
                         <div className="h-20 bg-slate-800 rounded mb-2 overflow-hidden relative">
@@ -798,8 +893,12 @@ export function RecordVsReality() {
                             {item.year}
                           </span>
                         </div>
-                        <div className="font-semibold text-xs text-foreground truncate">{item.landUse}</div>
-                        <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">{item.description}</p>
+                        <div className="font-semibold text-xs text-foreground truncate">
+                          {item.landUse}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">
+                          {item.description}
+                        </p>
                       </button>
                     ))}
                   </div>
@@ -809,7 +908,10 @@ export function RecordVsReality() {
                 <div className="bg-card border border-border/80 rounded-xl p-4 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="rvr-head"><span>Ground truth</span><h3>Field Evidence</h3></div>
+                      <div className="rvr-head">
+                        <span>Ground truth</span>
+                        <h3>Field Evidence</h3>
+                      </div>
                       <span className="bg-emerald-900/10 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 text-[11px] font-semibold px-2 py-0.5 rounded-full">
                         {evidenceList.length} Submissions
                       </span>
@@ -828,7 +930,10 @@ export function RecordVsReality() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {evidenceList.map((ev) => (
-                      <div key={ev.id} className="border border-border rounded-lg p-3 bg-background flex flex-col justify-between">
+                      <div
+                        key={ev.id}
+                        className="border border-border rounded-lg p-3 bg-background flex flex-col justify-between"
+                      >
                         <div className="space-y-2">
                           <div className="h-24 bg-muted rounded-md overflow-hidden relative">
                             <img
@@ -837,7 +942,8 @@ export function RecordVsReality() {
                               className="w-full h-full object-cover"
                               loading="lazy"
                               onError={(e) => {
-                                if (!e.currentTarget.src.endsWith(satelliteMap)) e.currentTarget.src = satelliteMap;
+                                if (!e.currentTarget.src.endsWith(satelliteMap))
+                                  e.currentTarget.src = satelliteMap;
                               }}
                             />
                             <span className="absolute bottom-1.5 left-1.5 bg-black/75 text-white text-[10px] px-2 py-0.5 rounded font-medium">
@@ -845,9 +951,13 @@ export function RecordVsReality() {
                             </span>
                           </div>
                           <div>
-                            <span className="text-[10px] font-mono text-muted-foreground block">{ev.date}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground block">
+                              {ev.date}
+                            </span>
                             <div className="text-xs font-semibold text-foreground">{ev.author}</div>
-                            <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{ev.description}</p>
+                            <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
+                              {ev.description}
+                            </p>
                             {(ev.geoTag || ev.ocrVerified) && (
                               <div className="rvr-ev-tags">
                                 {ev.geoTag && (
@@ -871,7 +981,10 @@ export function RecordVsReality() {
 
                 {/* Section: Nearby Plots Analysis */}
                 <div className="bg-card border border-border/80 rounded-xl p-4 shadow-sm space-y-3">
-                  <div className="rvr-head"><span>Neighbourhood</span><h3>Nearby Plots Analysis</h3></div>
+                  <div className="rvr-head">
+                    <span>Neighbourhood</span>
+                    <h3>Nearby Plots Analysis</h3>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
                       <thead className="bg-muted/50 border-b border-border text-muted-foreground font-medium uppercase tracking-wider">
@@ -890,12 +1003,16 @@ export function RecordVsReality() {
                           <tr key={plot.surveyNo} className="hover:bg-muted/30 transition-colors">
                             <td className="p-2.5 font-bold text-foreground">{plot.surveyNo}</td>
                             <td className="p-2.5 text-muted-foreground">{plot.officialUse}</td>
-                            <td className="p-2.5 font-medium text-foreground">{plot.detectedUse}</td>
+                            <td className="p-2.5 font-medium text-foreground">
+                              {plot.detectedUse}
+                            </td>
                             <td className="p-2.5 text-muted-foreground">{plot.areaHectares}</td>
                             <td className="p-2.5">
                               <span
                                 className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                                  plot.change === "Changed" ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                  plot.change === "Changed"
+                                    ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                                    : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                                 }`}
                               >
                                 {plot.change}
@@ -907,8 +1024,8 @@ export function RecordVsReality() {
                                   plot.riskLevel === "High"
                                     ? "text-rose-600"
                                     : plot.riskLevel === "Medium"
-                                    ? "text-amber-600"
-                                    : "text-emerald-600"
+                                      ? "text-amber-600"
+                                      : "text-emerald-600"
                                 }
                               >
                                 ● {plot.riskLevel}
@@ -937,7 +1054,9 @@ export function RecordVsReality() {
                 <div className="rvr-panel bg-card border border-border/80 rounded-xl p-5 shadow-sm space-y-5 lg:sticky lg:top-[88px]">
                   {/* Panel Header */}
                   <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                    <h2 className="font-serif font-bold text-lg text-foreground">Analysis Result</h2>
+                    <h2 className="font-serif font-bold text-lg text-foreground">
+                      Analysis Result
+                    </h2>
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide ${
                         currentParcel.mismatchDetected
@@ -996,23 +1115,27 @@ export function RecordVsReality() {
                     </div>
                     <div className="flex justify-between py-1 border-b border-border/40">
                       <span className="text-muted-foreground font-medium">District</span>
-                      <span className="font-semibold text-foreground">{currentParcel.district}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-border/40">
-                      <span className="text-muted-foreground font-medium">
-                        Official Land Use{" "}
-                        <span className="pv-kpi-tag">legal evidence</span>
+                      <span className="font-semibold text-foreground">
+                        {currentParcel.district}
                       </span>
-                      <span className="font-semibold text-foreground">{currentParcel.officialLandUse}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-border/40">
                       <span className="text-muted-foreground font-medium">
-                        Detected Land Use{" "}
-                        <span className="pv-kpi-tag pv-tag-derived">derived</span>
+                        Official Land Use <span className="pv-kpi-tag">legal evidence</span>
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {currentParcel.officialLandUse}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-border/40">
+                      <span className="text-muted-foreground font-medium">
+                        Detected Land Use <span className="pv-kpi-tag pv-tag-derived">derived</span>
                       </span>
                       <span
                         className={`font-semibold ${
-                          currentParcel.mismatchDetected ? "text-rose-600 dark:text-rose-400" : "text-emerald-600"
+                          currentParcel.mismatchDetected
+                            ? "text-rose-600 dark:text-rose-400"
+                            : "text-emerald-600"
                         }`}
                       >
                         {currentParcel.observedLandUse}
@@ -1020,7 +1143,9 @@ export function RecordVsReality() {
                     </div>
                     <div className="flex justify-between py-1">
                       <span className="text-muted-foreground font-medium">Area</span>
-                      <span className="font-bold text-foreground">{currentParcel.areaHectares} hectares</span>
+                      <span className="font-bold text-foreground">
+                        {currentParcel.areaHectares} hectares
+                      </span>
                     </div>
                   </div>
 
@@ -1028,7 +1153,9 @@ export function RecordVsReality() {
                   <div className="space-y-1.5 border-b border-border/60 pb-4">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="text-muted-foreground">Detection confidence</span>
-                      <span className="text-foreground font-mono">{currentParcel.confidenceScore}%</span>
+                      <span className="text-foreground font-mono">
+                        {currentParcel.confidenceScore}%
+                      </span>
                     </div>
                     <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                       <div
@@ -1037,7 +1164,8 @@ export function RecordVsReality() {
                       />
                     </div>
                     <p className="text-[10px] text-muted-foreground italic">
-                      * Satellite classification confidence screening score. Requires ground verification.
+                      * Satellite classification confidence screening score. Requires ground
+                      verification.
                     </p>
                   </div>
 
@@ -1049,11 +1177,21 @@ export function RecordVsReality() {
                     <ul className="space-y-2 text-xs">
                       {currentParcel.implications.map((imp, i) => (
                         <li key={i} className="flex items-start gap-2 text-muted-foreground">
-                          {imp.type === "warning" && <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />}
-                          {imp.type === "check" && <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />}
-                          {imp.type === "info" && <Info className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />}
-                          {imp.type === "success" && <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />}
-                          <span className="text-foreground font-medium leading-snug">{imp.text}</span>
+                          {imp.type === "warning" && (
+                            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                          )}
+                          {imp.type === "check" && (
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                          )}
+                          {imp.type === "info" && (
+                            <Info className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+                          )}
+                          {imp.type === "success" && (
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                          )}
+                          <span className="text-foreground font-medium leading-snug">
+                            {imp.text}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -1102,7 +1240,9 @@ export function RecordVsReality() {
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-card border border-border rounded-xl max-w-lg w-full p-6 space-y-4 shadow-xl">
               <div className="flex items-center justify-between border-b border-border pb-3">
-                <h3 className="font-serif font-bold text-lg text-foreground">How Record vs Reality Works</h3>
+                <h3 className="font-serif font-bold text-lg text-foreground">
+                  How Record vs Reality Works
+                </h3>
                 <Button variant="ghost" size="icon" onClick={() => setShowHowItWorks(false)}>
                   <X className="h-4 w-4" />
                 </Button>
@@ -1114,7 +1254,9 @@ export function RecordVsReality() {
                     1
                   </span>
                   <div>
-                    <strong className="text-foreground block font-semibold mb-0.5">Select Location & Parcel</strong>
+                    <strong className="text-foreground block font-semibold mb-0.5">
+                      Select Location & Parcel
+                    </strong>
                     Choose State, District, Village and Survey Number from official registries.
                   </div>
                 </div>
@@ -1124,7 +1266,9 @@ export function RecordVsReality() {
                     2
                   </span>
                   <div>
-                    <strong className="text-foreground block font-semibold mb-0.5">Spatial Overlay & Classification</strong>
+                    <strong className="text-foreground block font-semibold mb-0.5">
+                      Spatial Overlay & Classification
+                    </strong>
                     Compare cadastral boundaries against Sentinel-2 LULC satellite rasters.
                   </div>
                 </div>
@@ -1134,7 +1278,9 @@ export function RecordVsReality() {
                     3
                   </span>
                   <div>
-                    <strong className="text-foreground block font-semibold mb-0.5">Review Mismatch Signal</strong>
+                    <strong className="text-foreground block font-semibold mb-0.5">
+                      Review Mismatch Signal
+                    </strong>
                     Identify potential land-use divergence, area differences, and confidence scores.
                   </div>
                 </div>
@@ -1144,7 +1290,9 @@ export function RecordVsReality() {
                     4
                   </span>
                   <div>
-                    <strong className="text-foreground block font-semibold mb-0.5">Examine Historical Timeline & Evidence</strong>
+                    <strong className="text-foreground block font-semibold mb-0.5">
+                      Examine Historical Timeline & Evidence
+                    </strong>
                     Inspect 5-year temporal progression and citizen/field inspector submissions.
                   </div>
                 </div>
@@ -1154,14 +1302,19 @@ export function RecordVsReality() {
                     5
                   </span>
                   <div>
-                    <strong className="text-foreground block font-semibold mb-0.5">Trigger Verification Task</strong>
+                    <strong className="text-foreground block font-semibold mb-0.5">
+                      Trigger Verification Task
+                    </strong>
                     Assign field verification tasks to local officers for legal confirmation.
                   </div>
                 </div>
               </div>
 
               <div className="pt-2 flex justify-end">
-                <Button onClick={() => setShowHowItWorks(false)} className="bg-emerald-800 text-white font-medium text-xs">
+                <Button
+                  onClick={() => setShowHowItWorks(false)}
+                  className="bg-emerald-800 text-white font-medium text-xs"
+                >
                   Got it
                 </Button>
               </div>
@@ -1176,7 +1329,9 @@ export function RecordVsReality() {
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
                   <UserCheck className="h-5 w-5 text-emerald-700" />
-                  <h3 className="font-serif font-bold text-lg text-foreground">Create Field Verification Task</h3>
+                  <h3 className="font-serif font-bold text-lg text-foreground">
+                    Create Field Verification Task
+                  </h3>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setShowTaskModal(false)}>
                   <X className="h-4 w-4" />
@@ -1186,7 +1341,9 @@ export function RecordVsReality() {
               <form onSubmit={handleCreateTask} className="space-y-3 text-xs">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="font-semibold text-muted-foreground block mb-1">Survey Number</label>
+                    <label className="font-semibold text-muted-foreground block mb-1">
+                      Survey Number
+                    </label>
                     <input
                       type="text"
                       readOnly
@@ -1195,7 +1352,9 @@ export function RecordVsReality() {
                     />
                   </div>
                   <div>
-                    <label className="font-semibold text-muted-foreground block mb-1">Village & District</label>
+                    <label className="font-semibold text-muted-foreground block mb-1">
+                      Village & District
+                    </label>
                     <input
                       type="text"
                       readOnly
@@ -1206,7 +1365,9 @@ export function RecordVsReality() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-muted-foreground block mb-1">Issue Description</label>
+                  <label className="font-semibold text-muted-foreground block mb-1">
+                    Issue Description
+                  </label>
                   <input
                     type="text"
                     value={taskForm.issue}
@@ -1218,7 +1379,9 @@ export function RecordVsReality() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="font-semibold text-muted-foreground block mb-1">Priority</label>
+                    <label className="font-semibold text-muted-foreground block mb-1">
+                      Priority
+                    </label>
                     <select
                       value={taskForm.priority}
                       onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
@@ -1230,7 +1393,9 @@ export function RecordVsReality() {
                     </select>
                   </div>
                   <div>
-                    <label className="font-semibold text-muted-foreground block mb-1">Due Date</label>
+                    <label className="font-semibold text-muted-foreground block mb-1">
+                      Due Date
+                    </label>
                     <input
                       type="date"
                       value={taskForm.dueDate}
@@ -1241,7 +1406,9 @@ export function RecordVsReality() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-muted-foreground block mb-1">Assign Department</label>
+                  <label className="font-semibold text-muted-foreground block mb-1">
+                    Assign Department
+                  </label>
                   <input
                     type="text"
                     value={taskForm.department}
@@ -1251,7 +1418,9 @@ export function RecordVsReality() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-muted-foreground block mb-1">Assigned Officer</label>
+                  <label className="font-semibold text-muted-foreground block mb-1">
+                    Assigned Officer
+                  </label>
                   <input
                     type="text"
                     value={taskForm.officer}
@@ -1261,7 +1430,9 @@ export function RecordVsReality() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-muted-foreground block mb-1">Notes / Instructions</label>
+                  <label className="font-semibold text-muted-foreground block mb-1">
+                    Notes / Instructions
+                  </label>
                   <textarea
                     rows={2}
                     value={taskForm.notes}
@@ -1290,7 +1461,9 @@ export function RecordVsReality() {
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-emerald-700" />
-                  <h3 className="font-serif font-bold text-lg text-foreground">Detailed Intelligence Report</h3>
+                  <h3 className="font-serif font-bold text-lg text-foreground">
+                    Detailed Intelligence Report
+                  </h3>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setShowReportModal(false)}>
                   <X className="h-4 w-4" />
@@ -1298,8 +1471,12 @@ export function RecordVsReality() {
               </div>
 
               <div className="bg-muted/40 p-4 rounded-lg space-y-2 text-xs border border-border">
-                <div className="font-bold text-foreground">Report Summary — Parcel {selectedSurveyNo}</div>
-                <div>Location: {selectedVillage}, {selectedDistrict}, {selectedState}</div>
+                <div className="font-bold text-foreground">
+                  Report Summary — Parcel {selectedSurveyNo}
+                </div>
+                <div>
+                  Location: {selectedVillage}, {selectedDistrict}, {selectedState}
+                </div>
                 <div>Official Record: {currentParcel.officialLandUse}</div>
                 <div>Detected Observation: {currentParcel.observedLandUse}</div>
                 <div>Satellite Confidence: {currentParcel.confidenceScore}%</div>
@@ -1338,7 +1515,9 @@ export function RecordVsReality() {
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="h-5 w-5 text-emerald-700" />
-                  <h3 className="font-serif font-bold text-lg text-foreground">Department Review Initiated</h3>
+                  <h3 className="font-serif font-bold text-lg text-foreground">
+                    Department Review Initiated
+                  </h3>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setShowReviewModal(false)}>
                   <X className="h-4 w-4" />
@@ -1346,7 +1525,9 @@ export function RecordVsReality() {
               </div>
 
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Review workflow initiated for parcel <strong>{selectedSurveyNo}</strong> ({selectedVillage}). This flag has been logged to the District Land Governance portal.
+                Review workflow initiated for parcel <strong>{selectedSurveyNo}</strong> (
+                {selectedVillage}). This flag has been logged to the District Land Governance
+                portal.
               </p>
 
               <div className="bg-emerald-950/10 border border-emerald-700/30 p-3 rounded text-xs text-emerald-900 dark:text-emerald-200">

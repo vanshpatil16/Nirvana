@@ -429,10 +429,7 @@ export function NewPolicyView({ onToast }: { onToast?: (message: string) => void
                 <Play />
                 Run simulation
               </button>
-              <button
-                className="pl-btn ghost"
-                onClick={() => loadPreset(null)}
-              >
+              <button className="pl-btn ghost" onClick={() => loadPreset(null)}>
                 Reset to as notified
               </button>
               <span className="pl-help" style={{ marginLeft: "auto" }}>

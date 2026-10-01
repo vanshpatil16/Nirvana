@@ -53,13 +53,20 @@ export async function handleTtsApi(request: Request, env?: unknown): Promise<Res
   try {
     const body = (await request.json()) as { text?: unknown; language?: unknown };
     text = typeof body.text === "string" ? body.text.trim() : "";
-    if (typeof body.language === "string" && /^[a-z]{2}$/.test(body.language)) language = body.language;
+    if (typeof body.language === "string" && /^[a-z]{2}$/.test(body.language))
+      language = body.language;
   } catch {
     return json({ ok: false, error: "Invalid JSON body." }, 400);
   }
   if (!text) return json({ ok: false, error: "Nothing to speak." }, 400);
   if (!ELEVEN_LANGUAGES.has(language))
-    return json({ ok: false, error: `Language "${language}" not supported by ElevenLabs — use the browser voice.` }, 415);
+    return json(
+      {
+        ok: false,
+        error: `Language "${language}" not supported by ElevenLabs — use the browser voice.`,
+      },
+      415,
+    );
   if (text.length > MAX_CHARS) text = `${text.slice(0, MAX_CHARS).replace(/\s+\S*$/, "")}.`;
 
   const voiceId = readEnv(env, "ELEVENLABS_VOICE_ID") ?? DEFAULT_VOICE_ID;
@@ -79,7 +86,9 @@ export async function handleTtsApi(request: Request, env?: unknown): Promise<Res
         body: JSON.stringify({
           text,
           model_id: model,
-          ...(model.includes("flash_v2_5") || model.includes("turbo_v2_5") ? { language_code: language } : {}),
+          ...(model.includes("flash_v2_5") || model.includes("turbo_v2_5")
+            ? { language_code: language }
+            : {}),
           voice_settings: { stability: 0.5, similarity_boost: 0.75 },
         }),
         signal: controller.signal,

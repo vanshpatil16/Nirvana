@@ -51,7 +51,9 @@ const LIVE_SOURCE = "OpenStreetMap live";
 function isParcelFeature(value: unknown): value is ParcelFeature {
   if (typeof value !== "object" || value === null) return false;
   const f = value as { type?: unknown; geometry?: { type?: unknown; coordinates?: unknown } };
-  return f.type === "Feature" && f.geometry?.type === "Polygon" && Array.isArray(f.geometry.coordinates);
+  return (
+    f.type === "Feature" && f.geometry?.type === "Polygon" && Array.isArray(f.geometry.coordinates)
+  );
 }
 
 /** Bundled demo extract (real OSM geometry, see script notes in repo temp). */
@@ -69,14 +71,18 @@ function ringIntersectsBBox(ring: number[][], bbox: BBox): boolean {
   return ring.some((pt) => {
     const x = pt[0];
     const y = pt[1];
-    return typeof x === "number" && typeof y === "number" && x >= x0 && x <= x1 && y >= y0 && y <= y1;
+    return (
+      typeof x === "number" && typeof y === "number" && x >= x0 && x <= x1 && y >= y0 && y <= y1
+    );
   });
 }
 
 export function filterParcelsByBBox(collection: ParcelCollection, bbox: BBox): ParcelCollection {
   return {
     type: "FeatureCollection",
-    features: collection.features.filter((f) => ringIntersectsBBox(f.geometry.coordinates[0] ?? [], bbox)),
+    features: collection.features.filter((f) =>
+      ringIntersectsBBox(f.geometry.coordinates[0] ?? [], bbox),
+    ),
   };
 }
 
@@ -85,7 +91,10 @@ export function filterParcelsByBBox(collection: ParcelCollection, bbox: BBox): P
 // Responses are cached per (rounded) bbox so panning back never refetches.
 // ---------------------------------------------------------------------------
 
-const OVERPASS_URLS = ["https://overpass.kumi.systems/api/interpreter", "https://overpass-api.de/api/interpreter"];
+const OVERPASS_URLS = [
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass-api.de/api/interpreter",
+];
 const liveCache = new Map<string, ParcelCollection>();
 
 function cacheKey(bbox: BBox): string {
@@ -139,7 +148,14 @@ function attemptSignal(caller: AbortSignal): AbortSignal {
     clearTimeout(timer);
     ctrl.abort(caller.reason);
   } else {
-    caller.addEventListener("abort", () => { clearTimeout(timer); ctrl.abort(caller.reason); }, { once: true });
+    caller.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        ctrl.abort(caller.reason);
+      },
+      { once: true },
+    );
   }
   return ctrl.signal;
 }
@@ -286,7 +302,9 @@ function normalizeApiFeature(value: unknown): ParcelFeature | null {
       ...(typeof p.taluka === "string" ? { taluka: p.taluka } : {}),
       ...(typeof p.district === "string" ? { district: p.district } : {}),
       ...(typeof p.state === "string" ? { state: p.state } : {}),
-      ...(typeof p.sourceId === "string" ? { sourceId: p.sourceId } : { sourceId: apiSourceId(typeof p.source === "string" ? p.source : "") }),
+      ...(typeof p.sourceId === "string"
+        ? { sourceId: p.sourceId }
+        : { sourceId: apiSourceId(typeof p.source === "string" ? p.source : "") }),
     },
     geometry: value.geometry,
   };
@@ -324,7 +342,9 @@ export interface WfsProviderOptions {
 export class WfsParcelProvider implements ParcelProvider {
   readonly id = "wfs";
   readonly label: string;
-  private readonly options: Required<Omit<WfsProviderOptions, "extraParams">> & { extraParams: Record<string, string> };
+  private readonly options: Required<Omit<WfsProviderOptions, "extraParams">> & {
+    extraParams: Record<string, string>;
+  };
   constructor(options: WfsProviderOptions) {
     this.label = options.sourceLabel;
     this.options = {
@@ -348,13 +368,19 @@ export class WfsParcelProvider implements ParcelProvider {
     const res = await fetch(`${this.options.endpoint}?${params.toString()}`, { signal });
     if (!res.ok) throw new Error(`WFS ${res.status}`);
     const json = (await res.json()) as { type?: unknown; features?: unknown[] };
-    if (json.type !== "FeatureCollection" || !Array.isArray(json.features)) throw new Error("WFS bad payload");
+    if (json.type !== "FeatureCollection" || !Array.isArray(json.features))
+      throw new Error("WFS bad payload");
     return {
       type: "FeatureCollection",
       features: json.features
         .map((f) => {
           const feature = normalizeApiFeature(f);
-          return feature ? { ...feature, properties: { ...feature.properties, source: this.options.sourceLabel } } : null;
+          return feature
+            ? {
+                ...feature,
+                properties: { ...feature.properties, source: this.options.sourceLabel },
+              }
+            : null;
         })
         .filter((f): f is ParcelFeature => f !== null),
     };
@@ -371,10 +397,18 @@ export class ParcelApiProvider implements ParcelProvider {
   readonly label = "Cadastral API";
   private readonly baseUrl: string;
   constructor(baseUrl?: string) {
-    const configured = typeof baseUrl === "string" && baseUrl.length > 0 ? baseUrl : import.meta.env["VITE_PARCEL_API_URL"];
-    this.baseUrl = typeof configured === "string" && configured.length > 0 ? configured : "/api/parcels";
+    const configured =
+      typeof baseUrl === "string" && baseUrl.length > 0
+        ? baseUrl
+        : import.meta.env["VITE_PARCEL_API_URL"];
+    this.baseUrl =
+      typeof configured === "string" && configured.length > 0 ? configured : "/api/parcels";
   }
-  async query(bbox: BBox, signal: AbortSignal, params?: { village?: string; surveyNumber?: string; parcelId?: string }): Promise<ParcelCollection> {
+  async query(
+    bbox: BBox,
+    signal: AbortSignal,
+    params?: { village?: string; surveyNumber?: string; parcelId?: string },
+  ): Promise<ParcelCollection> {
     const [x0, y0, x1, y1] = bbox;
     const search = new URLSearchParams({ bbox: `${x0},${y0},${x1},${y1}` });
     if (params?.village) search.set("village", params.village);
@@ -383,10 +417,13 @@ export class ParcelApiProvider implements ParcelProvider {
     const res = await fetch(`${this.baseUrl}?${search.toString()}`, { signal });
     if (!res.ok) throw new Error(`Parcel API ${res.status}`);
     const json = (await res.json()) as { type?: unknown; features?: unknown[] };
-    if (json.type !== "FeatureCollection" || !Array.isArray(json.features)) throw new Error("Parcel API bad payload");
+    if (json.type !== "FeatureCollection" || !Array.isArray(json.features))
+      throw new Error("Parcel API bad payload");
     return {
       type: "FeatureCollection",
-      features: json.features.map(normalizeApiFeature).filter((f): f is ParcelFeature => f !== null),
+      features: json.features
+        .map(normalizeApiFeature)
+        .filter((f): f is ParcelFeature => f !== null),
     };
   }
 }

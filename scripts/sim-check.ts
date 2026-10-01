@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Policy simulation verification harness.
  *
@@ -114,10 +113,7 @@ const targetCategory = (r: EffectRule): string | null =>
 console.log(`\n=== 1. Library integrity (${POLICIES.length} instruments) ===`);
 {
   check("library is populated", POLICIES.length > 0, `${POLICIES.length} instruments`);
-  check(
-    "ids are unique",
-    new Set(POLICIES.map((p) => p.id)).size === POLICIES.length,
-  );
+  check("ids are unique", new Set(POLICIES.map((p) => p.id)).size === POLICIES.length);
   check(
     "every instrument cites its source document",
     POLICIES.every((p) => !!p.sourceDocument.clause && !!p.sourceDocument.sourceFile),
@@ -141,7 +137,9 @@ console.log(`\n=== 1. Library integrity (${POLICIES.length} instruments) ===`);
   );
   check(
     "every indicator reference resolves to a real indicator",
-    POLICIES.every((p) => p.indicators.every((r) => !!INDICATORS.find((i) => i.id === r.indicatorId))),
+    POLICIES.every((p) =>
+      p.indicators.every((r) => !!INDICATORS.find((i) => i.id === r.indicatorId)),
+    ),
   );
   check(
     "every dataset reference resolves to a real dataset",
@@ -172,7 +170,10 @@ for (const p of POLICIES) {
       ? `${r.kpis.length} KPIs, ${moved.length} moved, ${r.series.length} series pts, max intensity ${f(Math.max(...r.geographyImpact.map((g) => g.intensity)), 1)}`
       : "null result",
   );
-  check(`${p.shortName} · every row labelled observed`, r.indicators.every((i) => i.basis === "observed"));
+  check(
+    `${p.shortName} · every row labelled observed`,
+    r.indicators.every((i) => i.basis === "observed"),
+  );
   check(
     `${p.shortName} · change === compared − current`,
     r.kpis.every((k) => Math.abs(k.change - (k.compared - k.current)) < 1e-9),
@@ -212,10 +213,15 @@ for (const p of POLICIES) {
   );
   check(
     `${p.shortName} · limitations populated`,
-    r.assumptions.limitations.length >= 4 && r.assumptions.parameters.length === p.parameters.length,
+    r.assumptions.limitations.length >= 4 &&
+      r.assumptions.parameters.length === p.parameters.length,
   );
   const share = r.landMix.reduce((s, l) => s + l.comparedShare, 0);
-  check(`${p.shortName} · land shares sum to 100%`, Math.abs(share - 100) < 0.05, `${f(share, 3)}%`);
+  check(
+    `${p.shortName} · land shares sum to 100%`,
+    Math.abs(share - 100) < 0.05,
+    `${f(share, 3)}%`,
+  );
 }
 
 console.log(`\n=== 4. Parameters drive the result (${SAMPLE.shortName}) ===`);
@@ -259,10 +265,7 @@ console.log(`\n=== 4. Parameters drive the result (${SAMPLE.shortName}) ===`);
 
   const allCats = run("new", SAMPLE, {}, { cats: ALL_CATEGORIES })!;
   const fewCats = run("new", SAMPLE, {}, { cats: ["built-up"] })!;
-  check(
-    "land-category selection changes the reallocation",
-    landSig(allCats) !== landSig(fewCats),
-  );
+  check("land-category selection changes the reallocation", landSig(allCats) !== landSig(fewCats));
 
   // Determinism: the same config must reproduce exactly.
   const again = run("new", SAMPLE, {
@@ -270,14 +273,20 @@ console.log(`\n=== 4. Parameters drive the result (${SAMPLE.shortName}) ===`);
     green_buffer: 18,
     density_bonus: 28,
   })!;
-  check("engine is deterministic", sig(strict) === sig(again) && landSig(strict) === landSig(again));
+  check(
+    "engine is deterministic",
+    sig(strict) === sig(again) && landSig(strict) === landSig(again),
+  );
 
   // The three variants must be genuinely different points on a curve.
-  const variantSig = (v: { kpis: { compared: number }[] }) => v.kpis.map((k) => k.compared).join("|");
+  const variantSig = (v: { kpis: { compared: number }[] }) =>
+    v.kpis.map((k) => k.compared).join("|");
   const v = relaxed.variants;
   check(
     "three intensity variants are distinct",
-    v.length === 3 && variantSig(v[0]!) !== variantSig(v[1]!) && variantSig(v[1]!) !== variantSig(v[2]!),
+    v.length === 3 &&
+      variantSig(v[0]!) !== variantSig(v[1]!) &&
+      variantSig(v[1]!) !== variantSig(v[2]!),
     v.map((x) => `${x.name} ${f(x.kpis[0]?.pctChange ?? null, 1)}%`).join(", "),
   );
 }
@@ -314,7 +323,8 @@ console.log("\n=== 6. Coverage across the library ===");
   console.log(`        datasets in use    ${coveredDs.size}/${DATASETS.length}`);
   console.log(`        indicators in use ${coveredInd.size}/${INDICATORS.length}`);
   if (orphanDs.length) console.log(`        datasets with no instrument: ${orphanDs.join(", ")}`);
-  if (orphanInd.length) console.log(`        indicators with no instrument: ${orphanInd.join(", ")}`);
+  if (orphanInd.length)
+    console.log(`        indicators with no instrument: ${orphanInd.join(", ")}`);
 
   check(
     "every dataset in use is a real dataset",
@@ -349,7 +359,11 @@ console.log("\n=== 6. Coverage across the library ===");
       .map((r) => `${p.shortName}: ${r.id} -> ${targetIndicator(r)}`),
   );
   unreported.forEach((u) => console.log(`        (unreported) ${u}`));
-  check("every indicator rule is reported by its instrument", unreported.length === 0, `${unreported.length} unreported`);
+  check(
+    "every indicator rule is reported by its instrument",
+    unreported.length === 0,
+    `${unreported.length} unreported`,
+  );
 
   const dsSigs = new Set(POLICIES.map((p) => p.datasetIds.join("+")));
   const indSigs = new Set(POLICIES.map((p) => p.indicators.map((i) => i.indicatorId).join("+")));
@@ -411,10 +425,14 @@ for (const p of POLICIES) {
     const results = p.windows.map((w) => run("existing", p, {}, { windowId: w.id })!);
     const distinct = new Set(results.map((r) => r.kpis.map((k) => k.compared).join("|"))).size;
     if (observable) {
-      check(`${p.shortName} · each window changes the comparison`, distinct === p.windows.length, `${distinct}/${p.windows.length}`);
+      check(
+        `${p.shortName} · each window changes the comparison`,
+        distinct === p.windows.length,
+        `${distinct}/${p.windows.length}`,
+      );
     } else {
-      const flagged = results.every(
-        (r) => r.assumptions.limitations.some((l) => /outside the .* record/i.test(l)),
+      const flagged = results.every((r) =>
+        r.assumptions.limitations.some((l) => /outside the .* record/i.test(l)),
       );
       check(
         `${p.shortName} · unobservable windows collapse to one answer and say so`,
@@ -443,7 +461,10 @@ console.log("\n=== 8. Map data comes from the dataset ===");
   );
   const r1 = run("new", SAMPLE)!;
   const r2 = run("new", SAMPLE, { development_pressure: 100 })!;
-  check("geographyImpact covers every unit", r1.geographyImpact.length === ALL_GEOGRAPHY_IDS.length);
+  check(
+    "geographyImpact covers every unit",
+    r1.geographyImpact.length === ALL_GEOGRAPHY_IDS.length,
+  );
   check(
     "map values change when the scenario does",
     r1.geographyImpact.map((g) => g.intensity).join() !==
@@ -504,13 +525,23 @@ console.log("\n=== 9. Honesty and validation ===");
       ...over,
     } as Parameters<typeof validateConfig>[0]);
 
-  check("missing geography is flagged", cfg({ geographyIds: [] }).some((i) => i.parameterId === "geography"));
-  check("missing land category is flagged", cfg({ landCategories: [] }).some((i) => i.parameterId === "landCategory"));
+  check(
+    "missing geography is flagged",
+    cfg({ geographyIds: [] }).some((i) => i.parameterId === "geography"),
+  );
+  check(
+    "missing land category is flagged",
+    cfg({ landCategories: [] }).some((i) => i.parameterId === "landCategory"),
+  );
   check("unknown policy is flagged", cfg({ policyId: "nope" }).length > 0);
 
   // Out-of-range: use each declared soft bound rather than hard-coded ids.
   const bounded = p.parameters.filter((x) => !!x.validate);
-  check("sample policy declares soft bounds", bounded.length > 0, `${bounded.length} bounded parameters`);
+  check(
+    "sample policy declares soft bounds",
+    bounded.length > 0,
+    `${bounded.length} bounded parameters`,
+  );
   for (const b of bounded) {
     const bad: ParamValues = {};
     if (b.validate?.max !== undefined) bad[b.id] = b.validate.max + 1;
@@ -599,13 +630,17 @@ console.log("\n=== 11. Scenario presets ===");
     check(
       `${p.shortName} · ${presets.length} presets produce ${new Set(sigs).size} distinct results`,
       new Set(sigs).size === presets.length,
-      results.map((r, i) => `${presets[i]!.name} ${f(r.kpis[0]?.pctChange ?? null, 1)}%`).join(", "),
+      results
+        .map((r, i) => `${presets[i]!.name} ${f(r.kpis[0]?.pctChange ?? null, 1)}%`)
+        .join(", "),
     );
     // The instrument's own figures are the policy's declared defaults. No preset
     // may claim to restate them: a pack carries generic placeholders, and an
     // earlier version shipped a "stated-rule" preset that silently overwrote
     // real statutory values.
-    const restates = presets.find((s) => /stated|as (appears|notified)|published defaults/i.test(s.name + s.description));
+    const restates = presets.find((s) =>
+      /stated|as (appears|notified)|published defaults/i.test(s.name + s.description),
+    );
     check(
       `${p.shortName} · no preset claims to restate the instrument`,
       !restates,
@@ -613,7 +648,8 @@ console.log("\n=== 11. Scenario presets ===");
     );
     const defaults = applyPreset(p.parameters, null);
     const drifted = p.parameters.filter(
-      (x) => x.default !== undefined && JSON.stringify(defaults[x.id]) !== JSON.stringify(x.default),
+      (x) =>
+        x.default !== undefined && JSON.stringify(defaults[x.id]) !== JSON.stringify(x.default),
     );
     check(
       `${p.shortName} · the default bundle is the instrument's own figures`,

@@ -63,7 +63,8 @@ export const CHAPTERS: {
       hi: "विवाद बनने से पहले गड़बड़ी पकड़ें",
       mr: "वाद होण्याआधी त्रुटी शोधा",
     },
-    role: "officer", prov: "synthetic",
+    role: "officer",
+    prov: "synthetic",
   },
   {
     id: "ask",
@@ -73,7 +74,8 @@ export const CHAPTERS: {
       hi: "अपनी भाषा में पूछें, स्रोत सहित उत्तर पाएँ",
       mr: "तुमच्या भाषेत विचारा, संदर्भासह उत्तर मिळवा",
     },
-    role: "officer", prov: "synthetic",
+    role: "officer",
+    prov: "synthetic",
   },
   {
     id: "protect",
@@ -83,7 +85,8 @@ export const CHAPTERS: {
       hi: "प्रश्न अंदर, केवल समेकित आँकड़े बाहर",
       mr: "प्रश्न आत, फक्त एकत्रित आकडे बाहेर",
     },
-    role: "officer", prov: "simulated",
+    role: "officer",
+    prov: "simulated",
   },
   {
     id: "simulate",
@@ -93,7 +96,8 @@ export const CHAPTERS: {
       hi: "नीति लागू करने से पहले परखें",
       mr: "धोरण लागू करण्याआधी तपासा",
     },
-    role: "policymaker", prov: "simulated",
+    role: "policymaker",
+    prov: "simulated",
   },
   {
     id: "prove",
@@ -103,7 +107,8 @@ export const CHAPTERS: {
       hi: "पहले लक्ष्य दर्ज करें, फिर पूछें: क्या असर हुआ?",
       mr: "आधी लक्ष्य नोंदवा, मग विचारा: परिणाम झाला का?",
     },
-    role: "policymaker", prov: "synthetic",
+    role: "policymaker",
+    prov: "synthetic",
   },
   {
     id: "capsule",
@@ -113,7 +118,8 @@ export const CHAPTERS: {
       hi: "ऐसा पैकेज जिसे कोई भी दोबारा चला सके",
       mr: "कोणीही पुन्हा चालवू शकेल असे पॅकेज",
     },
-    role: "researcher", prov: "synthetic",
+    role: "researcher",
+    prov: "synthetic",
   },
   {
     id: "loop",
@@ -123,7 +129,8 @@ export const CHAPTERS: {
       hi: "हर परिणाम नया प्रमाण बनता है",
       mr: "प्रत्येक निकाल नवा पुरावा बनतो",
     },
-    role: "researcher", prov: "illustrative",
+    role: "researcher",
+    prov: "illustrative",
   },
 ];
 

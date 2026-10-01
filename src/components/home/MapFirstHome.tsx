@@ -68,7 +68,6 @@ import { CopilotAnswer } from "./CopilotAnswer";
 
 maplibregl.config.WORKER_URL = mapWorkerUrl;
 
-
 interface LocationContext {
   lat: number;
   lon: number;
@@ -308,8 +307,6 @@ export function MapFirstHome() {
     return () => clearInterval(timer);
   }, []);
 
-
-
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
@@ -471,7 +468,12 @@ export function MapFirstHome() {
           lang: string;
           interimResults: boolean;
           maxAlternatives: number;
-          onresult: ((event: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+          onresult:
+            | ((event: {
+                resultIndex: number;
+                results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
+              }) => void)
+            | null;
           onend: (() => void) | null;
           onerror: (() => void) | null;
           start: () => void;
@@ -536,7 +538,8 @@ export function MapFirstHome() {
     const scroller = chatScrollRef.current;
     const turns = scroller?.querySelectorAll<HTMLElement>("[data-turn='user']");
     const last = turns?.[turns.length - 1];
-    if (scroller && last) scroller.scrollTo({ top: last.offsetTop - scroller.offsetTop - 12, behavior: "smooth" });
+    if (scroller && last)
+      scroller.scrollTo({ top: last.offsetTop - scroller.offsetTop - 12, behavior: "smooth" });
     else chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [chatLog.length, analyzing, mode]);
 
@@ -665,7 +668,10 @@ export function MapFirstHome() {
     mapRef.current = map;
 
     map.on("error", (event) => {
-      const err = event as unknown as { sourceId?: string; error?: { status?: number; message?: string } };
+      const err = event as unknown as {
+        sourceId?: string;
+        error?: { status?: number; message?: string };
+      };
       if (err.sourceId !== "satellite") return;
       const status = err.error?.status;
       const message = err.error?.message ?? "";
@@ -714,7 +720,11 @@ export function MapFirstHome() {
       map.setLayoutProperty("osm-base", "visibility", baseMode === "map" ? "visible" : "none");
     }
     if (map.getLayer("sat-base")) {
-      map.setLayoutProperty("sat-base", "visibility", baseMode === "satellite" ? "visible" : "none");
+      map.setLayoutProperty(
+        "sat-base",
+        "visibility",
+        baseMode === "satellite" ? "visible" : "none",
+      );
     }
   }, [baseMode]);
 
@@ -737,7 +747,8 @@ export function MapFirstHome() {
       } catch {
         collection = null;
       }
-      cadastralParcelsRef.current = collection && collection.features.length > 0 ? collection : null;
+      cadastralParcelsRef.current =
+        collection && collection.features.length > 0 ? collection : null;
 
       // 2. Fallback to bundled demo extract
       if (!collection || collection.features.length === 0) {
@@ -755,7 +766,7 @@ export function MapFirstHome() {
 
       if (collection && map.getSource("parcels")) {
         (map.getSource("parcels") as maplibregl.GeoJSONSource).setData(
-          collection as unknown as maplibregl.GeoJSONSourceSpecification["data"]
+          collection as unknown as maplibregl.GeoJSONSourceSpecification["data"],
         );
       }
     } catch (err) {
@@ -811,7 +822,8 @@ export function MapFirstHome() {
     if (cadHit) {
       const geometry = toSinglePolygon(cadHit.geometry);
       const props = (cadHit.properties ?? {}) as Record<string, unknown>;
-      const str = (k: string) => (typeof props[k] === "string" && props[k] ? (props[k] as string) : null);
+      const str = (k: string) =>
+        typeof props[k] === "string" && props[k] ? (props[k] as string) : null;
       const parcelId =
         str("CCODE") ??
         str("Parcel_num") ??
@@ -878,15 +890,22 @@ export function MapFirstHome() {
 
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`,
       );
       if (res.ok) {
         const data = await res.json();
         if (data.address) {
           stateName = data.address.state || data.address.region || stateName;
-          districtName = data.address.state_district || data.address.county || data.address.city || districtName;
-          talukaName = data.address.subdistrict || data.address.taluka || data.address.tehsil || talukaName;
-          villageName = data.address.village || data.address.suburb || data.address.neighbourhood || data.address.town || villageName;
+          districtName =
+            data.address.state_district || data.address.county || data.address.city || districtName;
+          talukaName =
+            data.address.subdistrict || data.address.taluka || data.address.tehsil || talukaName;
+          villageName =
+            data.address.village ||
+            data.address.suburb ||
+            data.address.neighbourhood ||
+            data.address.town ||
+            villageName;
         }
       }
     } catch {
@@ -1062,9 +1081,9 @@ export function MapFirstHome() {
           fit: !action.place, // a named place gets its own fly_to
         });
       case "compare": {
-        const pts = (await Promise.all(action.places.map((p) => geocode(p.place, p.lat, p.lon)))).filter(
-          (p): p is { lat: number; lon: number } => p !== null,
-        );
+        const pts = (
+          await Promise.all(action.places.map((p) => geocode(p.place, p.lat, p.lon)))
+        ).filter((p): p is { lat: number; lon: number } => p !== null);
         if (pts.length === 0) return null;
         const lons = pts.map((p) => p.lon);
         const lats = pts.map((p) => p.lat);
@@ -1096,7 +1115,16 @@ export function MapFirstHome() {
         setChatLog((prev) =>
           prev.map((t, i) =>
             i === prev.length - 1 && t.reply?.copilot
-              ? { ...t, reply: { ...t.reply, copilot: { ...t.reply.copilot, applied: [...(t.reply.copilot.applied ?? []), msg] } } }
+              ? {
+                  ...t,
+                  reply: {
+                    ...t.reply,
+                    copilot: {
+                      ...t.reply.copilot,
+                      applied: [...(t.reply.copilot.applied ?? []), msg],
+                    },
+                  },
+                }
               : t,
           ),
         );
@@ -1112,7 +1140,10 @@ export function MapFirstHome() {
     if (!textToSubmit || analyzing) return;
 
     const stamp = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setChatLog((prev) => [...prev, { id: ++chatIdRef.current, role: "user", text: textToSubmit, at: stamp() }]);
+    setChatLog((prev) => [
+      ...prev,
+      { id: ++chatIdRef.current, role: "user", text: textToSubmit, at: stamp() },
+    ]);
     setAiInput("");
     setAnalyzing(true);
     setMode("chat");
@@ -1190,11 +1221,15 @@ export function MapFirstHome() {
       if (data.plan) lastPlanRef.current = data.plan;
       const answerLang = data.language?.code;
       const replyLang: VoiceLang = answerLang === "hi" || answerLang === "mr" ? answerLang : "en";
-      if (answerLang === "hi" || answerLang === "mr" || answerLang === "en") setVoiceLang(answerLang);
+      if (answerLang === "hi" || answerLang === "mr" || answerLang === "en")
+        setVoiceLang(answerLang);
       const fullReply: AIResponse = { query: textToSubmit, ...reply, copilot };
       const turnId = ++chatIdRef.current;
       setAiResponse(fullReply);
-      setChatLog((prev) => [...prev, { id: turnId, role: "assistant", text: reply.summary, at: stamp(), reply: fullReply }]);
+      setChatLog((prev) => [
+        ...prev,
+        { id: turnId, role: "assistant", text: reply.summary, at: stamp(), reply: fullReply },
+      ]);
 
       // Agentic map actions — run in order, then confirm what actually changed on the map.
       void (async () => {
@@ -1235,7 +1270,13 @@ export function MapFirstHome() {
       setAiResponse(errorReply);
       setChatLog((prev) => [
         ...prev,
-        { id: ++chatIdRef.current, role: "assistant", text: errorReply.summary, at: stamp(), reply: errorReply },
+        {
+          id: ++chatIdRef.current,
+          role: "assistant",
+          text: errorReply.summary,
+          at: stamp(),
+          reply: errorReply,
+        },
       ]);
     } finally {
       setAnalyzing(false);
@@ -1255,112 +1296,123 @@ export function MapFirstHome() {
         onChip={onChip}
       />
     ) : (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-3.5 space-y-3">
-      <div className="border-l-2 border-green-600 pl-3">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 block mb-0.5">
-          Key finding
-        </span>
-        <p className="text-slate-700 leading-snug font-medium select-text">{reply.summary}</p>
-      </div>
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-3.5 space-y-3">
+        <div className="border-l-2 border-green-600 pl-3">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 block mb-0.5">
+            Key finding
+          </span>
+          <p className="text-slate-700 leading-snug font-medium select-text">{reply.summary}</p>
+        </div>
 
-      {/* Risk assessment — only when the agent actually flagged a risk. */}
-      {reply.riskAssessment.trim() &&
-        (() => {
-          // English, Hindi and Marathi level words (Copilot answers in the user's language)
-          const level = /high|उच्च|ज़्यादा|अधिक|जास्त/i.test(reply.riskAssessment)
-            ? { n: 3, label: "High", dot: "bg-red-500", bar: "bg-red-500" }
-            : /moderate|medium|मध्यम/i.test(reply.riskAssessment)
-              ? { n: 2, label: "Moderate", dot: "bg-amber-500", bar: "bg-amber-500" }
-              : { n: 1, label: "Low", dot: "bg-green-600", bar: "bg-green-600" };
-          return (
-            <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                  Risk assessment
-                </span>
-                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
-                  <i className={`w-2 h-2 rounded-full ${level.dot}`} />
-                  {level.label}
-                </span>
-              </div>
-              <div className="flex gap-1 mb-2" aria-hidden="true">
-                {[1, 2, 3].map((i) => (
-                  <span key={i} className={`h-1.5 flex-1 rounded-full ${i <= level.n ? level.bar : "bg-slate-200"}`} />
-                ))}
-              </div>
-              <p className="text-slate-600 leading-snug line-clamp-3 select-text">{reply.riskAssessment}</p>
-            </div>
-          );
-        })()}
-
-      {/* Regulatory framework — only when rules actually apply. */}
-      {reply.framework.length > 0 && (
-        <div>
-          <h4 className="font-bold text-slate-900 text-xs mb-1.5">Regulatory framework</h4>
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
-            {reply.framework.map((item, idx) => {
-              const sep = item.indexOf(":");
-              const label = sep > 0 ? item.slice(0, sep).trim() : "Rule";
-              const body = sep > 0 ? item.slice(sep + 1).trim() : item;
-              return (
-                <li key={idx} className="flex items-baseline gap-2 px-2.5 py-2 bg-white">
-                  <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-green-700 bg-green-50 border border-green-100 rounded px-1.5 py-0.5 max-w-[110px] truncate">
-                    {label}
+        {/* Risk assessment — only when the agent actually flagged a risk. */}
+        {reply.riskAssessment.trim() &&
+          (() => {
+            // English, Hindi and Marathi level words (Copilot answers in the user's language)
+            const level = /high|उच्च|ज़्यादा|अधिक|जास्त/i.test(reply.riskAssessment)
+              ? { n: 3, label: "High", dot: "bg-red-500", bar: "bg-red-500" }
+              : /moderate|medium|मध्यम/i.test(reply.riskAssessment)
+                ? { n: 2, label: "Moderate", dot: "bg-amber-500", bar: "bg-amber-500" }
+                : { n: 1, label: "Low", dot: "bg-green-600", bar: "bg-green-600" };
+            return (
+              <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                    Risk assessment
                   </span>
-                  <span className="text-slate-600 leading-snug line-clamp-2">{body}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
+                    <i className={`w-2 h-2 rounded-full ${level.dot}`} />
+                    {level.label}
+                  </span>
+                </div>
+                <div className="flex gap-1 mb-2" aria-hidden="true">
+                  {[1, 2, 3].map((i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 flex-1 rounded-full ${i <= level.n ? level.bar : "bg-slate-200"}`}
+                    />
+                  ))}
+                </div>
+                <p className="text-slate-600 leading-snug line-clamp-3 select-text">
+                  {reply.riskAssessment}
+                </p>
+              </div>
+            );
+          })()}
 
-      {/* Structured evidence classes — observed vs derived vs legal record. */}
-      {(reply.evidenceBreakdown?.length ?? 0) > 0 && (
-        <div>
-          <h4 className="font-bold text-slate-900 text-xs mb-1.5">Evidence classes</h4>
-          <ul className="space-y-1">
-            {reply.evidenceBreakdown!.map((b, idx) => (
-              <li key={idx} className="flex items-baseline gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 py-1.5">
-                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-slate-600">{b.section}</span>
-                <span className="text-slate-600 leading-snug select-text">{b.detail}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {reply.evidence.length > 0 && (
-        <div>
-          <h4 className="font-bold text-slate-900 text-xs mb-1.5">Verified sources</h4>
-          <div className="flex flex-wrap gap-1.5">
-            {reply.evidence.map((ev, idx) => (
-              <span
-                key={idx}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold border border-slate-200"
-              >
-                <Database className="w-3 h-3 text-green-600" />
-                {ev.label}
-              </span>
-            ))}
+        {/* Regulatory framework — only when rules actually apply. */}
+        {reply.framework.length > 0 && (
+          <div>
+            <h4 className="font-bold text-slate-900 text-xs mb-1.5">Regulatory framework</h4>
+            <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+              {reply.framework.map((item, idx) => {
+                const sep = item.indexOf(":");
+                const label = sep > 0 ? item.slice(0, sep).trim() : "Rule";
+                const body = sep > 0 ? item.slice(sep + 1).trim() : item;
+                return (
+                  <li key={idx} className="flex items-baseline gap-2 px-2.5 py-2 bg-white">
+                    <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-green-700 bg-green-50 border border-green-100 rounded px-1.5 py-0.5 max-w-[110px] truncate">
+                      {label}
+                    </span>
+                    <span className="text-slate-600 leading-snug line-clamp-2">{body}</span>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Data caveats — only when a genuine caveat was returned. */}
-      {reply.limitation.trim() && (
-        <details className="rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 group">
-          <summary className="cursor-pointer text-[11px] font-bold text-slate-500 hover:text-slate-700 list-none flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-            Data caveats
-          </summary>
-          <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed select-text">{reply.limitation}</p>
-        </details>
-      )}
+        {/* Structured evidence classes — observed vs derived vs legal record. */}
+        {(reply.evidenceBreakdown?.length ?? 0) > 0 && (
+          <div>
+            <h4 className="font-bold text-slate-900 text-xs mb-1.5">Evidence classes</h4>
+            <ul className="space-y-1">
+              {reply.evidenceBreakdown!.map((b, idx) => (
+                <li
+                  key={idx}
+                  className="flex items-baseline gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-2.5 py-1.5"
+                >
+                  <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-slate-600">
+                    {b.section}
+                  </span>
+                  <span className="text-slate-600 leading-snug select-text">{b.detail}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-    </div>
-  );
+        {reply.evidence.length > 0 && (
+          <div>
+            <h4 className="font-bold text-slate-900 text-xs mb-1.5">Verified sources</h4>
+            <div className="flex flex-wrap gap-1.5">
+              {reply.evidence.map((ev, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold border border-slate-200"
+                >
+                  <Database className="w-3 h-3 text-green-600" />
+                  {ev.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Data caveats — only when a genuine caveat was returned. */}
+        {reply.limitation.trim() && (
+          <details className="rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 group">
+            <summary className="cursor-pointer text-[11px] font-bold text-slate-500 hover:text-slate-700 list-none flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+              Data caveats
+            </summary>
+            <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed select-text">
+              {reply.limitation}
+            </p>
+          </details>
+        )}
+      </div>
+    );
 
   // Layer panel checkboxes drive the real map overlays (also switched on by Copilot actions)
   const overlayRegion = selectedLocation?.state || lastPlanRef.current?.location?.state || null;
@@ -1434,7 +1486,9 @@ export function MapFirstHome() {
         if (cancelled) return;
         const sourceLayer = ids[0];
         if (!sourceLayer) {
-          setCadastreNote(`Cadastral layer for ${provider.stateName} is unavailable upstream right now`);
+          setCadastreNote(
+            `Cadastral layer for ${provider.stateName} is unavailable upstream right now`,
+          );
           return;
         }
         try {
@@ -1462,7 +1516,15 @@ export function MapFirstHome() {
               layout: { visibility: vis },
               paint: {
                 "line-color": "#0f7b4f",
-                "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.7, 14, 2] as unknown as maplibregl.ExpressionSpecification,
+                "line-width": [
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  11,
+                  0.7,
+                  14,
+                  2,
+                ] as unknown as maplibregl.ExpressionSpecification,
                 "line-opacity": 0.95,
               },
             },
@@ -1524,7 +1586,11 @@ export function MapFirstHome() {
         try {
           if (want && !has) {
             if (!map.getSource(def.sourceId)) {
-              map.addSource(def.sourceId, { type: "vector", url: def.tileJson, attribution: def.attribution });
+              map.addSource(def.sourceId, {
+                type: "vector",
+                url: def.tileJson,
+                attribution: def.attribution,
+              });
             }
             void vectorLayerIdsFromUrl(def.tileJson).then((ids) => {
               const sourceLayer = ids[0];
@@ -1582,7 +1648,6 @@ export function MapFirstHome() {
       cancelled = true;
       cancelReady();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overlays]);
 
   const portal = selectedLocation ? officialPortalFor(selectedLocation.state) : null;
@@ -1613,8 +1678,12 @@ export function MapFirstHome() {
           <div className="flex items-center gap-2.5">
             <img src={logo} alt="Nirvana" className="w-8 h-8 object-contain" />
             <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight text-green-950 leading-none">NIRVANA</span>
-              <span className="text-[10px] text-emerald-700 font-semibold tracking-wide leading-tight">निर्वाण</span>
+              <span className="font-extrabold text-sm tracking-tight text-green-950 leading-none">
+                NIRVANA
+              </span>
+              <span className="text-[10px] text-emerald-700 font-semibold tracking-wide leading-tight">
+                निर्वाण
+              </span>
             </div>
           </div>
           <button
@@ -1650,9 +1719,11 @@ export function MapFirstHome() {
                   <Icon className="w-4 h-4 text-slate-400" />
                   <span>{label}</span>
                 </div>
-                <span className="text-[9px] font-semibold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">Soon</span>
+                <span className="text-[9px] font-semibold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">
+                  Soon
+                </span>
               </button>
-            )
+            ),
           )}
         </nav>
 
@@ -1682,8 +1753,12 @@ export function MapFirstHome() {
           <div className="flex items-center gap-2.5 pl-1">
             <img src={logo} alt="Nirvana" className="w-7 h-7 object-contain" />
             <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight text-green-950 leading-none">NIRVANA</span>
-              <span className="text-[10px] text-emerald-700 font-semibold tracking-wide leading-tight">निर्वाण</span>
+              <span className="font-extrabold text-sm tracking-tight text-green-950 leading-none">
+                NIRVANA
+              </span>
+              <span className="text-[10px] text-emerald-700 font-semibold tracking-wide leading-tight">
+                निर्वाण
+              </span>
             </div>
           </div>
         </div>
@@ -1732,7 +1807,9 @@ export function MapFirstHome() {
                     >
                       <div className="flex items-center gap-2 overflow-hidden">
                         <MapPin className="w-3.5 h-3.5 text-green-600 shrink-0" />
-                        <span className="text-xs font-semibold text-slate-800 truncate">{hit.name}</span>
+                        <span className="text-xs font-semibold text-slate-800 truncate">
+                          {hit.name}
+                        </span>
                       </div>
                       <span className="text-[10px] text-slate-400 shrink-0 ml-2">
                         {hit.lat.toFixed(3)}, {hit.lon.toFixed(3)}
@@ -1748,7 +1825,12 @@ export function MapFirstHome() {
                           displayName: preset.name,
                           lat: preset.lat,
                           lon: preset.lon,
-                          bbox: [preset.lon - 0.04, preset.lat - 0.04, preset.lon + 0.04, preset.lat + 0.04],
+                          bbox: [
+                            preset.lon - 0.04,
+                            preset.lat - 0.04,
+                            preset.lon + 0.04,
+                            preset.lat + 0.04,
+                          ],
                         })
                       }
                       className="w-full text-left px-3.5 py-2 hover:bg-green-50/70 transition-colors flex items-center justify-between border-b border-slate-100 last:border-none"
@@ -1784,7 +1866,10 @@ export function MapFirstHome() {
             <Layers className="w-4 h-4 text-green-600" />
           </button>
 
-          <button className="hidden md:flex p-2 hover:bg-slate-100 text-slate-600 rounded-xl transition-colors" title="Appearance">
+          <button
+            className="hidden md:flex p-2 hover:bg-slate-100 text-slate-600 rounded-xl transition-colors"
+            title="Appearance"
+          >
             <Moon className="w-4 h-4" />
           </button>
 
@@ -1792,7 +1877,10 @@ export function MapFirstHome() {
             EN <ChevronDown className="w-3.5 h-3.5" />
           </button>
 
-          <button className="hidden md:flex p-2 hover:bg-slate-100 text-slate-600 rounded-xl relative transition-colors" title="Notifications">
+          <button
+            className="hidden md:flex p-2 hover:bg-slate-100 text-slate-600 rounded-xl relative transition-colors"
+            title="Notifications"
+          >
             <Bell className="w-4 h-4" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-600" />
           </button>
@@ -1802,7 +1890,9 @@ export function MapFirstHome() {
               OK
             </span>
             <div className="hidden lg:flex flex-col text-left">
-              <strong className="text-xs font-bold text-slate-900 leading-tight">Omkar Kudalkar</strong>
+              <strong className="text-xs font-bold text-slate-900 leading-tight">
+                Omkar Kudalkar
+              </strong>
               <small className="text-[10px] text-slate-400 leading-tight">Researcher</small>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -1813,10 +1903,17 @@ export function MapFirstHome() {
       {satNotice && baseMode === "satellite" && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-[2px] shadow-lg border border-slate-200 text-xs font-semibold text-slate-700 max-w-[92vw]">
           <span>Satellite tiles loading slowly…</span>
-          <button onClick={() => setBaseMode("map")} className="text-green-700 font-bold hover:underline shrink-0">
+          <button
+            onClick={() => setBaseMode("map")}
+            className="text-green-700 font-bold hover:underline shrink-0"
+          >
             Map view
           </button>
-          <button onClick={() => setSatNotice(false)} aria-label="Dismiss" className="text-slate-400 hover:text-slate-600 shrink-0">
+          <button
+            onClick={() => setSatNotice(false)}
+            aria-label="Dismiss"
+            className="text-slate-400 hover:text-slate-600 shrink-0"
+          >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -1869,7 +1966,10 @@ export function MapFirstHome() {
           onClick={() => {
             if (navigator.geolocation) {
               navigator.geolocation.getCurrentPosition((pos) => {
-                mapRef.current?.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 15 });
+                mapRef.current?.flyTo({
+                  center: [pos.coords.longitude, pos.coords.latitude],
+                  zoom: 15,
+                });
               });
             }
           }}
@@ -1896,7 +1996,11 @@ export function MapFirstHome() {
           }`}
           title="Toggle Satellite / Map"
         >
-          {baseMode === "satellite" ? <Satellite className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
+          {baseMode === "satellite" ? (
+            <Satellite className="w-4 h-4" />
+          ) : (
+            <MapIcon className="w-4 h-4" />
+          )}
         </button>
       </div>
 
@@ -1910,8 +2014,13 @@ export function MapFirstHome() {
           }`}
         >
           <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Map Layers</span>
-            <button onClick={() => setLayersOpen(false)} className="text-slate-400 hover:text-slate-600">
+            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              Map Layers
+            </span>
+            <button
+              onClick={() => setLayersOpen(false)}
+              className="text-slate-400 hover:text-slate-600"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -1956,7 +2065,10 @@ export function MapFirstHome() {
                   { key: "risk", label: "Climate & Flood Risk" },
                   { key: "disputes", label: "Active Disputes Data" },
                 ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <label
+                    key={key}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 cursor-pointer"
+                  >
                     <span className="text-xs font-medium text-slate-700">{label}</span>
                     <input
                       type="checkbox"
@@ -1977,7 +2089,10 @@ export function MapFirstHome() {
               </span>
               <div className="space-y-1.5">
                 {MAP_OVERLAYS.map((def) => (
-                  <label key={def.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <label
+                    key={def.id}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 cursor-pointer"
+                  >
                     <span className="flex flex-col">
                       <span className="text-xs font-medium text-slate-700">{def.label}</span>
                       <span className="text-[10px] text-slate-400">{def.attribution}</span>
@@ -2020,13 +2135,18 @@ export function MapFirstHome() {
                 {selectedLocation.lat.toFixed(6)}, {selectedLocation.lon.toFixed(6)}
               </span>
             </div>
-            <button onClick={() => setCardOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+            <button
+              onClick={() => setCardOpen(false)}
+              className="text-slate-400 hover:text-slate-600 p-1"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <div className="mt-2 space-y-3">
-            <p className="text-xs font-semibold text-slate-500">Here's what the land parcel data shows:</p>
+            <p className="text-xs font-semibold text-slate-500">
+              Here's what the land parcel data shows:
+            </p>
 
             {/* Plot Details Box (Light Lavender Tint matching reference image) */}
             <div className="bg-green-50/50 rounded-xl p-3.5 border border-green-100/90 space-y-2.5 text-xs">
@@ -2038,23 +2158,33 @@ export function MapFirstHome() {
 
               <div className="grid grid-cols-2 gap-y-2 pt-1 text-slate-700">
                 <span className="text-slate-400 font-medium">District</span>
-                <span className="font-medium text-slate-800 text-right">{selectedLocation.district}</span>
+                <span className="font-medium text-slate-800 text-right">
+                  {selectedLocation.district}
+                </span>
 
                 <span className="text-slate-400 font-medium">Mandal</span>
-                <span className="font-medium text-slate-800 text-right">{selectedLocation.taluka}</span>
+                <span className="font-medium text-slate-800 text-right">
+                  {selectedLocation.taluka}
+                </span>
 
                 <span className="text-slate-400 font-medium">Village</span>
-                <span className="font-medium text-slate-800 text-right">{selectedLocation.village}</span>
+                <span className="font-medium text-slate-800 text-right">
+                  {selectedLocation.village}
+                </span>
 
                 {selectedLocation.surveyNumber ? (
                   <>
                     <span className="text-slate-400 font-medium">Survey No.</span>
-                    <span className="font-bold text-green-700 text-right">{selectedLocation.surveyNumber}</span>
+                    <span className="font-bold text-green-700 text-right">
+                      {selectedLocation.surveyNumber}
+                    </span>
                   </>
                 ) : selectedLocation.parcelId ? (
                   <>
                     <span className="text-slate-400 font-medium">Parcel ID</span>
-                    <span className="font-bold text-green-700 text-right">{selectedLocation.parcelId}</span>
+                    <span className="font-bold text-green-700 text-right">
+                      {selectedLocation.parcelId}
+                    </span>
                   </>
                 ) : null}
               </div>
@@ -2075,15 +2205,17 @@ export function MapFirstHome() {
               />
             ) : (
               <p className="pv-honesty">
-                No public parcel geometry for this point — only a reverse-geocoded location is shown. No ownership or
-                survey record is implied.
+                No public parcel geometry for this point — only a reverse-geocoded location is
+                shown. No ownership or survey record is implied.
               </p>
             )}
 
             {/* Stacked Primary & Secondary Action Buttons (Matching reference image) */}
             <div className="space-y-2 pt-1">
               <button
-                onClick={() => handleAiSubmit("Ask about this property: Complete Due Diligence & Regulations")}
+                onClick={() =>
+                  handleAiSubmit("Ask about this property: Complete Due Diligence & Regulations")
+                }
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4 fill-white" />
@@ -2095,7 +2227,9 @@ export function MapFirstHome() {
                   if (portal) {
                     window.open(portal.url, "_blank");
                   } else {
-                    handleAiSubmit("Get official documents and survey record guidelines for this land.");
+                    handleAiSubmit(
+                      "Get official documents and survey record guidelines for this land.",
+                    );
                   }
                 }}
                 className="w-full bg-white hover:bg-green-50 text-green-600 border border-green-300 font-bold text-xs py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
@@ -2123,7 +2257,9 @@ export function MapFirstHome() {
                   className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-green-100 shadow-lg shadow-green-600/25"
                 />
                 <div className="min-w-0 leading-tight">
-                  <span className="block font-semibold text-[14px] text-slate-900 truncate">Nirvana Copilot</span>
+                  <span className="block font-semibold text-[14px] text-slate-900 truncate">
+                    Nirvana Copilot
+                  </span>
                   <span className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
                     <i className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
                     Land intelligence assistant
@@ -2146,25 +2282,43 @@ export function MapFirstHome() {
           </header>
 
           {/* Selected parcel context — fixed */}
-          {selectedLocation && (selectedLocation.surveyNumber || selectedLocation.areaAcres != null) && (
-            <div className="shrink-0 px-5 py-2.5 border-b border-slate-100 bg-slate-50/60">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                Selected parcel
-              </span>
-              <dl className="grid grid-cols-3 gap-2">
-                {[
-                  { k: "Survey No.", v: selectedLocation.surveyNumber ?? selectedLocation.parcelId?.replace(/^OSM-/, "") ?? "—" },
-                  { k: "Area", v: selectedLocation.areaAcres != null ? `${selectedLocation.areaAcres.toFixed(1)} ac` : "—" },
-                  { k: "Land use", v: selectedLocation.landUse || "—" },
-                ].map((s) => (
-                  <div key={s.k} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0 shadow-sm">
-                    <dt className="text-[9px] font-bold uppercase tracking-wider text-slate-400 truncate">{s.k}</dt>
-                    <dd className="text-xs font-bold text-slate-800 truncate">{s.v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          )}
+          {selectedLocation &&
+            (selectedLocation.surveyNumber || selectedLocation.areaAcres != null) && (
+              <div className="shrink-0 px-5 py-2.5 border-b border-slate-100 bg-slate-50/60">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                  Selected parcel
+                </span>
+                <dl className="grid grid-cols-3 gap-2">
+                  {[
+                    {
+                      k: "Survey No.",
+                      v:
+                        selectedLocation.surveyNumber ??
+                        selectedLocation.parcelId?.replace(/^OSM-/, "") ??
+                        "—",
+                    },
+                    {
+                      k: "Area",
+                      v:
+                        selectedLocation.areaAcres != null
+                          ? `${selectedLocation.areaAcres.toFixed(1)} ac`
+                          : "—",
+                    },
+                    { k: "Land use", v: selectedLocation.landUse || "—" },
+                  ].map((s) => (
+                    <div
+                      key={s.k}
+                      className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 min-w-0 shadow-sm"
+                    >
+                      <dt className="text-[9px] font-bold uppercase tracking-wider text-slate-400 truncate">
+                        {s.k}
+                      </dt>
+                      <dd className="text-xs font-bold text-slate-800 truncate">{s.v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
 
           {/* Scrollable transcript — grows with every query, auto-pins to newest */}
           <div
@@ -2176,7 +2330,9 @@ export function MapFirstHome() {
                 <div key={turn.id} data-turn="user" className="flex justify-end">
                   <div className="max-w-[88%] bg-emerald-900 text-white rounded-2xl rounded-br-md px-3.5 py-2.5 shadow-sm">
                     <p className="text-[13px] font-medium leading-snug">{turn.text}</p>
-                    <span className="mt-1 block text-right text-[10px] text-emerald-200/80">{turn.at}</span>
+                    <span className="mt-1 block text-right text-[10px] text-emerald-200/80">
+                      {turn.at}
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -2187,15 +2343,15 @@ export function MapFirstHome() {
                     ) : (
                       <p className="text-xs text-slate-600 leading-snug">{turn.text}</p>
                     )}
-                    <span className="block text-[10px] text-slate-400">Nirvana Copilot · {turn.at}</span>
+                    <span className="block text-[10px] text-slate-400">
+                      Nirvana Copilot · {turn.at}
+                    </span>
                   </div>
                 </div>
               ),
             )}
 
-            {analyzing && (
-              <AnalysingSteps />
-            )}
+            {analyzing && <AnalysingSteps />}
             <div ref={chatEndRef} className="h-px" />
           </div>
 
@@ -2244,8 +2400,8 @@ export function MapFirstHome() {
                     {selectedLocation.surveyNumber
                       ? `Parcel ${selectedLocation.surveyNumber}`
                       : selectedLocation.parcelId
-                      ? `Parcel ${selectedLocation.parcelId}`
-                      : `${selectedLocation.lat.toFixed(4)}, ${selectedLocation.lon.toFixed(4)}`}{" "}
+                        ? `Parcel ${selectedLocation.parcelId}`
+                        : `${selectedLocation.lat.toFixed(4)}, ${selectedLocation.lon.toFixed(4)}`}{" "}
                     · {selectedLocation.village}, {selectedLocation.taluka}
                   </span>
                   <button
@@ -2295,7 +2451,6 @@ export function MapFirstHome() {
                 className="w-full relative z-10 bg-transparent text-base font-normal text-slate-800 placeholder:text-slate-400 outline-none tracking-tight"
               />
             </div>
-
 
             {/* Bottom Row Controls: Plus, Chat/Map toggle, Model dropdown, Up arrow */}
             <div className="flex items-center justify-between pt-1">
@@ -2356,7 +2511,11 @@ export function MapFirstHome() {
                     if (ttsEnabled) stopSpeaking();
                     setTtsEnabled((on) => !on);
                   }}
-                  title={ttsEnabled ? "Voice replies on — click to mute" : "Voice replies off — click to unmute"}
+                  title={
+                    ttsEnabled
+                      ? "Voice replies on — click to mute"
+                      : "Voice replies off — click to unmute"
+                  }
                   aria-label={ttsEnabled ? "Mute spoken replies" : "Unmute spoken replies"}
                   className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all shadow-sm ${
                     ttsEnabled
@@ -2368,7 +2527,9 @@ export function MapFirstHome() {
                 </button>
                 {speechSupported && (
                   <button
-                    onClick={() => setVoiceLang((l) => (l === "en" ? "hi" : l === "hi" ? "mr" : "en"))}
+                    onClick={() =>
+                      setVoiceLang((l) => (l === "en" ? "hi" : l === "hi" ? "mr" : "en"))
+                    }
                     title={`Voice language: ${VOICE_BCP47[voiceLang]} — click to switch (follows the language of your last question)`}
                     aria-label="Switch voice language"
                     className="h-8 min-w-8 px-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-600 flex items-center justify-center transition-all shadow-sm"

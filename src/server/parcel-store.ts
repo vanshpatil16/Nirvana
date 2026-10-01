@@ -26,7 +26,10 @@ interface CadastralDataset {
 }
 
 const DATASETS: CadastralDataset[] = [
-  { slug: "vadnerbhairav-chandwad", ...(vadnerbhairavChandwad as unknown as Omit<CadastralDataset, "slug">) },
+  {
+    slug: "vadnerbhairav-chandwad",
+    ...(vadnerbhairavChandwad as unknown as Omit<CadastralDataset, "slug">),
+  },
 ];
 
 export interface ParcelQuery {

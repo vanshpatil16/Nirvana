@@ -12,7 +12,7 @@ import {
   ChevronLeft,
   Plus,
   Minus,
-  Maximize
+  Maximize,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -38,8 +38,19 @@ import {
   yearShares,
   type ScenarioDeltas,
 } from "@/data/land-scenario";
-import { LULC_CLASSES, renderRegion, stateOuterRings, statesBounds, type RegionRaster } from "./lulcRaster";
-import { SIDE_COLORS, ScenarioControls, ScenarioInsights, type ScenarioSide } from "./ScenarioPanel";
+import {
+  LULC_CLASSES,
+  renderRegion,
+  stateOuterRings,
+  statesBounds,
+  type RegionRaster,
+} from "./lulcRaster";
+import {
+  SIDE_COLORS,
+  ScenarioControls,
+  ScenarioInsights,
+  type ScenarioSide,
+} from "./ScenarioPanel";
 import { ProfileMenu } from "@/components/ProfileMenu";
 
 maplibregl.config.WORKER_URL = mapWorkerUrl;
@@ -47,8 +58,9 @@ maplibregl.config.WORKER_URL = mapWorkerUrl;
 type Mode = "time" | "states";
 type Side = { region: string; year: string };
 
-const satelliteTiles = (year: string) =>
-  [`https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-${year}_3857/default/g/{z}/{y}/{x}.jpg`];
+const satelliteTiles = (year: string) => [
+  `https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-${year}_3857/default/g/{z}/{y}/{x}.jpg`,
+];
 
 const EMPTY_FC = { type: "FeatureCollection", features: [] } as const;
 
@@ -59,26 +71,82 @@ const maskFor = (region: string): any => {
   return {
     type: "Feature",
     properties: {},
-    geometry: { type: "Polygon", coordinates: [[[-180, -85], [-180, 85], [180, 85], [180, -85], [-180, -85]], ...outer] },
+    geometry: {
+      type: "Polygon",
+      coordinates: [
+        [
+          [-180, -85],
+          [-180, 85],
+          [180, 85],
+          [180, -85],
+          [-180, -85],
+        ],
+        ...outer,
+      ],
+    },
   };
 };
 
 const CITY_LABELS: [string, number, number][] = [
-  ["Mumbai", 72.87, 19.07], ["Pune", 73.85, 18.52], ["Nagpur", 79.08, 21.14], ["Nashik", 73.78, 19.99], ["Aurangabad", 75.34, 19.87],
-  ["Delhi", 77.21, 28.61], ["Bengaluru", 77.59, 12.97], ["Chennai", 80.27, 13.08], ["Kolkata", 88.36, 22.57], ["Hyderabad", 78.49, 17.39],
-  ["Ahmedabad", 72.57, 23.02], ["Surat", 72.83, 21.17], ["Vadodara", 73.19, 22.31], ["Rajkot", 70.8, 22.3], ["Jaipur", 75.79, 26.91],
-  ["Jodhpur", 73.02, 26.24], ["Udaipur", 73.71, 24.58], ["Lucknow", 80.95, 26.85], ["Kanpur", 80.33, 26.45], ["Varanasi", 82.99, 25.32],
-  ["Agra", 78.01, 27.18], ["Patna", 85.14, 25.59], ["Bhopal", 77.41, 23.26], ["Indore", 75.86, 22.72], ["Jabalpur", 79.94, 23.18],
-  ["Raipur", 81.63, 21.25], ["Ranchi", 85.33, 23.34], ["Bhubaneswar", 85.82, 20.3], ["Visakhapatnam", 83.3, 17.69], ["Vijayawada", 80.65, 16.51],
-  ["Coimbatore", 76.96, 11.02], ["Madurai", 78.12, 9.93], ["Kochi", 76.27, 9.93], ["Thiruvananthapuram", 76.94, 8.52], ["Mysuru", 76.64, 12.3],
-  ["Ludhiana", 75.86, 30.9], ["Amritsar", 74.87, 31.63], ["Chandigarh", 76.78, 30.73], ["Dehradun", 78.03, 30.32], ["Shimla", 77.17, 31.1],
-  ["Srinagar", 74.8, 34.08], ["Guwahati", 91.74, 26.14], ["Shillong", 91.88, 25.58], ["Imphal", 93.94, 24.82], ["Panaji", 73.83, 15.49],
-  ["Siliguri", 88.43, 26.73], ["Gangtok", 88.61, 27.33], ["Agartala", 91.28, 23.83], ["Aizawl", 92.72, 23.73], ["Kohima", 94.11, 25.67],
+  ["Mumbai", 72.87, 19.07],
+  ["Pune", 73.85, 18.52],
+  ["Nagpur", 79.08, 21.14],
+  ["Nashik", 73.78, 19.99],
+  ["Aurangabad", 75.34, 19.87],
+  ["Delhi", 77.21, 28.61],
+  ["Bengaluru", 77.59, 12.97],
+  ["Chennai", 80.27, 13.08],
+  ["Kolkata", 88.36, 22.57],
+  ["Hyderabad", 78.49, 17.39],
+  ["Ahmedabad", 72.57, 23.02],
+  ["Surat", 72.83, 21.17],
+  ["Vadodara", 73.19, 22.31],
+  ["Rajkot", 70.8, 22.3],
+  ["Jaipur", 75.79, 26.91],
+  ["Jodhpur", 73.02, 26.24],
+  ["Udaipur", 73.71, 24.58],
+  ["Lucknow", 80.95, 26.85],
+  ["Kanpur", 80.33, 26.45],
+  ["Varanasi", 82.99, 25.32],
+  ["Agra", 78.01, 27.18],
+  ["Patna", 85.14, 25.59],
+  ["Bhopal", 77.41, 23.26],
+  ["Indore", 75.86, 22.72],
+  ["Jabalpur", 79.94, 23.18],
+  ["Raipur", 81.63, 21.25],
+  ["Ranchi", 85.33, 23.34],
+  ["Bhubaneswar", 85.82, 20.3],
+  ["Visakhapatnam", 83.3, 17.69],
+  ["Vijayawada", 80.65, 16.51],
+  ["Coimbatore", 76.96, 11.02],
+  ["Madurai", 78.12, 9.93],
+  ["Kochi", 76.27, 9.93],
+  ["Thiruvananthapuram", 76.94, 8.52],
+  ["Mysuru", 76.64, 12.3],
+  ["Ludhiana", 75.86, 30.9],
+  ["Amritsar", 74.87, 31.63],
+  ["Chandigarh", 76.78, 30.73],
+  ["Dehradun", 78.03, 30.32],
+  ["Shimla", 77.17, 31.1],
+  ["Srinagar", 74.8, 34.08],
+  ["Guwahati", 91.74, 26.14],
+  ["Shillong", 91.88, 25.58],
+  ["Imphal", 93.94, 24.82],
+  ["Panaji", 73.83, 15.49],
+  ["Siliguri", 88.43, 26.73],
+  ["Gangtok", 88.61, 27.33],
+  ["Agartala", 91.28, 23.83],
+  ["Aizawl", 92.72, 23.73],
+  ["Kohima", 94.11, 25.67],
 ];
 
 const cityData = {
   type: "FeatureCollection",
-  features: CITY_LABELS.map(([name, lon, lat]) => ({ type: "Feature", properties: { name }, geometry: { type: "Point", coordinates: [lon, lat] } })),
+  features: CITY_LABELS.map(([name, lon, lat]) => ({
+    type: "Feature",
+    properties: { name },
+    geometry: { type: "Point", coordinates: [lon, lat] },
+  })),
 };
 
 // isStyleLoaded() is false while tiles are still loading, and 'load' only fires once,
@@ -104,7 +172,12 @@ const applyRaster = (map: maplibregl.Map, r: RegionRaster, showChange: boolean) 
     }
     map.addSource(id, { type: "image", url, coordinates: r.coordinates });
     map.addLayer(
-      { id: `${id}-layer`, type: "raster", source: id, paint: { "raster-opacity": 1, "raster-resampling": "linear", "raster-fade-duration": 0 } },
+      {
+        id: `${id}-layer`,
+        type: "raster",
+        source: id,
+        paint: { "raster-opacity": 1, "raster-resampling": "linear", "raster-fade-duration": 0 },
+      },
       "state-border",
     );
   };
@@ -117,12 +190,21 @@ const applyRaster = (map: maplibregl.Map, r: RegionRaster, showChange: boolean) 
     if (previous) setTimeout(() => URL.revokeObjectURL(previous), 5000);
   }
   const changeVisible = !!r.changeUrl && showChange;
-  if (map.getLayer("lulc-change-layer")) map.setLayoutProperty("lulc-change-layer", "visibility", changeVisible ? "visible" : "none");
+  if (map.getLayer("lulc-change-layer"))
+    map.setLayoutProperty("lulc-change-layer", "visibility", changeVisible ? "visible" : "none");
   // Recede the base classification a little so newly affected regions stand out
   map.setPaintProperty("lulc-layer", "raster-opacity", changeVisible ? 0.7 : 1);
 };
 
-function MapSelect({ value, subtitle, options, disabledOption, open, onToggle, onSelect }: {
+function MapSelect({
+  value,
+  subtitle,
+  options,
+  disabledOption,
+  open,
+  onToggle,
+  onSelect,
+}: {
   value: string;
   subtitle: string;
   options: readonly string[];
@@ -142,10 +224,15 @@ function MapSelect({ value, subtitle, options, disabledOption, open, onToggle, o
       >
         <span className="font-extrabold text-gray-900 text-sm whitespace-nowrap">{value}</span>
         <span className="text-gray-500 font-medium text-sm whitespace-nowrap">{subtitle}</span>
-        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
       {open && (
-        <ul role="listbox" className="absolute left-0 top-full mt-2 w-full min-w-[180px] max-h-72 overflow-y-auto bg-white rounded-xl shadow-xl py-1.5">
+        <ul
+          role="listbox"
+          className="absolute left-0 top-full mt-2 w-full min-w-[180px] max-h-72 overflow-y-auto bg-white rounded-xl shadow-xl py-1.5"
+        >
           {options.map((o) => (
             <li key={o}>
               <button
@@ -199,15 +286,25 @@ export function LandDifference() {
   const maps = () => [map1Ref.current, map2Ref.current] as const;
 
   const sides: [Side, Side] = useMemo(
-    () => (mode === "time"
-      ? [{ region: timeRegion, year: leftYear }, { region: timeRegion, year: rightYear }]
-      : [{ region: stateA, year: compareYear }, { region: stateB, year: compareYear }]),
+    () =>
+      mode === "time"
+        ? [
+            { region: timeRegion, year: leftYear },
+            { region: timeRegion, year: rightYear },
+          ]
+        : [
+            { region: stateA, year: compareYear },
+            { region: stateB, year: compareYear },
+          ],
     [mode, timeRegion, leftYear, rightYear, stateA, stateB, compareYear],
   );
   const sideLabel = (s: Side) => (mode === "time" ? `${s.region} ${s.year}` : s.region);
 
   // Metrics update on every slider move; the map follows a beat later (rasters are heavier)
-  const outcomes = useMemo(() => sides.map((s) => regionOutcome(s.region, s.year, deltas)), [sides, deltas]);
+  const outcomes = useMemo(
+    () => sides.map((s) => regionOutcome(s.region, s.year, deltas)),
+    [sides, deltas],
+  );
   useEffect(() => {
     const t = setTimeout(() => setMapDeltas(deltas), 80);
     return () => clearTimeout(t);
@@ -217,7 +314,7 @@ export function LandDifference() {
     label: sideLabel(s),
     color: SIDE_COLORS[k]!,
     outcome: outcomes[k]!,
-    changedKm2: isZeroScenario(deltas) ? null : changedKm2[k] ?? null,
+    changedKm2: isZeroScenario(deltas) ? null : (changedKm2[k] ?? null),
   }));
 
   useEffect(() => {
@@ -236,7 +333,10 @@ export function LandDifference() {
       const b = statesBounds(regionStates(side.region));
       return new maplibregl.Map({
         container,
-        bounds: [[b.west, b.south], [b.east, b.north]],
+        bounds: [
+          [b.west, b.south],
+          [b.east, b.north],
+        ],
         fitBoundsOptions: { padding: 60 },
         attributionControl: false,
         style: {
@@ -251,16 +351,45 @@ export function LandDifference() {
           // Order: satellite → land-use + change overlays (added by applyRaster) → boundary → labels → markers
           layers: [
             { id: "sat", type: "raster", source: "satellite", paint: { "raster-opacity": 1 } },
-            { id: "mask-layer", type: "fill", source: "mask", paint: { "fill-color": "#000000", "fill-opacity": 0.65 } },
-            { id: "state-border", type: "line", source: "states", paint: { "line-color": "#ffffff", "line-width": 2 } },
             {
-              id: "city-labels", type: "symbol", source: "cities",
-              layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Medium"], "text-size": 14, "text-offset": [0, 1.2] },
-              paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0,0,0,0.85)", "text-halo-width": 1.5, "text-halo-blur": 0.5 },
+              id: "mask-layer",
+              type: "fill",
+              source: "mask",
+              paint: { "fill-color": "#000000", "fill-opacity": 0.65 },
             },
             {
-              id: "city-dots", type: "circle", source: "cities",
-              paint: { "circle-radius": 4, "circle-color": "#E53935", "circle-stroke-width": 1.5, "circle-stroke-color": "#ffffff" },
+              id: "state-border",
+              type: "line",
+              source: "states",
+              paint: { "line-color": "#ffffff", "line-width": 2 },
+            },
+            {
+              id: "city-labels",
+              type: "symbol",
+              source: "cities",
+              layout: {
+                "text-field": ["get", "name"],
+                "text-font": ["Noto Sans Medium"],
+                "text-size": 14,
+                "text-offset": [0, 1.2],
+              },
+              paint: {
+                "text-color": "#ffffff",
+                "text-halo-color": "rgba(0,0,0,0.85)",
+                "text-halo-width": 1.5,
+                "text-halo-blur": 0.5,
+              },
+            },
+            {
+              id: "city-dots",
+              type: "circle",
+              source: "cities",
+              paint: {
+                "circle-radius": 4,
+                "circle-color": "#E53935",
+                "circle-stroke-width": 1.5,
+                "circle-stroke-color": "#ffffff",
+              },
             },
           ],
         },
@@ -273,9 +402,16 @@ export function LandDifference() {
 
     // Cameras are linked only when comparing the same region over time
     const sync = (from: maplibregl.Map, to: maplibregl.Map) => (e: any) => {
-      if (e.originalEvent && modeRef.current === "time") to.jumpTo({ center: from.getCenter(), zoom: from.getZoom(), bearing: from.getBearing(), pitch: from.getPitch() });
+      if (e.originalEvent && modeRef.current === "time")
+        to.jumpTo({
+          center: from.getCenter(),
+          zoom: from.getZoom(),
+          bearing: from.getBearing(),
+          pitch: from.getPitch(),
+        });
     };
-    const sync1 = sync(m1, m2), sync2 = sync(m2, m1);
+    const sync1 = sync(m1, m2),
+      sync2 = sync(m2, m1);
     m1.on("move", sync1);
     m2.on("move", sync2);
 
@@ -294,7 +430,13 @@ export function LandDifference() {
       if (!m) return;
       m.resize();
       const b = statesBounds(regionStates(sides[k]!.region));
-      m.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: { top: 90, bottom: 60, left: 80, right: 40 }, animate });
+      m.fitBounds(
+        [
+          [b.west, b.south],
+          [b.east, b.north],
+        ],
+        { padding: { top: 90, bottom: 60, left: 80, right: 40 }, animate },
+      );
     });
   };
 
@@ -322,7 +464,9 @@ export function LandDifference() {
     maps().forEach((m, k) => {
       if (!m) return;
       const year = sides[k]!.year;
-      whenLoaded(m, () => (m.getSource("satellite") as maplibregl.RasterTileSource).setTiles(satelliteTiles(year)));
+      whenLoaded(m, () =>
+        (m.getSource("satellite") as maplibregl.RasterTileSource).setTiles(satelliteTiles(year)),
+      );
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yearKey]);
@@ -336,7 +480,9 @@ export function LandDifference() {
       const side = sides[k]!;
       const states = regionStates(side.region);
       const baseShares = states.map((s) => yearShares(s, side.year));
-      const flows = isZeroScenario(mapDeltas) ? null : baseShares.map((b) => scenarioFlows(b, mapDeltas));
+      const flows = isZeroScenario(mapDeltas)
+        ? null
+        : baseShares.map((b) => scenarioFlows(b, mapDeltas));
       const raster = await renderRegion(states, side.year, baseShares, flows);
       if (renderTokens.get(m) !== token) {
         if (raster.changeUrl) URL.revokeObjectURL(raster.changeUrl);
@@ -349,7 +495,6 @@ export function LandDifference() {
       });
       whenLoaded(m, () => applyRaster(m, raster, showChange));
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sides, mapDeltas, showChange]);
 
   const bothMaps = (fn: (m: maplibregl.Map) => void) => {
@@ -374,25 +519,50 @@ export function LandDifference() {
   return (
     <TooltipProvider>
       <div className="dashboard-shell h-screen flex overflow-hidden bg-background">
-
         {/* Sidebar */}
         <aside className={`sidebar ${drawer ? "open" : ""} shrink-0 z-50`}>
           <div className="sidebar-top">
             <div className="brand">
-              <span className="brand-mark" aria-hidden="true"><img src={logo} alt="NIRVANA Logo" width={38} height={38} /></span>
-              <div><strong>NIRVANA</strong><b>निर्वाण</b></div>
+              <span className="brand-mark" aria-hidden="true">
+                <img src={logo} alt="NIRVANA Logo" width={38} height={38} />
+              </span>
+              <div>
+                <strong>NIRVANA</strong>
+                <b>निर्वाण</b>
+              </div>
             </div>
-            <Button variant="ghost" size="icon" className="sidebar-close" onClick={() => setDrawer(false)}><X /></Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="sidebar-close"
+              onClick={() => setDrawer(false)}
+            >
+              <X />
+            </Button>
             <p>National Platform for Research & Policy Innovation</p>
           </div>
           <nav aria-label="Main navigation">
             {navItems.map(({ label, icon: Icon, href }) => {
               const isActive = label === "Land Difference";
-              if (href) return <a key={label} href={href} className={isActive ? "active" : ""}><Icon /><span>{label}</span></a>;
-              return <button key={label} title={`${label} — coming soon`}><Icon /><span>{label}</span><i>Soon</i></button>;
+              if (href)
+                return (
+                  <a key={label} href={href} className={isActive ? "active" : ""}>
+                    <Icon />
+                    <span>{label}</span>
+                  </a>
+                );
+              return (
+                <button key={label} title={`${label} — coming soon`}>
+                  <Icon />
+                  <span>{label}</span>
+                  <i>Soon</i>
+                </button>
+              );
             })}
           </nav>
-          <div className="sidebar-bottom"><img src={sidenavBottom} alt="Government of India" /></div>
+          <div className="sidebar-bottom">
+            <img src={sidenavBottom} alt="Government of India" />
+          </div>
         </aside>
 
         {drawer && <button className="drawer-backdrop" onClick={() => setDrawer(false)} />}
@@ -400,21 +570,47 @@ export function LandDifference() {
         <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           {/* Top Header */}
           <header className="top-header shrink-0">
-            <Button variant="ghost" size="icon" className="menu-button" onClick={() => setDrawer(true)}><Menu /></Button>
-            <label className="global-search"><Search /><input placeholder="Search a location..." /><kbd><Command /> K</kbd></label>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="menu-button"
+              onClick={() => setDrawer(true)}
+            >
+              <Menu />
+            </Button>
+            <label className="global-search">
+              <Search />
+              <input placeholder="Search a location..." />
+              <kbd>
+                <Command /> K
+              </kbd>
+            </label>
             <div className="header-tools">
-              <button className="lang">EN <ChevronDown /></button>
-              <Button variant="ghost" size="icon" className="notification"><Bell /><i /></Button>
+              <button className="lang">
+                EN <ChevronDown />
+              </button>
+              <Button variant="ghost" size="icon" className="notification">
+                <Bell />
+                <i />
+              </Button>
               <ProfileMenu />
             </div>
           </header>
 
           <div className="p-4 md:p-6 lg:p-8 flex-1 flex flex-col max-w-[1600px] mx-auto w-full gap-6">
-
             {/* Comparison mode + region/year */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div role="tablist" aria-label="Comparison mode" className="inline-flex rounded-xl border border-border bg-card p-1 shadow-sm">
-                {([["time", "Over time"], ["states", "State vs State"]] as const).map(([id, label]) => (
+              <div
+                role="tablist"
+                aria-label="Comparison mode"
+                className="inline-flex rounded-xl border border-border bg-card p-1 shadow-sm"
+              >
+                {(
+                  [
+                    ["time", "Over time"],
+                    ["states", "State vs State"],
+                  ] as const
+                ).map(([id, label]) => (
                   <button
                     key={id}
                     role="tab"
@@ -430,15 +626,31 @@ export function LandDifference() {
                 {mode === "time" ? (
                   <label className="flex items-center gap-2 text-sm font-semibold">
                     Region
-                    <select value={timeRegion} onChange={(e) => setTimeRegion(e.target.value)} className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium">
-                      {REGION_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                    <select
+                      value={timeRegion}
+                      onChange={(e) => setTimeRegion(e.target.value)}
+                      className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium"
+                    >
+                      {REGION_OPTIONS.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
                     </select>
                   </label>
                 ) : (
                   <label className="flex items-center gap-2 text-sm font-semibold">
                     Year
-                    <select value={compareYear} onChange={(e) => setCompareYear(e.target.value)} className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium">
-                      {AVAILABLE_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+                    <select
+                      value={compareYear}
+                      onChange={(e) => setCompareYear(e.target.value)}
+                      className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium"
+                    >
+                      {AVAILABLE_YEARS.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
                     </select>
                   </label>
                 )}
@@ -447,17 +659,24 @@ export function LandDifference() {
             </div>
 
             {/* Impeccable Map Workspace */}
-            <div ref={workspaceRef} className="relative w-full h-[650px] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-border/80">
-
+            <div
+              ref={workspaceRef}
+              className="relative w-full h-[650px] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-border/80"
+            >
               {/* Inline positioning: maplibre's .maplibregl-map { position: relative } overrides Tailwind's layered utilities.
                   Over time: both maps fill the frame and the right one is clipped by the swipe.
                   State vs state: each map gets its own half with an independent camera. */}
-              <div ref={mapContainer1} style={{ position: "absolute", inset: mode === "time" ? 0 : "0 50% 0 0" }} />
+              <div
+                ref={mapContainer1}
+                style={{ position: "absolute", inset: mode === "time" ? 0 : "0 50% 0 0" }}
+              />
               <div
                 ref={mapContainer2}
-                style={mode === "time"
-                  ? { position: "absolute", inset: 0, clipPath: `inset(0 0 0 ${swipePosition}%)` }
-                  : { position: "absolute", inset: "0 0 0 50%" }}
+                style={
+                  mode === "time"
+                    ? { position: "absolute", inset: 0, clipPath: `inset(0 0 0 ${swipePosition}%)` }
+                    : { position: "absolute", inset: "0 0 0 50%" }
+                }
               />
 
               {/* Floating UI: left selector */}
@@ -467,59 +686,146 @@ export function LandDifference() {
                 </div>
                 {mode === "time" ? (
                   <MapSelect
-                    value={leftYear} subtitle="Land Use" options={AVAILABLE_YEARS} disabledOption={rightYear}
-                    open={menu === "left"} onToggle={() => setMenu(menu === "left" ? null : "left")}
-                    onSelect={(y) => { setLeftYear(y); setMenu(null); }}
+                    value={leftYear}
+                    subtitle="Land Use"
+                    options={AVAILABLE_YEARS}
+                    disabledOption={rightYear}
+                    open={menu === "left"}
+                    onToggle={() => setMenu(menu === "left" ? null : "left")}
+                    onSelect={(y) => {
+                      setLeftYear(y);
+                      setMenu(null);
+                    }}
                   />
                 ) : (
                   <MapSelect
-                    value={stateA} subtitle="State A" options={STATE_NAMES} disabledOption={stateB}
-                    open={menu === "left"} onToggle={() => setMenu(menu === "left" ? null : "left")}
-                    onSelect={(s) => { setStateA(s); setMenu(null); }}
+                    value={stateA}
+                    subtitle="State A"
+                    options={STATE_NAMES}
+                    disabledOption={stateB}
+                    open={menu === "left"}
+                    onToggle={() => setMenu(menu === "left" ? null : "left")}
+                    onSelect={(s) => {
+                      setStateA(s);
+                      setMenu(null);
+                    }}
                   />
                 )}
               </div>
 
               {/* Floating UI: right selector (follows the swipe in time mode, bounded) */}
-              <div className="absolute top-5 z-40 flex items-center gap-3 transition-opacity duration-75"
-                   style={{ left: `calc(${Math.min(split, 80)}% + 20px)`, opacity: split > 85 ? 0 : 1, pointerEvents: split > 85 ? "none" : "auto" }}>
+              <div
+                className="absolute top-5 z-40 flex items-center gap-3 transition-opacity duration-75"
+                style={{
+                  left: `calc(${Math.min(split, 80)}% + 20px)`,
+                  opacity: split > 85 ? 0 : 1,
+                  pointerEvents: split > 85 ? "none" : "auto",
+                }}
+              >
                 {mode === "time" ? (
                   <MapSelect
-                    value={rightYear} subtitle="Land Use" options={AVAILABLE_YEARS} disabledOption={leftYear}
-                    open={menu === "right"} onToggle={() => setMenu(menu === "right" ? null : "right")}
-                    onSelect={(y) => { setRightYear(y); setMenu(null); }}
+                    value={rightYear}
+                    subtitle="Land Use"
+                    options={AVAILABLE_YEARS}
+                    disabledOption={leftYear}
+                    open={menu === "right"}
+                    onToggle={() => setMenu(menu === "right" ? null : "right")}
+                    onSelect={(y) => {
+                      setRightYear(y);
+                      setMenu(null);
+                    }}
                   />
                 ) : (
                   <MapSelect
-                    value={stateB} subtitle="State B" options={STATE_NAMES} disabledOption={stateA}
-                    open={menu === "right"} onToggle={() => setMenu(menu === "right" ? null : "right")}
-                    onSelect={(s) => { setStateB(s); setMenu(null); }}
+                    value={stateB}
+                    subtitle="State B"
+                    options={STATE_NAMES}
+                    disabledOption={stateA}
+                    open={menu === "right"}
+                    onToggle={() => setMenu(menu === "right" ? null : "right")}
+                    onSelect={(s) => {
+                      setStateB(s);
+                      setMenu(null);
+                    }}
                   />
                 )}
               </div>
 
               {/* Floating UI: Left Toolbar */}
               <div className="absolute top-24 left-5 z-20 flex flex-col gap-2">
-                <button title="Zoom in" onClick={() => bothMaps((m) => m.zoomIn())} className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl w-11 h-11 flex items-center justify-center hover:bg-gray-50 text-gray-700 transition-colors"><Plus className="w-5 h-5"/></button>
-                <button title="Zoom out" onClick={() => bothMaps((m) => m.zoomOut())} className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl w-11 h-11 flex items-center justify-center hover:bg-gray-50 text-gray-700 transition-colors"><Minus className="w-5 h-5"/></button>
-                <button title="Reset view" onClick={() => fitRegions()} className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl w-11 h-11 flex items-center justify-center hover:bg-gray-50 text-gray-700 transition-colors mt-2"><MapPin className="w-5 h-5"/></button>
-                <button title="Fullscreen" onClick={() => document.fullscreenElement ? document.exitFullscreen() : workspaceRef.current?.requestFullscreen()} className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl w-11 h-11 flex items-center justify-center hover:bg-gray-50 text-gray-700 transition-colors mt-2"><Maximize className="w-5 h-5"/></button>
+                <button
+                  title="Zoom in"
+                  onClick={() => bothMaps((m) => m.zoomIn())}
+                  className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl w-11 h-11 flex items-center justify-center hover:bg-gray-50 text-gray-700 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+                <button
+                  title="Zoom out"
+                  onClick={() => bothMaps((m) => m.zoomOut())}
+                  className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl w-11 h-11 flex items-center justify-center hover:bg-gray-50 text-gray-700 transition-colors"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+                <button
+                  title="Reset view"
+                  onClick={() => fitRegions()}
+                  className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl w-11 h-11 flex items-center justify-center hover:bg-gray-50 text-gray-700 transition-colors mt-2"
+                >
+                  <MapPin className="w-5 h-5" />
+                </button>
+                <button
+                  title="Fullscreen"
+                  onClick={() =>
+                    document.fullscreenElement
+                      ? document.exitFullscreen()
+                      : workspaceRef.current?.requestFullscreen()
+                  }
+                  className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl w-11 h-11 flex items-center justify-center hover:bg-gray-50 text-gray-700 transition-colors mt-2"
+                >
+                  <Maximize className="w-5 h-5" />
+                </button>
               </div>
 
               {/* Legends */}
               {sides.map((s, k) => (
-                <div key={k} className={`absolute bottom-6 ${k === 0 ? "left-5" : "right-5"} z-20 bg-white/95 backdrop-blur-md rounded-xl shadow-xl p-4 w-[220px]`}>
-                  <h4 className="font-extrabold text-sm mb-3 text-gray-900 leading-tight">Land Use ({sideLabel(s)})</h4>
+                <div
+                  key={k}
+                  className={`absolute bottom-6 ${k === 0 ? "left-5" : "right-5"} z-20 bg-white/95 backdrop-blur-md rounded-xl shadow-xl p-4 w-[220px]`}
+                >
+                  <h4 className="font-extrabold text-sm mb-3 text-gray-900 leading-tight">
+                    Land Use ({sideLabel(s)})
+                  </h4>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-gray-700 font-semibold">
                     {LULC_CLASSES.map((c) => (
-                      <div key={c.id} className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded-[3px] shrink-0" style={{ backgroundColor: c.color }}></div> {c.label}</div>
+                      <div key={c.id} className="flex items-center gap-2">
+                        <div
+                          className="w-3.5 h-3.5 rounded-[3px] shrink-0"
+                          style={{ backgroundColor: c.color }}
+                        ></div>{" "}
+                        {c.label}
+                      </div>
                     ))}
                   </div>
                   {scenarioActive && showChange && (
                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 text-xs text-gray-700 font-semibold">
                       {/* new-class colour with a white rim, as drawn on the map */}
-                      <div className="w-3.5 h-3.5 rounded-[3px] shrink-0" style={{ backgroundColor: LULC_CLASSES[0].color, boxShadow: "0 0 0 2px #fff, 0 0 0 3px #9ca3af" }} />
-                      <span>Change detected{changedKm2[k] != null && <span className="font-mono font-normal text-gray-500"> · {Math.round(changedKm2[k]!).toLocaleString("en-IN")} km²</span>}</span>
+                      <div
+                        className="w-3.5 h-3.5 rounded-[3px] shrink-0"
+                        style={{
+                          backgroundColor: LULC_CLASSES[0].color,
+                          boxShadow: "0 0 0 2px #fff, 0 0 0 3px #9ca3af",
+                        }}
+                      />
+                      <span>
+                        Change detected
+                        {changedKm2[k] != null && (
+                          <span className="font-mono font-normal text-gray-500">
+                            {" "}
+                            · {Math.round(changedKm2[k]!).toLocaleString("en-IN")} km²
+                          </span>
+                        )}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -536,10 +842,20 @@ export function LandDifference() {
                   tabIndex={0}
                   className="absolute top-0 bottom-0 z-30 w-6 -translate-x-1/2 cursor-ew-resize touch-none flex justify-center"
                   style={{ left: `${swipePosition}%` }}
-                  onPointerDown={(e) => { draggingRef.current = true; e.currentTarget.setPointerCapture(e.pointerId); updateSwipe(e.clientX); }}
-                  onPointerMove={(e) => { if (draggingRef.current) updateSwipe(e.clientX); }}
-                  onPointerUp={() => { draggingRef.current = false; }}
-                  onPointerCancel={() => { draggingRef.current = false; }}
+                  onPointerDown={(e) => {
+                    draggingRef.current = true;
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    updateSwipe(e.clientX);
+                  }}
+                  onPointerMove={(e) => {
+                    if (draggingRef.current) updateSwipe(e.clientX);
+                  }}
+                  onPointerUp={() => {
+                    draggingRef.current = false;
+                  }}
+                  onPointerCancel={() => {
+                    draggingRef.current = false;
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "ArrowLeft") setSwipePosition((p) => Math.max(0, p - 2));
                     if (e.key === "ArrowRight") setSwipePosition((p) => Math.min(100, p + 2));
@@ -558,7 +874,9 @@ export function LandDifference() {
 
               {/* Bottom Hint */}
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 bg-gray-900/85 backdrop-blur-md text-white px-5 py-2.5 rounded-full text-xs font-bold tracking-wide shadow-lg border border-white/10 pointer-events-none whitespace-nowrap">
-                {mode === "time" ? `Drag to compare ${leftYear} ↔ ${rightYear}` : `${stateA} vs ${stateB} · ${compareYear}`}
+                {mode === "time"
+                  ? `Drag to compare ${leftYear} ↔ ${rightYear}`
+                  : `${stateA} vs ${stateB} · ${compareYear}`}
               </div>
 
               {/* Source attribution */}
@@ -567,9 +885,19 @@ export function LandDifference() {
               </div>
             </div>
 
-            <ScenarioControls deltas={deltas} onChange={setDeltas} sides={scenarioSides} showChange={showChange} onShowChange={setShowChange} />
-            <ScenarioInsights sides={scenarioSides} deltas={deltas} transitions={transitions} intensity={intensity} />
-
+            <ScenarioControls
+              deltas={deltas}
+              onChange={setDeltas}
+              sides={scenarioSides}
+              showChange={showChange}
+              onShowChange={setShowChange}
+            />
+            <ScenarioInsights
+              sides={scenarioSides}
+              deltas={deltas}
+              transitions={transitions}
+              intensity={intensity}
+            />
           </div>
         </main>
       </div>

@@ -26,7 +26,13 @@ const out = gold.map((g) => {
   return {
     id: g.id,
     datasets: plan.datasets,
-    quotes: (lib?.quotes ?? []).map((q) => ({ policy: q.policy, clause: q.clause, page: q.page, method: q.method, quote: q.quote })),
+    quotes: (lib?.quotes ?? []).map((q) => ({
+      policy: q.policy,
+      clause: q.clause,
+      page: q.page,
+      method: q.method,
+      quote: q.quote,
+    })),
     cited: evidenceFor(data)
       .filter((e) => e.provenance === "document")
       .map((e) => e.label),

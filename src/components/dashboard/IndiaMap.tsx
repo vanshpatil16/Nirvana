@@ -40,8 +40,19 @@ import {
   type ParcelCollection,
   type ParcelFeature,
 } from "@/services/parcelService";
-import { DEMO_PRESETS, reverseGeocode, searchPlaces, type PlaceResult, type ReversePlace } from "@/services/geocodeService";
-import { fetchWeatherSummary, todayForecast, type WeatherStation, type WeatherSummary } from "@/services/weatherService";
+import {
+  DEMO_PRESETS,
+  reverseGeocode,
+  searchPlaces,
+  type PlaceResult,
+  type ReversePlace,
+} from "@/services/geocodeService";
+import {
+  fetchWeatherSummary,
+  todayForecast,
+  type WeatherStation,
+  type WeatherSummary,
+} from "@/services/weatherService";
 import {
   cadastreLayerFor,
   getParcelProvider,
@@ -156,7 +167,11 @@ function yearAdjustedLevel(theme: ThemeId, name: string, base: number, year: str
   return Math.max(0, Math.min(2, Math.round(base + drift)));
 }
 
-function fillExpression(theme: ThemeId, neutral = false, year = "2024"): maplibregl.ExpressionSpecification {
+function fillExpression(
+  theme: ThemeId,
+  neutral = false,
+  year = "2024",
+): maplibregl.ExpressionSpecification {
   // Satellite mode: plain neutral wash so imagery stays readable and no
   // thematic (red) fill ever paints over it. The ramp only applies to Map mode.
   if (neutral) return "#ffffff" as unknown as maplibregl.ExpressionSpecification;
@@ -180,7 +195,10 @@ function statesOpacity(satellite: boolean): maplibregl.ExpressionSpecification {
 }
 
 interface StatesGeometry {
-  features: { properties: { name: string }; geometry: { type: string; coordinates: number[][][][] } }[];
+  features: {
+    properties: { name: string };
+    geometry: { type: string; coordinates: number[][][][] };
+  }[];
 }
 
 function ringContains(ring: number[][], x: number, y: number): boolean {
@@ -196,7 +214,8 @@ function ringContains(ring: number[][], x: number, y: number): boolean {
 }
 
 /** Which demo-vintage state contains this point (dossier sync on search). */
-function stateAt(lon: number, lat: number): string | null {  const fc = states as unknown as StatesGeometry;
+function stateAt(lon: number, lat: number): string | null {
+  const fc = states as unknown as StatesGeometry;
   for (const f of fc.features) {
     for (const poly of f.geometry.coordinates) {
       const outer = poly[0];
@@ -232,7 +251,7 @@ function heatWeight(station: WeatherStation, metric: WeatherMetric): number {
     return Math.max(0.06, Math.min(1, (temp - 12) / 32));
   }
   const mm = station.rainfall ?? 0;
-  let weight = mm > 0 ? Math.min(1, mm / 40) : 0.03;
+  const weight = mm > 0 ? Math.min(1, mm / 40) : 0.03;
   const condition = todayForecast(station).toLowerCase();
   let forecastWeight = 0;
   if (/very heavy|torrential|extreme/.test(condition)) forecastWeight = 0.85;
@@ -243,7 +262,10 @@ function heatWeight(station: WeatherStation, metric: WeatherMetric): number {
 }
 
 /** Point field from live IMD station observations (lat/lon come from IMD). */
-function weatherHeatData(stations: WeatherStation[], metric: WeatherMetric): maplibregl.GeoJSONSourceSpecification["data"] {
+function weatherHeatData(
+  stations: WeatherStation[],
+  metric: WeatherMetric,
+): maplibregl.GeoJSONSourceSpecification["data"] {
   const features: unknown[] = [];
   for (const station of stations) {
     if (station.lat === null || station.lon === null) continue;
@@ -257,7 +279,10 @@ function weatherHeatData(stations: WeatherStation[], metric: WeatherMetric): map
       },
     });
   }
-  return { type: "FeatureCollection", features } as unknown as maplibregl.GeoJSONSourceSpecification["data"];
+  return {
+    type: "FeatureCollection",
+    features,
+  } as unknown as maplibregl.GeoJSONSourceSpecification["data"];
 }
 
 /** Metric-specific density ramps: blue→red heat for temperature, blue depth for rain. */
@@ -343,7 +368,13 @@ export interface MapAction {
   action: "analyze" | "regulations" | "simulate" | "historical" | "close";
 }
 
-export const SIM_USES = ["Industrial / Logistics", "Residential", "Commercial", "Agricultural", "Solar Park"] as const;
+export const SIM_USES = [
+  "Industrial / Logistics",
+  "Residential",
+  "Commercial",
+  "Agricultural",
+  "Solar Park",
+] as const;
 
 /** Approximate scenario circle (equirectangular, demo-grade but real math). */
 function circlePolygon(lon: number, lat: number, radiusM: number, steps = 64): number[][][] {
@@ -403,7 +434,18 @@ function toSinglePolygon(geometry: unknown): { type: "Polygon"; coordinates: num
   return null;
 }
 
-export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection, onSimSnapshot, actionRequest, onActionHandled, panel, panelOpen = false }: IndiaMapProps) {
+export function IndiaMap({
+  theme,
+  year,
+  onThemeChange,
+  onYearChange,
+  onSelection,
+  onSimSnapshot,
+  actionRequest,
+  onActionHandled,
+  panel,
+  panelOpen = false,
+}: IndiaMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
 
@@ -412,7 +454,10 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     const map = mapRef.current;
     if (!map) return;
     const narrow = (container.current?.clientWidth ?? 0) < 760;
-    map.easeTo({ padding: { top: 0, bottom: 0, left: 0, right: panelOpen && !narrow ? 400 : 0 }, duration: 450 });
+    map.easeTo({
+      padding: { top: 0, bottom: 0, left: 0, right: panelOpen && !narrow ? 400 : 0 },
+      duration: 450,
+    });
   }, [panelOpen]);
   const hoverId = useRef<number | null>(null);
   const selectedId = useRef<number | null>(null);
@@ -435,7 +480,9 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
   // --- Live IMD weather (Climate Risk heat replaces the old demo field) ---
   const [weather, setWeather] = useState<WeatherSummary | null>(null);
   const [weatherMetric, setWeatherMetric] = useState<WeatherMetric>("temperature");
-  const [weatherStatus, setWeatherStatus] = useState<"idle" | "loading" | "live" | "unavailable">("idle");
+  const [weatherStatus, setWeatherStatus] = useState<"idle" | "loading" | "live" | "unavailable">(
+    "idle",
+  );
   const weatherRef = useRef<WeatherSummary | null>(null);
   const weatherMetricRef = useRef<WeatherMetric>("temperature");
   weatherMetricRef.current = weatherMetric;
@@ -464,10 +511,18 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
   const cadastreRef = useRef<{ provider: CadastreProvider; layer: CadastreLayer } | null>(null);
 
   // --- Connected-experience state (map ↔ panel ↔ AI ↔ simulation) ---
-  const [locationSel, setLocationSel] = useState<{ lat: number; lon: number; rev: ReversePlace | null } | null>(null);
+  const [locationSel, setLocationSel] = useState<{
+    lat: number;
+    lon: number;
+    rev: ReversePlace | null;
+  } | null>(null);
   const [brief, setBrief] = useState<string | null>(null);
   const [simOpen, setSimOpen] = useState(false);
-  const [simParams, setSimParams] = useState<SimParams>({ use: SIM_USES[0], intensity: 65, bufferM: 500 });
+  const [simParams, setSimParams] = useState<SimParams>({
+    use: SIM_USES[0],
+    intensity: 65,
+    bufferM: 500,
+  });
   const [simRan, setSimRan] = useState(false);
   const [simResult, setSimResult] = useState<SimSnapshot | null>(null);
   const reverseReq = useRef(0);
@@ -636,16 +691,27 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     if (map && bufferSource) {
       bufferSource.setData(
         (buffer
-          ? { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: buffer } }] }
+          ? {
+              type: "FeatureCollection",
+              features: [
+                {
+                  type: "Feature",
+                  properties: {},
+                  geometry: { type: "Polygon", coordinates: buffer },
+                },
+              ],
+            }
           : EMPTY_PARCELS) as unknown as maplibregl.GeoJSONSourceSpecification["data"],
       );
     }
     if (map?.getLayer("sim-affected")) {
-      map.setPaintProperty(
-        "sim-affected",
-        "line-color",
-        ["match", ["get", "parcelId"], affectedIds, "#f59e0b", "rgba(0,0,0,0)"] as unknown as maplibregl.ExpressionSpecification,
-      );
+      map.setPaintProperty("sim-affected", "line-color", [
+        "match",
+        ["get", "parcelId"],
+        affectedIds,
+        "#f59e0b",
+        "rgba(0,0,0,0)",
+      ] as unknown as maplibregl.ExpressionSpecification);
       map.setPaintProperty("sim-affected", "line-width", affectedIds.length > 0 ? 2 : 0);
     }
   };
@@ -680,7 +746,9 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       const rev = await reverseGeocode(lat, lon, controller.signal);
       if (reverseReq.current !== req) return;
       setLocationSel((prev) =>
-        prev && Math.abs(prev.lat - lat) < 1e-9 && Math.abs(prev.lon - lon) < 1e-9 ? { lat, lon, rev } : prev,
+        prev && Math.abs(prev.lat - lat) < 1e-9 && Math.abs(prev.lon - lon) < 1e-9
+          ? { lat, lon, rev }
+          : prev,
       );
       emitSel({
         kind: "location",
@@ -715,9 +783,14 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     const buffer = circlePolygon(anchor.lon, anchor.lat, simParams.bufferM);
     const loaded = parcels?.features ?? [];
     const affected = loaded.filter(
-      (f) => (!anchor.parcel || f.properties.parcelId !== anchor.parcel.properties.parcelId) && ringHitsCircle(f.geometry.coordinates[0] ?? [], anchor.lon, anchor.lat, simParams.bufferM),
+      (f) =>
+        (!anchor.parcel || f.properties.parcelId !== anchor.parcel.properties.parcelId) &&
+        ringHitsCircle(f.geometry.coordinates[0] ?? [], anchor.lon, anchor.lat, simParams.bufferM),
     );
-    drawSimOverlay(buffer, affected.map((f) => f.properties.parcelId));
+    drawSimOverlay(
+      buffer,
+      affected.map((f) => f.properties.parcelId),
+    );
     setSimRan(true);
     const snap: SimSnapshot = {
       params: { ...simParams },
@@ -745,12 +818,15 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       const acres = parcelAcres(selectedParcel);
       lines.push(
         `${anchorName}: ${p.landuse} use, ${acres.toFixed(1)} acres (${(acres * 0.404686).toFixed(2)} ha). Source: ${p.source}.` +
-          (p.surveyNumber ? ` Survey No. ${p.surveyNumber}.` : " Survey number not present in open data — verify the 7/12 extract at the Tehsil office."),
+          (p.surveyNumber
+            ? ` Survey No. ${p.surveyNumber}.`
+            : " Survey number not present in open data — verify the 7/12 extract at the Tehsil office."),
       );
     } else {
       lines.push(`${anchorName}: location context (no parcel geometry selected).`);
     }
-    const stateName = parcelState ?? (locationSel ? stateAt(locationSel.lon, locationSel.lat) : null);
+    const stateName =
+      parcelState ?? (locationSel ? stateAt(locationSel.lon, locationSel.lat) : null);
     const stat = stateName ? STATE_STATS[stateName] : undefined;
     if (stateName && stat) {
       lines.push(
@@ -771,7 +847,9 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
         `Active scenario: ${simParams.use} at ${simParams.intensity}% intensity with a ${simParams.bufferM} m buffer. Scenario geometry only — feasibility and timelines need the simulation backend.`,
       );
     }
-    lines.push("Demo brief assembled from visible map data. Connect an AI endpoint for live analysis.");
+    lines.push(
+      "Demo brief assembled from visible map data. Connect an AI endpoint for live analysis.",
+    );
     return lines.join("\n\n");
   };
 
@@ -889,7 +967,9 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
           sources: {
             base: {
               type: "raster",
-              tiles: ["https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png?key=cb1_3vsa_1_e1c600cfb2864f18a2fdb94f"],
+              tiles: [
+                "https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png?key=cb1_3vsa_1_e1c600cfb2864f18a2fdb94f",
+              ],
               tileSize: 256,
               attribution: "© OpenStreetMap contributors © CARTO",
             },
@@ -907,7 +987,11 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
               id: "base",
               type: "raster",
               source: "base",
-              paint: { "raster-saturation": -0.35, "raster-opacity": 0.72, "raster-contrast": -0.08 },
+              paint: {
+                "raster-saturation": -0.35,
+                "raster-opacity": 0.72,
+                "raster-contrast": -0.08,
+              },
             },
             {
               id: "satellite",
@@ -931,7 +1015,10 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     if (import.meta.env.DEV) (window as unknown as { __map?: maplibregl.Map }).__map = map;
 
     map.on("error", (event) => {
-      const err = event as unknown as { sourceId?: string; error?: { status?: number; message?: string } };
+      const err = event as unknown as {
+        sourceId?: string;
+        error?: { status?: number; message?: string };
+      };
       if (err.sourceId !== "satellite" || cancelled) return;
       // EOX answers 404 for tiles with no imagery (open ocean) — expected,
       // not an outage. Never force-quit satellite mode over tile hiccups.
@@ -1017,9 +1104,18 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       });
 
       // --- Parcel layers (rendered above states, below labels) ---
-      map.addSource("parcels", { type: "geojson", data: EMPTY_PARCELS as unknown as maplibregl.GeoJSONSourceSpecification["data"] });
-      map.addSource("selected-parcel", { type: "geojson", data: EMPTY_PARCELS as unknown as maplibregl.GeoJSONSourceSpecification["data"] });
-      map.addSource("sim-buffer", { type: "geojson", data: EMPTY_PARCELS as unknown as maplibregl.GeoJSONSourceSpecification["data"] });
+      map.addSource("parcels", {
+        type: "geojson",
+        data: EMPTY_PARCELS as unknown as maplibregl.GeoJSONSourceSpecification["data"],
+      });
+      map.addSource("selected-parcel", {
+        type: "geojson",
+        data: EMPTY_PARCELS as unknown as maplibregl.GeoJSONSourceSpecification["data"],
+      });
+      map.addSource("sim-buffer", {
+        type: "geojson",
+        data: EMPTY_PARCELS as unknown as maplibregl.GeoJSONSourceSpecification["data"],
+      });
       map.addLayer({
         id: PARCEL_FILL_LAYER,
         type: "fill",
@@ -1054,7 +1150,11 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
           "text-size": 9,
           "text-allow-overlap": false,
         },
-        paint: { "text-color": "#ffffff", "text-halo-color": "rgba(20,30,20,0.85)", "text-halo-width": 1.2 },
+        paint: {
+          "text-color": "#ffffff",
+          "text-halo-color": "rgba(20,30,20,0.85)",
+          "text-halo-width": 1.2,
+        },
       });
       map.addLayer({
         id: "sim-buffer-fill",
@@ -1110,7 +1210,12 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       });
 
       const parcelHitLayers = () => {
-        const layers = [PARCEL_FILL_LAYER, PARCEL_LINE_LAYER, SELECTED_LINE_LAYER, SELECTED_FILL_LAYER];
+        const layers = [
+          PARCEL_FILL_LAYER,
+          PARCEL_LINE_LAYER,
+          SELECTED_LINE_LAYER,
+          SELECTED_FILL_LAYER,
+        ];
         if (map.getLayer(CAD_FILL_LAYER)) layers.push(CAD_FILL_LAYER, CAD_LINE_LAYER);
         return layers;
       };
@@ -1136,22 +1241,31 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
         const props = feature.properties as Record<string, unknown> | null;
         const parcelId = props?.["parcelId"];
         if (typeof parcelId !== "string") return;
-        const current = map.querySourceFeatures("parcels").find(
-          (f) => (f.properties as Record<string, unknown> | null)?.["parcelId"] === parcelId,
-        );
+        const current = map
+          .querySourceFeatures("parcels")
+          .find((f) => (f.properties as Record<string, unknown> | null)?.["parcelId"] === parcelId);
         const geometry = (current?.geometry ?? feature.geometry) as ParcelFeature["geometry"];
         if (geometry?.type !== "Polygon") return;
         const parcel: ParcelFeature = {
           type: "Feature",
           properties: {
             parcelId,
-            surveyNumber: typeof props?.["surveyNumber"] === "string" ? (props["surveyNumber"] as string) : null,
-            landuse: typeof props?.["landuse"] === "string" ? (props["landuse"] as string) : "unknown",
+            surveyNumber:
+              typeof props?.["surveyNumber"] === "string"
+                ? (props["surveyNumber"] as string)
+                : null,
+            landuse:
+              typeof props?.["landuse"] === "string" ? (props["landuse"] as string) : "unknown",
             name: typeof props?.["name"] === "string" ? (props["name"] as string) : null,
-            source: typeof props?.["source"] === "string" ? (props["source"] as string) : "OpenStreetMap",
-            ...(typeof props?.["village"] === "string" ? { village: props["village"] as string } : {}),
+            source:
+              typeof props?.["source"] === "string" ? (props["source"] as string) : "OpenStreetMap",
+            ...(typeof props?.["village"] === "string"
+              ? { village: props["village"] as string }
+              : {}),
             ...(typeof props?.["taluka"] === "string" ? { taluka: props["taluka"] as string } : {}),
-            ...(typeof props?.["district"] === "string" ? { district: props["district"] as string } : {}),
+            ...(typeof props?.["district"] === "string"
+              ? { district: props["district"] as string }
+              : {}),
             ...(typeof props?.["state"] === "string" ? { state: props["state"] as string } : {}),
           },
           geometry,
@@ -1231,7 +1345,12 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
           const center = map.getCenter();
           if (map.getZoom() < 11) return;
           const last = lastParcelView.current;
-          if (last && Math.abs(last.lon - center.lng) < 0.02 && Math.abs(last.lat - center.lat) < 0.02) return;
+          if (
+            last &&
+            Math.abs(last.lon - center.lng) < 0.02 &&
+            Math.abs(last.lat - center.lat) < 0.02
+          )
+            return;
           if (Date.now() - lastParcelLoadAt.current < 4000) return;
           void loadParcelsAround(center.lng, center.lat, 0.045);
         }, 700);
@@ -1254,7 +1373,9 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
             try {
               const match = map
                 .querySourceFeatures("states")
-                .find((f) => (f.properties as Record<string, unknown> | null)?.["name"] === stateName);
+                .find(
+                  (f) => (f.properties as Record<string, unknown> | null)?.["name"] === stateName,
+                );
               if (typeof match?.id === "number") {
                 selectedId.current = match.id;
                 map.setFeatureState({ source: "states", id: match.id }, { selected: true });
@@ -1286,13 +1407,21 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       // and restore satellite styling if the map was recreated mid-session.
       if (map.getLayer(FILL_LAYER)) {
         const sat = baseModeRef.current === "satellite";
-        map.setPaintProperty(FILL_LAYER, "fill-color", fillExpression(themeRef.current, sat, yearRef.current));
+        map.setPaintProperty(
+          FILL_LAYER,
+          "fill-color",
+          fillExpression(themeRef.current, sat, yearRef.current),
+        );
         map.setPaintProperty(FILL_LAYER, "fill-opacity", statesOpacity(sat));
         map.setLayoutProperty("satellite", "visibility", sat ? "visible" : "none");
         map.setLayoutProperty("base", "visibility", sat ? "none" : "visible");
       }
       if (map.getLayer(CLIMATE_HEAT_LAYER)) {
-        map.setLayoutProperty(CLIMATE_HEAT_LAYER, "visibility", themeRef.current === "climate-risk" ? "visible" : "none");
+        map.setLayoutProperty(
+          CLIMATE_HEAT_LAYER,
+          "visibility",
+          themeRef.current === "climate-risk" ? "visible" : "none",
+        );
         (map.getSource(CLIMATE_HEAT_SOURCE) as maplibregl.GeoJSONSource | undefined)?.setData(
           weatherHeatData(weatherRef.current?.stations ?? [], weatherMetricRef.current),
         );
@@ -1317,9 +1446,17 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
   useEffect(() => {
     const map = mapRef.current;
     if (status !== "ready" || !map?.getLayer(FILL_LAYER)) return;
-    map.setPaintProperty(FILL_LAYER, "fill-color", fillExpression(theme, baseModeRef.current === "satellite", yearRef.current));
+    map.setPaintProperty(
+      FILL_LAYER,
+      "fill-color",
+      fillExpression(theme, baseModeRef.current === "satellite", yearRef.current),
+    );
     if (map.getLayer(CLIMATE_HEAT_LAYER)) {
-      map.setLayoutProperty(CLIMATE_HEAT_LAYER, "visibility", theme === "climate-risk" ? "visible" : "none");
+      map.setLayoutProperty(
+        CLIMATE_HEAT_LAYER,
+        "visibility",
+        theme === "climate-risk" ? "visible" : "none",
+      );
     }
     setThemeState(theme);
   }, [theme, status]);
@@ -1362,7 +1499,11 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     // satellite mosaic and state fills respond to the year.
     const map = mapRef.current;
     if (map?.getLayer(FILL_LAYER)) {
-      map.setPaintProperty(FILL_LAYER, "fill-color", fillExpression(themeRef.current, baseModeRef.current === "satellite", year));
+      map.setPaintProperty(
+        FILL_LAYER,
+        "fill-color",
+        fillExpression(themeRef.current, baseModeRef.current === "satellite", year),
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, status]);
@@ -1410,8 +1551,16 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       weatherHeatData(weatherRef.current.stations, weatherMetric),
     );
     map.setPaintProperty(CLIMATE_HEAT_LAYER, "heatmap-color", heatRamp(weatherMetric));
-    map.setPaintProperty(CLIMATE_HEAT_LAYER, "heatmap-radius", weatherMetric === "rainfall" ? 54 : 46);
-    map.setPaintProperty(CLIMATE_HEAT_LAYER, "heatmap-intensity", weatherMetric === "rainfall" ? 1.3 : 1.05);
+    map.setPaintProperty(
+      CLIMATE_HEAT_LAYER,
+      "heatmap-radius",
+      weatherMetric === "rainfall" ? 54 : 46,
+    );
+    map.setPaintProperty(
+      CLIMATE_HEAT_LAYER,
+      "heatmap-intensity",
+      weatherMetric === "rainfall" ? 1.3 : 1.05,
+    );
   }, [weatherMetric]);
 
   // State-aware cadastre layer: real parcel polygons when the selected state
@@ -1459,7 +1608,9 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       if (cancelled) return;
       const sourceLayer = ids[0];
       if (!sourceLayer) {
-        setCadastreNote(`Cadastral layer for ${provider.stateName} is unavailable upstream right now`);
+        setCadastreNote(
+          `Cadastral layer for ${provider.stateName} is unavailable upstream right now`,
+        );
         return;
       }
       try {
@@ -1484,7 +1635,15 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
             minzoom: 11,
             paint: {
               "line-color": "#f2fff7",
-              "line-width": ["interpolate", ["linear"], ["zoom"], 11, 0.6, 14, 1.9] as unknown as maplibregl.ExpressionSpecification,
+              "line-width": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                11,
+                0.6,
+                14,
+                1.9,
+              ] as unknown as maplibregl.ExpressionSpecification,
               "line-opacity": 0.95,
             },
           },
@@ -1500,64 +1659,66 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
         return;
       }
 
-      const registryId = provider.id === "maharashtra" ? "cadastral-mrsac-maharashtra" : "cadastral-india-states";
+      const registryId =
+        provider.id === "maharashtra" ? "cadastral-mrsac-maharashtra" : "cadastral-india-states";
       const onClick = (event: maplibregl.MapLayerMouseEvent) => {
-      const hit = event.features?.[0];
-      if (!hit) return;
-      const geometry = toSinglePolygon(hit.geometry);
-      if (!geometry) return;
-      const props = (hit.properties ?? {}) as Record<string, unknown>;
-      const str = (k: string) => (typeof props[k] === "string" && props[k] ? (props[k] as string) : null);
-      const parcelId =
-        str("CCODE") ??
-        str("Parcel_num") ??
-        (typeof props["OBJECTID"] === "number" ? `CAD-${props["OBJECTID"]}` : null);
-      if (!parcelId) return;
-      const parcel: ParcelFeature = {
-        type: "Feature",
-        properties: {
-          parcelId,
-          surveyNumber: null,
-          landuse: "cadastral",
-          name: null,
-          source: `${wired.label} · ${provider.stateName} · real cadastral polygons`,
-          ...(str("VIL_NAME") || str("V_Name")
-            ? { village: (str("VIL_NAME") ?? str("V_Name")) as string }
-            : {}),
-          ...(str("THENAME") || str("New_Mandal")
-            ? { taluka: (str("THENAME") ?? str("New_Mandal")) as string }
-            : {}),
-          ...(str("DTENAME") || str("New_District")
-            ? { district: (str("DTENAME") ?? str("New_District")) as string }
-            : {}),
-          state: provider.stateName,
-          sourceId: registryId,
-          providerId: provider.id,
-        },
-        geometry,
+        const hit = event.features?.[0];
+        if (!hit) return;
+        const geometry = toSinglePolygon(hit.geometry);
+        if (!geometry) return;
+        const props = (hit.properties ?? {}) as Record<string, unknown>;
+        const str = (k: string) =>
+          typeof props[k] === "string" && props[k] ? (props[k] as string) : null;
+        const parcelId =
+          str("CCODE") ??
+          str("Parcel_num") ??
+          (typeof props["OBJECTID"] === "number" ? `CAD-${props["OBJECTID"]}` : null);
+        if (!parcelId) return;
+        const parcel: ParcelFeature = {
+          type: "Feature",
+          properties: {
+            parcelId,
+            surveyNumber: null,
+            landuse: "cadastral",
+            name: null,
+            source: `${wired.label} · ${provider.stateName} · real cadastral polygons`,
+            ...(str("VIL_NAME") || str("V_Name")
+              ? { village: (str("VIL_NAME") ?? str("V_Name")) as string }
+              : {}),
+            ...(str("THENAME") || str("New_Mandal")
+              ? { taluka: (str("THENAME") ?? str("New_Mandal")) as string }
+              : {}),
+            ...(str("DTENAME") || str("New_District")
+              ? { district: (str("DTENAME") ?? str("New_District")) as string }
+              : {}),
+            state: provider.stateName,
+            sourceId: registryId,
+            providerId: provider.id,
+          },
+          geometry,
+        };
+        const center = map.getCenter();
+        const [pcLon, pcLat] = parcelCenter(parcel);
+        const st = stateAt(center.lng, center.lat) ?? stateAt(pcLon, pcLat) ?? provider.stateName;
+        setParcelState(st);
+        setSelectedParcel(parcel);
+        setSelectedParcelData(parcel);
+        setLocationSel(null);
+        map.getCanvas().style.cursor = "pointer";
+        closeSim(true);
+        onSimSnapshotRef.current?.(null);
+        emitSel({
+          kind: "parcel",
+          parcel,
+          lat: pcLat,
+          lon: pcLon,
+          village: parcel.properties.village ?? null,
+          taluka: parcel.properties.taluka ?? null,
+          district: parcel.properties.district ?? null,
+          stateName: st,
+          placeLabel: placeRef.current?.name ?? null,
+        });
       };
-      const center = map.getCenter();
-      const [pcLon, pcLat] = parcelCenter(parcel);
-      const st = stateAt(center.lng, center.lat) ?? stateAt(pcLon, pcLat) ?? provider.stateName;
-      setParcelState(st);
-      setSelectedParcel(parcel);
-      setSelectedParcelData(parcel);
-      setLocationSel(null);
-      map.getCanvas().style.cursor = "pointer";
-      closeSim(true);
-      onSimSnapshotRef.current?.(null);
-      emitSel({
-        kind: "parcel",
-        parcel,
-        lat: pcLat,
-        lon: pcLon,
-        village: parcel.properties.village ?? null,
-        taluka: parcel.properties.taluka ?? null,
-        district: parcel.properties.district ?? null,
-        stateName: st,
-        placeLabel: placeRef.current?.name ?? null,
-      });
-    };
       const onHover = () => {
         map.getCanvas().style.cursor = "pointer";
       };
@@ -1603,7 +1764,11 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
       try {
         if (want && !has) {
           if (!map.getSource(def.sourceId)) {
-            map.addSource(def.sourceId, { type: "vector", url: def.tileJson, attribution: def.attribution });
+            map.addSource(def.sourceId, {
+              type: "vector",
+              url: def.tileJson,
+              attribution: def.attribution,
+            });
           }
           vectorLayerIdsFromUrl(def.tileJson).then((ids) => {
             const sourceLayer = ids[0];
@@ -1656,7 +1821,6 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overlays, status]);
 
   // Side-panel action requests (chips live outside the map; execution stays inside).
@@ -1691,7 +1855,11 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
     if (!map?.getLayer("satellite")) return;
     map.setLayoutProperty("satellite", "visibility", mode === "satellite" ? "visible" : "none");
     map.setLayoutProperty("base", "visibility", mode === "satellite" ? "none" : "visible");
-    map.setPaintProperty(FILL_LAYER, "fill-color", fillExpression(themeRef.current, mode === "satellite", yearRef.current));
+    map.setPaintProperty(
+      FILL_LAYER,
+      "fill-color",
+      fillExpression(themeRef.current, mode === "satellite", yearRef.current),
+    );
     map.setPaintProperty(FILL_LAYER, "fill-opacity", statesOpacity(mode === "satellite"));
     if (mode === "satellite" && !parcels && !parcelsLoading) {
       const center = map.getCenter();
@@ -1748,355 +1916,404 @@ export function IndiaMap({ theme, year, onThemeChange, onYearChange, onSelection
         {query.trim().length === 0 && (
           <div className="intel-presets">
             {DEMO_PRESETS.map((preset) => (
-              <button key={preset.name} onClick={() => goToPlace(preset.name, preset.lat, preset.lon, preset.zoom)}>
+              <button
+                key={preset.name}
+                onClick={() => goToPlace(preset.name, preset.lat, preset.lon, preset.zoom)}
+              >
                 {preset.name}
               </button>
             ))}
           </div>
         )}
       </div>
-      <section className={`intel-map${panelOpen ? " has-panel" : ""}`} aria-label="India land intelligence overview map">
-      <div ref={container} className="map-canvas" />
+      <section
+        className={`intel-map${panelOpen ? " has-panel" : ""}`}
+        aria-label="India land intelligence overview map"
+      >
+        <div ref={container} className="map-canvas" />
 
-      <div className="intel-chip" aria-live="polite">
-        <strong>{place ? `${place.name} · ${def.headline}` : def.headline}</strong>
-        <span className="demo-chip">Demo data · Not official</span>
-        {theme === "climate-risk" && (
-          <div className="weather-modes" role="group" aria-label="Live weather heatmap metric">
-            <button type="button" className={weatherMetric === "temperature" ? "active" : ""} onClick={() => setWeatherMetric("temperature")}>
-              <Thermometer /> Temperature
-            </button>
-            <button type="button" className={weatherMetric === "rainfall" ? "active" : ""} onClick={() => setWeatherMetric("rainfall")}>
-              <Droplets /> Rainfall
-            </button>
-            <span className={`weather-status ${weatherStatus}`}>
-              {weatherStatus === "loading" && "Fetching live IMD weather…"}
-              {weatherStatus === "live" &&
-                (weather ? `IMD live · ${weather.count} stations · ${shortDate(weather.stations[0]?.observedAt ?? null) ?? "today"}` : "")}
-              {weatherStatus === "unavailable" && "IMD weather unavailable — reload to retry"}
-              {weatherStatus === "idle" && ""}
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="intel-basemap" role="group" aria-label="Base map style">
-        <button className={baseMode === "satellite" ? "active" : ""} onClick={() => switchBaseMode("satellite")}>
-          <Satellite /> Satellite
-        </button>
-        <button className={baseMode === "map" ? "active" : ""} onClick={() => switchBaseMode("map")}>
-          <MapIcon /> Map
-        </button>
-      </div>
-
-      <div className="intel-overlays">
-        <div className="overlay-toggles" role="group" aria-label="Overlay layers">
-          <button
-            type="button"
-            className={overlays.rivers ? "active" : ""}
-            aria-pressed={overlays.rivers}
-            onClick={() => setOverlays((o) => ({ ...o, rivers: !o.rivers }))}
-          >
-            Rivers
-          </button>
-          <button
-            type="button"
-            className={overlays.waterbodies ? "active" : ""}
-            aria-pressed={overlays.waterbodies}
-            onClick={() => setOverlays((o) => ({ ...o, waterbodies: !o.waterbodies }))}
-          >
-            Waterbodies
-          </button>
-          <button
-            type="button"
-            className={overlays.floods ? "active" : ""}
-            aria-pressed={overlays.floods}
-            onClick={() => setOverlays((o) => ({ ...o, floods: !o.floods }))}
-          >
-            Flood history
-          </button>
-        </div>
-        {cadastreNote && <span className="overlay-status">{cadastreNote}</span>}
-        {overlays.floods && (
-          <span className="overlay-status overlay-warn">
-            Historical flood extent · observed 1998–2022 · not a forecast
-          </span>
-        )}
-      </div>
-
-      {baseMode === "satellite" && (
-        <div className="intel-satmeta">
-          <span>
-            {satProvider.label} · {satProvider.credit}
-          </span>
-        </div>
-      )}
-
-      {hover && !selected && !selectedParcel && <HoverTip hover={hover} theme={themeState} />}
-
-      {(parcelsLoading || parcelsNote || (parcels && parcelCount > 0)) && (
-        parcelsNote ? (
-          <button className="parcel-note parcel-retry" role="status" onClick={retryParcels} title="Retry parcel fetch">
-            {parcelsNote} · Tap to retry
-          </button>
-        ) : (
-          <div className="parcel-note" role="status">
-            {parcelsLoading ? "Loading parcel boundaries…" : `${parcelCount} boundaries · ${parcelSource ?? "OpenStreetMap"}`}
-          </div>
-        )
-      )}
-
-      <button className="intel-reset" aria-label="Reset India view" title="Reset India view" onClick={resetView}>
-        <RotateCcw />
-      </button>
-
-      {simOpen && (
-        <div className="sim-drawer" role="dialog" aria-label="Policy simulation">
-          <header>
-            <strong>
-              <SlidersHorizontal /> Policy Simulation
-            </strong>
-            <button aria-label="Close simulation" onClick={() => closeSim()}>
-              <X />
-            </button>
-          </header>
-          <label className="sim-field">
-            Proposed Use
-            <select value={simParams.use} onChange={(e) => setSimParams((p) => ({ ...p, use: e.target.value }))}>
-              {SIM_USES.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="sim-field">
-            <span className="sim-label">
-              Development Intensity <b>{simParams.intensity}%</b>
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={simParams.intensity}
-              onChange={(e) => setSimParams((p) => ({ ...p, intensity: Number(e.target.value) }))}
-              aria-label="Development intensity percent"
-            />
-            <span className="sim-scale">
-              <span>Low</span>
-              <span>High</span>
-            </span>
-          </label>
-          <label className="sim-field">
-            <span className="sim-label">
-              Environmental Buffer <b>{simParams.bufferM.toLocaleString("en-IN")} m</b>
-            </span>
-            <input
-              type="range"
-              min={100}
-              max={5000}
-              step={100}
-              value={simParams.bufferM}
-              onChange={(e) => setSimParams((p) => ({ ...p, bufferM: Number(e.target.value) }))}
-              aria-label="Environmental buffer metres"
-            />
-            <span className="sim-scale">
-              <span>100m</span>
-              <span>5000m</span>
-            </span>
-          </label>
-          <button className="sim-run" onClick={runSimulation}>
-            <Play /> Run Simulation
-          </button>
-          {simRan && simResult && (
-            <div className="sim-result" aria-live="polite">
-              <span className="sim-result-tag">Simulation result · local scenario geometry</span>
-              <dl>
-                <div>
-                  <dt>Affected Area</dt>
-                  <dd>{simResult.bufferAreaHa.toFixed(1)} ha</dd>
-                </div>
-                <div>
-                  <dt>Affected Parcels</dt>
-                  <dd>{simResult.affectedParcels}</dd>
-                </div>
-                <div>
-                  <dt>Feasibility</dt>
-                  <dd>Unavailable — connect POST /api/simulate</dd>
-                </div>
-                <div>
-                  <dt>Timeline</dt>
-                  <dd>Unavailable — connect POST /api/simulate</dd>
-                </div>
-                <div>
-                  <dt>Constraints</dt>
-                  <dd>Unavailable — backend legal engine not connected</dd>
-                </div>
-              </dl>
-              <details className="sim-payload">
-                <summary>Backend payload preview</summary>
-                <pre>
-                  {JSON.stringify(
-                    {
-                      endpoint: "POST /api/simulate (not connected)",
-                      parcelId: selectedParcel?.properties.parcelId ?? null,
-                      lat: simAnchor()?.lat ?? null,
-                      lon: simAnchor()?.lon ?? null,
-                      ...simResult.params,
-                    },
-                    null,
-                    2,
-                  )}
-                </pre>
-              </details>
+        <div className="intel-chip" aria-live="polite">
+          <strong>{place ? `${place.name} · ${def.headline}` : def.headline}</strong>
+          <span className="demo-chip">Demo data · Not official</span>
+          {theme === "climate-risk" && (
+            <div className="weather-modes" role="group" aria-label="Live weather heatmap metric">
+              <button
+                type="button"
+                className={weatherMetric === "temperature" ? "active" : ""}
+                onClick={() => setWeatherMetric("temperature")}
+              >
+                <Thermometer /> Temperature
+              </button>
+              <button
+                type="button"
+                className={weatherMetric === "rainfall" ? "active" : ""}
+                onClick={() => setWeatherMetric("rainfall")}
+              >
+                <Droplets /> Rainfall
+              </button>
+              <span className={`weather-status ${weatherStatus}`}>
+                {weatherStatus === "loading" && "Fetching live IMD weather…"}
+                {weatherStatus === "live" &&
+                  (weather
+                    ? `IMD live · ${weather.count} stations · ${shortDate(weather.stations[0]?.observedAt ?? null) ?? "today"}`
+                    : "")}
+                {weatherStatus === "unavailable" && "IMD weather unavailable — reload to retry"}
+                {weatherStatus === "idle" && ""}
+              </span>
             </div>
           )}
         </div>
-      )}
 
-      {sourcesOpen && (
-        <div className="source-drawer" role="dialog" aria-label="Map data sources">
-          <header>
-            <strong>Data sources</strong>
-            <button aria-label="Close data sources" onClick={() => setSourcesOpen(false)}>
-              <X />
+        <div className="intel-basemap" role="group" aria-label="Base map style">
+          <button
+            className={baseMode === "satellite" ? "active" : ""}
+            onClick={() => switchBaseMode("satellite")}
+          >
+            <Satellite /> Satellite
+          </button>
+          <button
+            className={baseMode === "map" ? "active" : ""}
+            onClick={() => switchBaseMode("map")}
+          >
+            <MapIcon /> Map
+          </button>
+        </div>
+
+        <div className="intel-overlays">
+          <div className="overlay-toggles" role="group" aria-label="Overlay layers">
+            <button
+              type="button"
+              className={overlays.rivers ? "active" : ""}
+              aria-pressed={overlays.rivers}
+              onClick={() => setOverlays((o) => ({ ...o, rivers: !o.rivers }))}
+            >
+              Rivers
             </button>
-          </header>
-          <table>
-            <thead>
-              <tr>
-                <th>Dataset</th>
-                <th>Source</th>
-                <th>Year</th>
-                <th>Coverage</th>
-                <th>Updated</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Satellite imagery (true colour B04/B03/B02)</td>
-                <td>Sentinel-2 cloudless · EOX · Copernicus</td>
-                <td>{satProvider.label.replace("Sentinel-2 ", "")}</td>
-                <td>Viewport</td>
-                <td>Annual mosaic</td>
-              </tr>
-              <tr>
-                <td>Parcel / field boundaries</td>
-                <td>{parcelSource ?? "Source unavailable"}</td>
-                <td>—</td>
-                <td>{place?.name ?? "Demo corridor"}</td>
-                <td>{isDemoMode() ? "Bundled extract" : "Live"}</td>
-              </tr>
-              <tr>
-                <td>Cadastral API (Maharashtra)</td>
-                <td>GET /api/parcels · BhuNaksha plot outlines (via BhuMe)</td>
-                <td>—</td>
-                <td>Vadnerbhairav, Chandwad</td>
-                <td>Bundled</td>
-              </tr>
-              <tr>
-                <td>Bhu-Naksha direct geometry</td>
-                <td>No public API — import a legitimate export via scripts/import_parcels.py</td>
-                <td>—</td>
-                <td>—</td>
-                <td>—</td>
-              </tr>
-              {["cadastral-mrsac-maharashtra", "cadastral-vadnerbhairav", "wris-water-features", "ndem-flood-inundation", "imd-weather", "parcel-osm-overpass"].map((id) => {
-                const s = getDataSource(id);
-                if (!s) return null;
-                return (
-                  <tr key={id}>
-                    <td>
-                      {s.name} <span className="pv-kpi-tag">{s.reliabilityClass}</span>
-                    </td>
-                    <td>
-                      {s.provider}
-                      {s.license ? ` · ${s.license}` : ""}
-                    </td>
-                    <td>{s.temporalCoverage ?? "—"}</td>
-                    <td>{s.geography}</td>
-                    <td>{s.lastVerified ?? "—"}</td>
-                  </tr>
-                );
-              })}
-              {INTEL_SOURCES.map((row) => (
-                <tr key={row.dataset}>
-                  <td>{row.dataset}</td>
-                  <td>{row.source}</td>
-                  <td>{row.year}</td>
-                  <td>{row.coverage}</td>
-                  <td>{row.updated}</td>
+            <button
+              type="button"
+              className={overlays.waterbodies ? "active" : ""}
+              aria-pressed={overlays.waterbodies}
+              onClick={() => setOverlays((o) => ({ ...o, waterbodies: !o.waterbodies }))}
+            >
+              Waterbodies
+            </button>
+            <button
+              type="button"
+              className={overlays.floods ? "active" : ""}
+              aria-pressed={overlays.floods}
+              onClick={() => setOverlays((o) => ({ ...o, floods: !o.floods }))}
+            >
+              Flood history
+            </button>
+          </div>
+          {cadastreNote && <span className="overlay-status">{cadastreNote}</span>}
+          {overlays.floods && (
+            <span className="overlay-status overlay-warn">
+              Historical flood extent · observed 1998–2022 · not a forecast
+            </span>
+          )}
+        </div>
+
+        {baseMode === "satellite" && (
+          <div className="intel-satmeta">
+            <span>
+              {satProvider.label} · {satProvider.credit}
+            </span>
+          </div>
+        )}
+
+        {hover && !selected && !selectedParcel && <HoverTip hover={hover} theme={themeState} />}
+
+        {(parcelsLoading || parcelsNote || (parcels && parcelCount > 0)) &&
+          (parcelsNote ? (
+            <button
+              className="parcel-note parcel-retry"
+              role="status"
+              onClick={retryParcels}
+              title="Retry parcel fetch"
+            >
+              {parcelsNote} · Tap to retry
+            </button>
+          ) : (
+            <div className="parcel-note" role="status">
+              {parcelsLoading
+                ? "Loading parcel boundaries…"
+                : `${parcelCount} boundaries · ${parcelSource ?? "OpenStreetMap"}`}
+            </div>
+          ))}
+
+        <button
+          className="intel-reset"
+          aria-label="Reset India view"
+          title="Reset India view"
+          onClick={resetView}
+        >
+          <RotateCcw />
+        </button>
+
+        {simOpen && (
+          <div className="sim-drawer" role="dialog" aria-label="Policy simulation">
+            <header>
+              <strong>
+                <SlidersHorizontal /> Policy Simulation
+              </strong>
+              <button aria-label="Close simulation" onClick={() => closeSim()}>
+                <X />
+              </button>
+            </header>
+            <label className="sim-field">
+              Proposed Use
+              <select
+                value={simParams.use}
+                onChange={(e) => setSimParams((p) => ({ ...p, use: e.target.value }))}
+              >
+                {SIM_USES.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="sim-field">
+              <span className="sim-label">
+                Development Intensity <b>{simParams.intensity}%</b>
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={simParams.intensity}
+                onChange={(e) => setSimParams((p) => ({ ...p, intensity: Number(e.target.value) }))}
+                aria-label="Development intensity percent"
+              />
+              <span className="sim-scale">
+                <span>Low</span>
+                <span>High</span>
+              </span>
+            </label>
+            <label className="sim-field">
+              <span className="sim-label">
+                Environmental Buffer <b>{simParams.bufferM.toLocaleString("en-IN")} m</b>
+              </span>
+              <input
+                type="range"
+                min={100}
+                max={5000}
+                step={100}
+                value={simParams.bufferM}
+                onChange={(e) => setSimParams((p) => ({ ...p, bufferM: Number(e.target.value) }))}
+                aria-label="Environmental buffer metres"
+              />
+              <span className="sim-scale">
+                <span>100m</span>
+                <span>5000m</span>
+              </span>
+            </label>
+            <button className="sim-run" onClick={runSimulation}>
+              <Play /> Run Simulation
+            </button>
+            {simRan && simResult && (
+              <div className="sim-result" aria-live="polite">
+                <span className="sim-result-tag">Simulation result · local scenario geometry</span>
+                <dl>
+                  <div>
+                    <dt>Affected Area</dt>
+                    <dd>{simResult.bufferAreaHa.toFixed(1)} ha</dd>
+                  </div>
+                  <div>
+                    <dt>Affected Parcels</dt>
+                    <dd>{simResult.affectedParcels}</dd>
+                  </div>
+                  <div>
+                    <dt>Feasibility</dt>
+                    <dd>Unavailable — connect POST /api/simulate</dd>
+                  </div>
+                  <div>
+                    <dt>Timeline</dt>
+                    <dd>Unavailable — connect POST /api/simulate</dd>
+                  </div>
+                  <div>
+                    <dt>Constraints</dt>
+                    <dd>Unavailable — backend legal engine not connected</dd>
+                  </div>
+                </dl>
+                <details className="sim-payload">
+                  <summary>Backend payload preview</summary>
+                  <pre>
+                    {JSON.stringify(
+                      {
+                        endpoint: "POST /api/simulate (not connected)",
+                        parcelId: selectedParcel?.properties.parcelId ?? null,
+                        lat: simAnchor()?.lat ?? null,
+                        lon: simAnchor()?.lon ?? null,
+                        ...simResult.params,
+                      },
+                      null,
+                      2,
+                    )}
+                  </pre>
+                </details>
+              </div>
+            )}
+          </div>
+        )}
+
+        {sourcesOpen && (
+          <div className="source-drawer" role="dialog" aria-label="Map data sources">
+            <header>
+              <strong>Data sources</strong>
+              <button aria-label="Close data sources" onClick={() => setSourcesOpen(false)}>
+                <X />
+              </button>
+            </header>
+            <table>
+              <thead>
+                <tr>
+                  <th>Dataset</th>
+                  <th>Source</th>
+                  <th>Year</th>
+                  <th>Coverage</th>
+                  <th>Updated</th>
                 </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Satellite imagery (true colour B04/B03/B02)</td>
+                  <td>Sentinel-2 cloudless · EOX · Copernicus</td>
+                  <td>{satProvider.label.replace("Sentinel-2 ", "")}</td>
+                  <td>Viewport</td>
+                  <td>Annual mosaic</td>
+                </tr>
+                <tr>
+                  <td>Parcel / field boundaries</td>
+                  <td>{parcelSource ?? "Source unavailable"}</td>
+                  <td>—</td>
+                  <td>{place?.name ?? "Demo corridor"}</td>
+                  <td>{isDemoMode() ? "Bundled extract" : "Live"}</td>
+                </tr>
+                <tr>
+                  <td>Cadastral API (Maharashtra)</td>
+                  <td>GET /api/parcels · BhuNaksha plot outlines (via BhuMe)</td>
+                  <td>—</td>
+                  <td>Vadnerbhairav, Chandwad</td>
+                  <td>Bundled</td>
+                </tr>
+                <tr>
+                  <td>Bhu-Naksha direct geometry</td>
+                  <td>No public API — import a legitimate export via scripts/import_parcels.py</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                </tr>
+                {[
+                  "cadastral-mrsac-maharashtra",
+                  "cadastral-vadnerbhairav",
+                  "wris-water-features",
+                  "ndem-flood-inundation",
+                  "imd-weather",
+                  "parcel-osm-overpass",
+                ].map((id) => {
+                  const s = getDataSource(id);
+                  if (!s) return null;
+                  return (
+                    <tr key={id}>
+                      <td>
+                        {s.name} <span className="pv-kpi-tag">{s.reliabilityClass}</span>
+                      </td>
+                      <td>
+                        {s.provider}
+                        {s.license ? ` · ${s.license}` : ""}
+                      </td>
+                      <td>{s.temporalCoverage ?? "—"}</td>
+                      <td>{s.geography}</td>
+                      <td>{s.lastVerified ?? "—"}</td>
+                    </tr>
+                  );
+                })}
+                {INTEL_SOURCES.map((row) => (
+                  <tr key={row.dataset}>
+                    <td>{row.dataset}</td>
+                    <td>{row.source}</td>
+                    <td>{row.year}</td>
+                    <td>{row.coverage}</td>
+                    <td>{row.updated}</td>
+                  </tr>
+                ))}
+                <tr>
+                  <td>Base map</td>
+                  <td>CARTO · OpenStreetMap</td>
+                  <td>—</td>
+                  <td>Global</td>
+                  <td>Live tiles</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <footer className="intel-foot">
+          <div className="intel-legend" aria-label={`${weatherLegend.title} legend`}>
+            <span>{weatherLegend.title}</span>
+            <ul>
+              {weatherLegend.stops.map((stop, i) => (
+                <li key={stop}>
+                  <i style={{ background: weatherLegend.colors[i] ?? weatherLegend.colors[0] }} />
+                  {stop}
+                </li>
               ))}
-              <tr>
-                <td>Base map</td>
-                <td>CARTO · OpenStreetMap</td>
-                <td>—</td>
-                <td>Global</td>
-                <td>Live tiles</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
+            </ul>
+          </div>
+          <span className="intel-updated">
+            {baseMode === "satellite"
+              ? `${satProvider.label} · Latest available low-cloud imagery`
+              : DATA_UPDATED_LABEL}
+          </span>
+          <div className="intel-actions">
+            <button
+              className="intel-sources"
+              onClick={() => setSourcesOpen((v) => !v)}
+              aria-expanded={sourcesOpen}
+            >
+              <Database /> Sources
+            </button>
+            <a className="intel-open" href={`/gis-explorer?layer=${themeState}`}>
+              Open in GIS <ArrowRight />
+            </a>
+          </div>
+        </footer>
 
-      <footer className="intel-foot">
-        <div className="intel-legend" aria-label={`${weatherLegend.title} legend`}>
-          <span>{weatherLegend.title}</span>
-          <ul>
-            {weatherLegend.stops.map((stop, i) => (
-              <li key={stop}>
-                <i style={{ background: weatherLegend.colors[i] ?? weatherLegend.colors[0] }} />
-                {stop}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <span className="intel-updated">
-          {baseMode === "satellite" ? `${satProvider.label} · Latest available low-cloud imagery` : DATA_UPDATED_LABEL}
-        </span>
-        <div className="intel-actions">
-          <button className="intel-sources" onClick={() => setSourcesOpen((v) => !v)} aria-expanded={sourcesOpen}>
-            <Database /> Sources
-          </button>
-          <a className="intel-open" href={`/gis-explorer?layer=${themeState}`}>
-            Open in GIS <ArrowRight />
-          </a>
-        </div>
-      </footer>
+        {satDown && (
+          <div className="parcel-note sat-fallback" role="alert">
+            Satellite tiles slow — loaded imagery stays visible.
+            <button className="sat-link" onClick={() => rebuildSatellite()}>
+              Retry
+            </button>
+            <button className="sat-link" onClick={() => switchBaseMode("map")}>
+              Map view
+            </button>
+          </div>
+        )}
 
-      {satDown && (
-        <div className="parcel-note sat-fallback" role="alert">
-          Satellite tiles slow — loaded imagery stays visible.
-          <button className="sat-link" onClick={() => rebuildSatellite()}>
-            Retry
-          </button>
-          <button className="sat-link" onClick={() => switchBaseMode("map")}>
-            Map view
-          </button>
-        </div>
-      )}
+        {status === "loading" && (
+          <div className="map-status" role="status">
+            <span className="map-spinner" aria-hidden="true" />
+            Loading national land intelligence…
+          </div>
+        )}
+        {status === "error" && (
+          <div className="map-status" role="alert">
+            National layer temporarily unavailable.
+            <button onClick={() => setRetry((n) => n + 1)}>Retry</button>
+          </div>
+        )}
+        {status === "ready" && !hasThemeData && (
+          <div className="map-status" role="status">
+            No verified data available for this indicator.
+          </div>
+        )}
 
-      {status === "loading" && (
-        <div className="map-status" role="status">
-          <span className="map-spinner" aria-hidden="true" />
-          Loading national land intelligence…
-        </div>
-      )}
-      {status === "error" && (
-        <div className="map-status" role="alert">
-          National layer temporarily unavailable.
-          <button onClick={() => setRetry((n) => n + 1)}>Retry</button>
-        </div>
-      )}
-      {status === "ready" && !hasThemeData && (
-        <div className="map-status" role="status">
-          No verified data available for this indicator.
-        </div>
-      )}
-
-      {panel}
-    </section>
+        {panel}
+      </section>
 
       {brief && (
         <div className="ai-brief" aria-live="polite">

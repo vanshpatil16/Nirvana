@@ -40,11 +40,17 @@ export function ProvenanceRows({ source }: { source: DataSourceRecord }) {
     ["Provider", source.provider],
     ...(source.upstream ? ([["Upstream", source.upstream]] as Array<[string, string]>) : []),
     ...(source.license ? ([["License", source.license]] as Array<[string, string]>) : []),
-    ...(source.spatialResolution ? ([["Resolution", source.spatialResolution]] as Array<[string, string]>) : []),
-    ...(source.temporalCoverage ? ([["Period", source.temporalCoverage]] as Array<[string, string]>) : []),
+    ...(source.spatialResolution
+      ? ([["Resolution", source.spatialResolution]] as Array<[string, string]>)
+      : []),
+    ...(source.temporalCoverage
+      ? ([["Period", source.temporalCoverage]] as Array<[string, string]>)
+      : []),
     ["Coverage", source.geography],
     ["Status", STATUS_LABELS[source.status]],
-    ...(source.lastVerified ? ([["Verified", source.lastVerified]] as Array<[string, string]>) : []),
+    ...(source.lastVerified
+      ? ([["Verified", source.lastVerified]] as Array<[string, string]>)
+      : []),
   ];
   return (
     <dl className="insight-rows pv-rows">
@@ -86,7 +92,11 @@ export function ParcelProvenance({
 }) {
   const source = sourceId ? getDataSource(sourceId) : undefined;
   const kind: CadastralBadgeKind =
-    source?.category === "CADASTRAL" ? "real-cadastre" : source ? "osm-non-cadastre" : "no-public-data";
+    source?.category === "CADASTRAL"
+      ? "real-cadastre"
+      : source
+        ? "osm-non-cadastre"
+        : "no-public-data";
   return (
     <section className="insight-section pv-panel" aria-label="Parcel provenance">
       <div className="pv-badges">
@@ -96,7 +106,8 @@ export function ParcelProvenance({
       </div>
       {!hasSurveyNumber && (
         <p className="pv-honesty">
-          Survey number not present in this source — verify the 7/12 extract at the Tehsil office before any legal use.
+          Survey number not present in this source — verify the 7/12 extract at the Tehsil office
+          before any legal use.
         </p>
       )}
       {source && <ProvenanceRows source={source} />}

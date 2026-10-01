@@ -38,14 +38,17 @@ interface NominatimHit {
   boundingbox?: [string, string, string, string];
 }
 
-export async function searchPlaces(query: string, signal: AbortSignal): Promise<PlaceResult[]> {  const params = new URLSearchParams({
+export async function searchPlaces(query: string, signal: AbortSignal): Promise<PlaceResult[]> {
+  const params = new URLSearchParams({
     q: query,
     format: "jsonv2",
     countrycodes: "in",
     limit: "5",
     addressdetails: "0",
   });
-  const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, { signal });
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+    signal,
+  });
   if (!res.ok) throw new Error(`Geocoder ${res.status}`);
   const hits = (await res.json()) as NominatimHit[];
   return hits
@@ -85,7 +88,11 @@ interface ReverseHit {
 }
 
 /** Click-anywhere naming (Nominatim reverse, cached). Null when unresolvable. */
-export async function reverseGeocode(lat: number, lon: number, signal: AbortSignal): Promise<ReversePlace | null> {
+export async function reverseGeocode(
+  lat: number,
+  lon: number,
+  signal: AbortSignal,
+): Promise<ReversePlace | null> {
   const key = reverseKey(lat, lon);
   if (reverseCache.has(key)) return reverseCache.get(key) ?? null;
   try {
@@ -96,7 +103,9 @@ export async function reverseGeocode(lat: number, lon: number, signal: AbortSign
       addressdetails: "1",
       zoom: "14",
     });
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`, { signal });
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`, {
+      signal,
+    });
     if (!res.ok) throw new Error(`Reverse geocoder ${res.status}`);
     const hit = (await res.json()) as ReverseHit;
     const addr = hit.address ?? {};
@@ -104,7 +113,9 @@ export async function reverseGeocode(lat: number, lon: number, signal: AbortSign
     const place: ReversePlace = {
       ...(village ? { village } : {}),
       ...(addr["county"] ? { taluka: addr["county"] } : {}),
-      ...(addr["state_district"] ?? addr["district"] ? { district: addr["state_district"] ?? addr["district"] } : {}),
+      ...((addr["state_district"] ?? addr["district"])
+        ? { district: addr["state_district"] ?? addr["district"] }
+        : {}),
       ...(addr["state"] ? { state: addr["state"] } : {}),
       label: hit.display_name ?? `${lat.toFixed(5)}, ${lon.toFixed(5)}`,
     };

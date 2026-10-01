@@ -22,7 +22,13 @@
 
 import { z } from "zod";
 import { detectLanguage, type LanguageCode, type LanguageInfo } from "@/copilot/language";
-import { RawPlanSchema, validatePlan, type QueryPlan, type RawPlan, type ValidationNote } from "@/copilot/plan";
+import {
+  RawPlanSchema,
+  validatePlan,
+  type QueryPlan,
+  type RawPlan,
+  type ValidationNote,
+} from "@/copilot/plan";
 import { chipsFor, followupsFor, mapActionsFor } from "@/copilot/actions";
 import { evidenceFor, executePlan, type DataResult } from "./copilot-data";
 
@@ -157,7 +163,7 @@ const SUBMIT_ANSWER_TOOL = {
           "For substantive land answers, break the claim down into evidence classes, " +
           'each as {"section","detail"} with section EXACTLY one of: OBSERVED ' +
           "(what platform data / imagery actually shows), DERIVED (computed from " +
-          'those inputs), LEGAL EVIDENCE (official record: 7/12, Bhulekh, orders), ' +
+          "those inputs), LEGAL EVIDENCE (official record: 7/12, Bhulekh, orders), " +
           "INTERPRETATION (your reading of it), LIMITATIONS (what this cannot prove), " +
           "SOURCES (where to verify officially). Include only sections that apply; " +
           "[] for greetings or capability questions. Never invent sources.",
@@ -210,30 +216,57 @@ const PLAN_QUERY_TOOL = {
       },
       uses_map_context: {
         type: "boolean",
-        description: "true when the user means the map selection or their own location: 'near me', 'here', 'this area/village/parcel', 'surrounding parcels'",
+        description:
+          "true when the user means the map selection or their own location: 'near me', 'here', 'this area/village/parcel', 'surrounding parcels'",
       },
       refers_to_previous: {
         type: "boolean",
-        description: "true when the question refines or continues the previous analysis ('only agriculture to built-up', 'compare it with Nashik', 'what about 2020?')",
+        description:
+          "true when the question refines or continues the previous analysis ('only agriculture to built-up', 'compare it with Nashik', 'what about 2020?')",
       },
       compare_with: {
         type: "object",
         description: "Second place when comparing",
-        properties: { name: { type: "string" }, state: { type: "string" }, lat: { type: "number" }, lon: { type: "number" } },
+        properties: {
+          name: { type: "string" },
+          state: { type: "string" },
+          lat: { type: "number" },
+          lon: { type: "number" },
+        },
       },
       from_year: { type: "integer" },
       to_year: { type: "integer" },
-      from_class: { type: "string", enum: ["agriculture", "forest", "built_up", "water", "barren", "other"] },
-      to_class: { type: "string", enum: ["agriculture", "forest", "built_up", "water", "barren", "other"] },
+      from_class: {
+        type: "string",
+        enum: ["agriculture", "forest", "built_up", "water", "barren", "other"],
+      },
+      to_class: {
+        type: "string",
+        enum: ["agriculture", "forest", "built_up", "water", "barren", "other"],
+      },
       operation: { type: "string", enum: ["summarise", "compare", "trend", "lookup", "explain"] },
       datasets: {
         type: "array",
         items: {
           type: "string",
-          enum: ["land_records", "cadastral", "lulc", "satellite", "climate", "socio_economic", "registration", "disputes", "research_policy", "policy_library"],
+          enum: [
+            "land_records",
+            "cadastral",
+            "lulc",
+            "satellite",
+            "climate",
+            "socio_economic",
+            "registration",
+            "disputes",
+            "research_policy",
+            "policy_library",
+          ],
         },
       },
-      map_action: { type: "string", enum: ["zoom", "highlight_change", "show_layer", "highlight_parcels", "compare", "none"] },
+      map_action: {
+        type: "string",
+        enum: ["zoom", "highlight_change", "show_layer", "highlight_parcels", "compare", "none"],
+      },
       layer: { type: "string", enum: ["lulc", "climate_risk", "disputes", "parcels", "satellite"] },
       topic: {
         type: "string",
@@ -284,7 +317,14 @@ const AnswerSchema = z.object({
   evidenceBreakdown: z
     .array(
       z.object({
-        section: z.enum(["OBSERVED", "DERIVED", "LEGAL EVIDENCE", "INTERPRETATION", "LIMITATIONS", "SOURCES"]),
+        section: z.enum([
+          "OBSERVED",
+          "DERIVED",
+          "LEGAL EVIDENCE",
+          "INTERPRETATION",
+          "LIMITATIONS",
+          "SOURCES",
+        ]),
         detail: z.string().min(1).max(400),
       }),
     )
@@ -669,7 +709,11 @@ async function planQuery(params: {
   history: { role: "user" | "assistant"; content: string }[];
   context: MapContext | null;
   previous: QueryPlan | null;
-}): Promise<{ raw: RawPlan; schemaValid: boolean; status: "ok" | "schema_invalid" | "upstream_error" }> {
+}): Promise<{
+  raw: RawPlan;
+  schemaValid: boolean;
+  status: "ok" | "schema_invalid" | "upstream_error";
+}> {
   const messages: ChatMessage[] = [
     { role: "system", content: plannerPrompt(params.context, params.previous) },
     ...params.history.slice(-4).map<ChatMessage>((h) => ({ role: h.role, content: h.content })),
@@ -697,10 +741,19 @@ async function planQuery(params: {
   // Planner unavailable or its output failed the schema: fall back to a general
   // answer (validation adds a note). schemaValid=false is reported to the client
   // so evaluations can count real planner failures instead of the repaired plan.
-  return { raw: { intent: "general", uses_map_context: false, refers_to_previous: false }, schemaValid: false, status };
+  return {
+    raw: { intent: "general", uses_map_context: false, refers_to_previous: false },
+    schemaValid: false,
+    status,
+  };
 }
 
-function groundingPrompt(plan: QueryPlan, notes: ValidationNote[], data: DataResult[], lang: LanguageInfo): string {
+function groundingPrompt(
+  plan: QueryPlan,
+  notes: ValidationNote[],
+  data: DataResult[],
+  lang: LanguageInfo,
+): string {
   const compact = data.map((d) => ({
     dataset: d.dataset,
     label: d.label,
@@ -766,10 +819,14 @@ async function explain(params: {
       { type: "function", function: { name: SUBMIT_ANSWER_TOOL.name } },
       params.referer,
     );
-    const call = reply.message.tool_calls?.find((c) => c.function?.name === SUBMIT_ANSWER_TOOL.name);
+    const call = reply.message.tool_calls?.find(
+      (c) => c.function?.name === SUBMIT_ANSWER_TOOL.name,
+    );
     const parsed = AnswerSchema.safeParse(safeJson(call?.function?.arguments ?? ""));
     if (parsed.success) return { answer: parsed.data, model: reply.model, generated: true };
-    const salvaged = extractAnswer(typeof reply.message.content === "string" ? reply.message.content : "");
+    const salvaged = extractAnswer(
+      typeof reply.message.content === "string" ? reply.message.content : "",
+    );
     if (salvaged) return { answer: salvaged, model: reply.model, generated: true };
   } catch (error) {
     console.error("[/api/ai] explain failed", error instanceof Error ? error.message : error);
@@ -847,17 +904,36 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
 
   try {
     // 1. Language detection (local, no model call)
-    const detection = detectLanguage(message, (parsed.data.languageHint as LanguageCode | undefined) ?? "en");
+    const detection = detectLanguage(
+      message,
+      (parsed.data.languageHint as LanguageCode | undefined) ?? "en",
+    );
     const lang = detection.language;
     mark("detect_language");
 
     // 2. Intent extraction → structured plan (LLM, forced tool call)
     const previous = (parsed.data.previousPlan ?? null) as QueryPlan | null;
-    const { raw, schemaValid, status: plannerStatus } = await planQuery({ key, model, referer, message, history: history ?? [], context: context ?? null, previous });
+    const {
+      raw,
+      schemaValid,
+      status: plannerStatus,
+    } = await planQuery({
+      key,
+      model,
+      referer,
+      message,
+      history: history ?? [],
+      context: context ?? null,
+      previous,
+    });
     mark("plan");
 
     // 3. Validation against what the platform can answer
-    const { plan, notes } = validatePlan(raw, { language: lang.code, context: context ?? null, previous });
+    const { plan, notes } = validatePlan(raw, {
+      language: lang.code,
+      context: context ?? null,
+      previous,
+    });
     mark("validate");
 
     // 4. Data / GIS layer + evidence (server-side, never from the LLM)
@@ -869,10 +945,19 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
     const messages: ChatMessage[] = [
       { role: "system", content: systemPrompt(context) },
       { role: "system", content: groundingPrompt(plan, notes, data, lang) },
-      ...(history ?? []).map<ChatMessage>((entry) => ({ role: entry.role, content: entry.content })),
+      ...(history ?? []).map<ChatMessage>((entry) => ({
+        role: entry.role,
+        content: entry.content,
+      })),
       { role: "user", content: message },
     ];
-    const answer = await explain({ key, model, referer, messages, fallback: data[0]?.headline ?? "" });
+    const answer = await explain({
+      key,
+      model,
+      referer,
+      messages,
+      fallback: data[0]?.headline ?? "",
+    });
     mark("explain");
     // Say so when the model did not answer — never pass a fallback off as an AI answer
     const degraded = plannerStatus === "upstream_error" || !answer.generated;
@@ -885,13 +970,22 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
     // 6. Map actions + chips + follow-ups (deterministic, from the validated plan)
     const actions = mapActionsFor(plan);
     const chips = chipsFor(plan, lang.code);
-    const followups = Array.from(new Set([...followupsFor(plan, lang.code), ...answer.answer.suggestedFollowups])).slice(0, 4);
+    const followups = Array.from(
+      new Set([...followupsFor(plan, lang.code), ...answer.answer.suggestedFollowups]),
+    ).slice(0, 4);
     mark("act");
 
     return jsonResponse({
       ok: true,
       model: answer.model,
-      language: { code: lang.code, name: lang.name, native: lang.native, bcp47: lang.bcp47, confidence: detection.confidence, method: detection.method },
+      language: {
+        code: lang.code,
+        name: lang.name,
+        native: lang.native,
+        bcp47: lang.bcp47,
+        confidence: detection.confidence,
+        method: detection.method,
+      },
       plan,
       planner: { status: plannerStatus, schemaValid, rawIntent: raw.intent ?? null },
       answerGenerated: answer.generated,
@@ -902,7 +996,13 @@ export async function handleAiApi(request: Request, env?: unknown): Promise<Resp
         ...evidence,
         // only claim an AI explanation when one was actually generated
         ...(answer.generated
-          ? [{ label: `AI explanation · ${answer.model}`, detail: "Wording and general context generated by the language model", provenance: "ai" }]
+          ? [
+              {
+                label: `AI explanation · ${answer.model}`,
+                detail: "Wording and general context generated by the language model",
+                provenance: "ai",
+              },
+            ]
           : []),
       ],
       chips,

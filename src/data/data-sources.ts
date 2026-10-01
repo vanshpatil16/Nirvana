@@ -40,8 +40,7 @@ export const RELIABILITY: Record<ReliabilityClass, ReliabilityInfo> = {
   C: {
     label: "Curated open aggregation",
     short: "CURATED",
-    description:
-      "Community-curated mirror of upstream official data with documented provenance.",
+    description: "Community-curated mirror of upstream official data with documented provenance.",
   },
   D: {
     label: "Community data",
@@ -75,7 +74,8 @@ export interface EvidenceInfo {
 export const EVIDENCE: Record<EvidenceClass, EvidenceInfo> = {
   observed: {
     label: "OBSERVED",
-    description: "Measured or recorded by the cited source (imagery pixel, station reading, record entry).",
+    description:
+      "Measured or recorded by the cited source (imagery pixel, station reading, record entry).",
   },
   derived: {
     label: "DERIVED",
@@ -185,12 +185,14 @@ export const DATA_SOURCES: DataSourceRecord[] = [
     name: "indian_cadastrals — state cadastre releases",
     category: "CADASTRAL",
     provider: "ramSeraph/indian_cadastrals + indianopenmaps.com",
-    upstream: "State land-record / remote-sensing portals (Bhuvan, NCOG, MRSAC, KGIS, TNGIS, Matribhoomi, MPBhulekh…)",
+    upstream:
+      "State land-record / remote-sensing portals (Bhuvan, NCOG, MRSAC, KGIS, TNGIS, Matribhoomi, MPBhulekh…)",
     url: "https://github.com/ramSeraph/indian_cadastrals",
     license: "CC0 1.0",
     spatialResolution: "Parcel polygons (vector tiles / GeoParquet / PMTiles per state)",
     temporalCoverage: "Per-release snapshots; publisher states updates are unlikely",
-    geography: "27 states/UTs — completeness explicitly partial for several (UP, Assam, Chhattisgarh, Punjab, West Bengal, J&K…)",
+    geography:
+      "27 states/UTs — completeness explicitly partial for several (UP, Assam, Chhattisgarh, Punjab, West Bengal, J&K…)",
     status: "available-not-connected",
     reliabilityClass: "C",
     lastVerified: VERIFIED,
@@ -204,7 +206,8 @@ export const DATA_SOURCES: DataSourceRecord[] = [
     provider: "BhuMe assignment bundle (Jarpula-Nirjala/BhuMe)",
     upstream: "Maharashtra land records — BhuNaksha plot outlines",
     url: "https://github.com/Jarpula-Nirjala/BhuMe",
-    license: "MIT (repository code); redistribution terms for the underlying land-record geometry are not stated",
+    license:
+      "MIT (repository code); redistribution terms for the underlying land-record geometry are not stated",
     spatialResolution: "2,457 individual plots, one village",
     temporalCoverage: "Assignment-vintage snapshot",
     geography: "Vadnerbhairav village, Chandwad taluka, Nashik district, Maharashtra",
@@ -222,7 +225,8 @@ export const DATA_SOURCES: DataSourceRecord[] = [
     upstream: "OpenStreetMap contributors",
     url: "https://www.openstreetmap.org/copyright",
     license: "ODbL 1.0 — © OpenStreetMap contributors",
-    spatialResolution: "Community-mapped ways (landuse farmland/industrial/residential/commercial), variable",
+    spatialResolution:
+      "Community-mapped ways (landuse farmland/industrial/residential/commercial), variable",
     temporalCoverage: "Continuously updated",
     geography: "Worldwide",
     status: "connected",
@@ -369,7 +373,8 @@ export const DATA_SOURCES: DataSourceRecord[] = [
     status: "available-not-connected",
     reliabilityClass: "B",
     lastVerified: VERIFIED,
-    limitations: "Not connected; modeled river-flood statistics, 10 km resolution — never parcel-level.",
+    limitations:
+      "Not connected; modeled river-flood statistics, 10 km resolution — never parcel-level.",
   },
 
   // --- Admin, socio-economic, infrastructure -------------------------------
@@ -403,7 +408,8 @@ export const DATA_SOURCES: DataSourceRecord[] = [
     status: "available-not-connected",
     reliabilityClass: "B",
     lastVerified: VERIFIED,
-    limitations: "Not connected; non-commercial licence restricts production use without permission.",
+    limitations:
+      "Not connected; non-commercial licence restricts production use without permission.",
   },
   {
     id: "geosadak-roads",
@@ -490,7 +496,8 @@ export const DATA_SOURCES: DataSourceRecord[] = [
     status: "connected",
     reliabilityClass: "F",
     lastVerified: null,
-    limitations: "Illustrative placeholders shaped on public patterns — not official land-use statistics.",
+    limitations:
+      "Illustrative placeholders shaped on public patterns — not official land-use statistics.",
   },
   {
     id: "record-reality-demo",
@@ -523,7 +530,8 @@ export const DATA_SOURCES: DataSourceRecord[] = [
     status: "connected",
     reliabilityClass: "F",
     lastVerified: null,
-    limitations: "Illustrative before/after pairs; findings are labelled AI-generated preliminary observations, not determinations.",
+    limitations:
+      "Illustrative before/after pairs; findings are labelled AI-generated preliminary observations, not determinations.",
   },
   {
     id: "policy-simulation",

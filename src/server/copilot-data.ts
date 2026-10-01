@@ -27,7 +27,12 @@ import {
 import { STATE_STATS } from "@/data/state-intelligence";
 import { POLICIES, searchCatalogue } from "@/data/research-hub";
 import { queryParcels } from "./parcel-store";
-import { libraryOverview, primaryIndicators, searchPolicies, type PolicyQuote } from "./policy-context";
+import {
+  libraryOverview,
+  primaryIndicators,
+  searchPolicies,
+  type PolicyQuote,
+} from "./policy-context";
 import type { DatasetId, LandClassName, Place, QueryPlan } from "@/copilot/plan";
 
 export type Provenance = "live" | "platform" | "demo" | "reference" | "document" | "unavailable";
@@ -345,7 +350,10 @@ function runPolicyLibrary(plan: QueryPlan, query: string): DataResult {
       provenance: "document",
       region: "Maharashtra",
       headline: `No instrument in the Policy Lab library matches this question. The library holds ${lib.length} Maharashtra and national instruments.`,
-      table: { columns: ["Instrument", "Domain", "Year"], rows: lib.map((p) => [p.name, p.domain, String(p.year)]) },
+      table: {
+        columns: ["Instrument", "Domain", "Year"],
+        rows: lib.map((p) => [p.name, p.domain, String(p.year)]),
+      },
       source: "Policy Lab library — Acts & policies read from their source PDFs",
     };
   }

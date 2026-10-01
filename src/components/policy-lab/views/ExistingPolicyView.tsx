@@ -25,7 +25,10 @@ import {
   type Policy,
   type SimulationResult,
 } from "@/data/policySimulation";
-import { BASE_YEAR as DATA_FROM, LATEST_YEAR as DATA_TO } from "@/data/policySimulation/observations";
+import {
+  BASE_YEAR as DATA_FROM,
+  LATEST_YEAR as DATA_TO,
+} from "@/data/policySimulation/observations";
 import { dateLabel, listSentence, pluralise } from "../lab-helpers";
 import { EvidencePanel, EvaluationBasisPanel } from "../parts/Evidence";
 import {
@@ -526,11 +529,13 @@ function PolicySetup({
                 worse than saying so: this instrument's stated windows all fall
                 outside the record, so there is nothing to choose between. */}
             <div className="pl-multiselect">
-              <span className="pl-chip on">{DATA_FROM} – {DATA_TO}</span>
+              <span className="pl-chip on">
+                {DATA_FROM} – {DATA_TO}
+              </span>
             </div>
             <p className="pl-help" style={{ marginTop: 8 }}>
-              This instrument took effect in {policy.implementationYear}, before the record begins in{" "}
-              {DATA_FROM}. Its own evaluation windows cannot be observed, so the whole available
+              This instrument took effect in {policy.implementationYear}, before the record begins
+              in {DATA_FROM}. Its own evaluation windows cannot be observed, so the whole available
               record is used and split in half. Read the result as a description of the period, not
               as an evaluation of the instrument.
             </p>

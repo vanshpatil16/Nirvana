@@ -62,7 +62,13 @@ export interface VerificationTask {
   dueDate: string;
   notes: string;
   createdAt: string;
-  status: "Potential mismatch" | "Verification pending" | "Field verified" | "Mismatch confirmed" | "False positive" | "Resolved";
+  status:
+    | "Potential mismatch"
+    | "Verification pending"
+    | "Field verified"
+    | "Mismatch confirmed"
+    | "False positive"
+    | "Resolved";
 }
 
 // Hierarchical location database
@@ -114,7 +120,8 @@ export const PARCEL_DATABASE: Record<string, ParcelRecord> = {
     confidenceScore: 92,
     mismatchDetected: true,
     statusPriority: "High Priority",
-    summary: "Official record shows Agricultural land, but satellite imagery indicates Built-up area.",
+    summary:
+      "Official record shows Agricultural land, but satellite imagery indicates Built-up area.",
     sources: {
       official: "State Land Records (2023)",
       satellite: "Sentinel-2 (2 Jan 2024)",
@@ -124,14 +131,42 @@ export const PARCEL_DATABASE: Record<string, ParcelRecord> = {
       { type: "warning", text: "Potential unrecorded land-use change" },
       { type: "warning", text: "Review applicable land-use regulations" },
       { type: "check", text: "May require field verification" },
-      { type: "info", text: "Check for applicable permissions (NA, NOC, conversion approval, etc.)" },
+      {
+        type: "info",
+        text: "Check for applicable permissions (NA, NOC, conversion approval, etc.)",
+      },
     ],
     historicalTimeline: [
-      { year: 2020, landUse: "Agriculture", description: "Full crop cover observed during Kharif & Rabi seasons.", imageUrl: "/src/assets/sat_2020.jpg" },
-      { year: 2021, landUse: "Agriculture", description: "Active agricultural land use with seasonal vegetation.", imageUrl: "/src/assets/sat_2020.jpg" },
-      { year: 2022, landUse: "Partially Built-up", description: "Initial earthworks and ground clearance observed.", imageUrl: "/src/assets/satellite_map.jpg" },
-      { year: 2023, landUse: "Construction Activity", description: "Structural foundations and commercial construction visible.", imageUrl: "/src/assets/sat_2024.jpg" },
-      { year: 2024, landUse: "Built-up", description: "Completed commercial shed structures and paving.", imageUrl: "/src/assets/sat_2024.jpg" },
+      {
+        year: 2020,
+        landUse: "Agriculture",
+        description: "Full crop cover observed during Kharif & Rabi seasons.",
+        imageUrl: "/src/assets/sat_2020.jpg",
+      },
+      {
+        year: 2021,
+        landUse: "Agriculture",
+        description: "Active agricultural land use with seasonal vegetation.",
+        imageUrl: "/src/assets/sat_2020.jpg",
+      },
+      {
+        year: 2022,
+        landUse: "Partially Built-up",
+        description: "Initial earthworks and ground clearance observed.",
+        imageUrl: "/src/assets/satellite_map.jpg",
+      },
+      {
+        year: 2023,
+        landUse: "Construction Activity",
+        description: "Structural foundations and commercial construction visible.",
+        imageUrl: "/src/assets/sat_2024.jpg",
+      },
+      {
+        year: 2024,
+        landUse: "Built-up",
+        description: "Completed commercial shed structures and paving.",
+        imageUrl: "/src/assets/sat_2024.jpg",
+      },
     ],
     fieldEvidence: [
       {
@@ -141,7 +176,8 @@ export const PARCEL_DATABASE: Record<string, ParcelRecord> = {
         author: "Local Gram Sabha Member",
         description: "Commercial warehousing shed built without published local NA order.",
         verified: true,
-        imageUrl: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80",
+        imageUrl:
+          "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80",
       },
       {
         id: "ev-2",
@@ -157,17 +193,54 @@ export const PARCEL_DATABASE: Record<string, ParcelRecord> = {
         date: "18 Aug 2023",
         submitterType: "Drone Survey",
         author: "District GIS Unit",
-        description: "High-resolution orthomosaic capturing boundary encroachment & steel roof structures.",
+        description:
+          "High-resolution orthomosaic capturing boundary encroachment & steel roof structures.",
         verified: true,
-        imageUrl: "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=400&q=80",
+        imageUrl:
+          "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=400&q=80",
       },
     ],
     nearbyPlots: [
-      { surveyNo: "123/1", officialUse: "Agriculture", detectedUse: "Agriculture", areaHectares: 1.98, change: "No Change", riskLevel: "Low" },
-      { surveyNo: "123/2", officialUse: "Agriculture", detectedUse: "Built-up", areaHectares: 2.14, change: "Changed", riskLevel: "High" },
-      { surveyNo: "123/3", officialUse: "Agriculture", detectedUse: "Built-up", areaHectares: 1.76, change: "Changed", riskLevel: "High" },
-      { surveyNo: "124/1", officialUse: "Residential", detectedUse: "Residential", areaHectares: 0.98, change: "No Change", riskLevel: "Low" },
-      { surveyNo: "125/4", officialUse: "Government", detectedUse: "Water Body", areaHectares: 3.42, change: "No Change", riskLevel: "Low" },
+      {
+        surveyNo: "123/1",
+        officialUse: "Agriculture",
+        detectedUse: "Agriculture",
+        areaHectares: 1.98,
+        change: "No Change",
+        riskLevel: "Low",
+      },
+      {
+        surveyNo: "123/2",
+        officialUse: "Agriculture",
+        detectedUse: "Built-up",
+        areaHectares: 2.14,
+        change: "Changed",
+        riskLevel: "High",
+      },
+      {
+        surveyNo: "123/3",
+        officialUse: "Agriculture",
+        detectedUse: "Built-up",
+        areaHectares: 1.76,
+        change: "Changed",
+        riskLevel: "High",
+      },
+      {
+        surveyNo: "124/1",
+        officialUse: "Residential",
+        detectedUse: "Residential",
+        areaHectares: 0.98,
+        change: "No Change",
+        riskLevel: "Low",
+      },
+      {
+        surveyNo: "125/4",
+        officialUse: "Government",
+        detectedUse: "Water Body",
+        areaHectares: 3.42,
+        change: "No Change",
+        riskLevel: "Low",
+      },
     ],
   },
   "123/1": {
@@ -207,13 +280,35 @@ export const PARCEL_DATABASE: Record<string, ParcelRecord> = {
         author: "Talathi Officer",
         description: "Sugarcane crop standing on parcel 123/1.",
         verified: true,
-        imageUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=400&q=80",
+        imageUrl:
+          "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=400&q=80",
       },
     ],
     nearbyPlots: [
-      { surveyNo: "123/1", officialUse: "Agriculture", detectedUse: "Agriculture", areaHectares: 1.98, change: "No Change", riskLevel: "Low" },
-      { surveyNo: "123/2", officialUse: "Agriculture", detectedUse: "Built-up", areaHectares: 2.14, change: "Changed", riskLevel: "High" },
-      { surveyNo: "123/3", officialUse: "Agriculture", detectedUse: "Built-up", areaHectares: 1.76, change: "Changed", riskLevel: "High" },
+      {
+        surveyNo: "123/1",
+        officialUse: "Agriculture",
+        detectedUse: "Agriculture",
+        areaHectares: 1.98,
+        change: "No Change",
+        riskLevel: "Low",
+      },
+      {
+        surveyNo: "123/2",
+        officialUse: "Agriculture",
+        detectedUse: "Built-up",
+        areaHectares: 2.14,
+        change: "Changed",
+        riskLevel: "High",
+      },
+      {
+        surveyNo: "123/3",
+        officialUse: "Agriculture",
+        detectedUse: "Built-up",
+        areaHectares: 1.76,
+        change: "Changed",
+        riskLevel: "High",
+      },
     ],
   },
   "123/3": {
@@ -257,9 +352,30 @@ export const PARCEL_DATABASE: Record<string, ParcelRecord> = {
       },
     ],
     nearbyPlots: [
-      { surveyNo: "123/1", officialUse: "Agriculture", detectedUse: "Agriculture", areaHectares: 1.98, change: "No Change", riskLevel: "Low" },
-      { surveyNo: "123/2", officialUse: "Agriculture", detectedUse: "Built-up", areaHectares: 2.14, change: "Changed", riskLevel: "High" },
-      { surveyNo: "123/3", officialUse: "Agriculture", detectedUse: "Built-up", areaHectares: 1.76, change: "Changed", riskLevel: "High" },
+      {
+        surveyNo: "123/1",
+        officialUse: "Agriculture",
+        detectedUse: "Agriculture",
+        areaHectares: 1.98,
+        change: "No Change",
+        riskLevel: "Low",
+      },
+      {
+        surveyNo: "123/2",
+        officialUse: "Agriculture",
+        detectedUse: "Built-up",
+        areaHectares: 2.14,
+        change: "Changed",
+        riskLevel: "High",
+      },
+      {
+        surveyNo: "123/3",
+        officialUse: "Agriculture",
+        detectedUse: "Built-up",
+        areaHectares: 1.76,
+        change: "Changed",
+        riskLevel: "High",
+      },
     ],
   },
 };

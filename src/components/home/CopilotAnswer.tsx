@@ -503,7 +503,9 @@ export function CopilotAnswer({
                 key={`${b.section}-${i}`}
                 className={`flex items-start gap-2 rounded-lg border px-2.5 py-1.5 ${BREAKDOWN_TONE[b.section] ?? DEFAULT_BREAKDOWN_TONE}`}
               >
-                <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-wide">{b.section}</span>
+                <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-wide">
+                  {b.section}
+                </span>
                 <span className="min-w-0 flex-1 text-[11.5px] leading-snug">{b.detail}</span>
               </li>
             ))}
