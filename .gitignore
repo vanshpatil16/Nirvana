@@ -43,3 +43,4 @@ public/cesium/
 *.sln
 *.sw?
 .vercel
+eval/__pycache__/
