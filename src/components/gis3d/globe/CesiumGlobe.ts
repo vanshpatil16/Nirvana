@@ -12,13 +12,33 @@
  *    carries an id prefix + properties so the inspector can explain it.
  */
 import { resolveFloors } from "@/services/gis3d/buildingFloors";
+import type { ScenarioElementKind } from "@/services/gis3d/landPotentialScenarioTypes";
+import {
+  CONTEXT_RING_COLOR,
+  ELEMENT_ALPHA,
+  ELEMENT_FILL,
+  ELEMENT_OUTLINE,
+  SCENARIO_LABEL_COLOR,
+  SCENARIO_STAGE_OUTLINE,
+  displayHeightM,
+  isExtruded,
+} from "@/services/gis3d/scenarioVisual";
+import { elementProperties } from "@/services/gis3d/scenarioProvenance";
+import type { LandScenario } from "@/services/gis3d/landPotentialScenarioTypes";
 import type { PerfMode, Viewport } from "../types";
 
 /** Type-only reference so `tsc` sees the module without bundling it here. */
 type CesiumModule = typeof import("cesium");
 
 export type GlobePickKind =
-  "parcel" | "land-parcel" | "building" | "state" | "region" | "place" | "none";
+  | "parcel"
+  | "land-parcel"
+  | "building"
+  | "state"
+  | "region"
+  | "place"
+  | "scenario-element"
+  | "none";
 
 export interface GlobePick {
   kind: GlobePickKind;
@@ -118,6 +138,39 @@ export interface LandPotentialSelection {
   properties?: Record<string, unknown>;
 }
 
+/* ------------------------------------------------------- 3d scenario -- */
+
+/**
+ * A conceptual scenario handed to the globe for drawing.
+ *
+ * This is deliberately a plain, Cesium-free shape. The globe is the only place
+ * that knows about Cesium entities, and the generators (which are pure geometry
+ * and are unit-tested without a browser) know nothing about it. The seam
+ * between them is this interface.
+ */
+export interface ScenarioDrawSpec {
+  parcelId: string;
+  /** Selected parcel ring, used for the stage outline and the SIMULATED hatch. */
+  parcelRing: number[][];
+  /** One entry per conceptual element. `heightM === 0` means draped. */
+  elements: {
+    key: string;
+    kind: ScenarioElementKind;
+    label: string;
+    ring: number[][];
+    heightM: number;
+  }[];
+  /** Floating label text, e.g. "CONCEPTUAL SCENARIO / INDUSTRIAL / 38.4 ha". */
+  label: string;
+  labelCentre: [number, number] | null;
+  /** 0..1 global opacity multiplier from the CURRENT→SCENARIO slider. */
+  opacity: number;
+  /** Draw the repeated "simulated" hatch across the parcel. */
+  hatch: boolean;
+  /** Context ring radii in metres; empty when the user has them off. */
+  contextRings: number[];
+}
+
 export interface ChoroplethSpec {
   /** state name → fill colour (CSS) */
   colors: Record<string, string>;
@@ -169,6 +222,22 @@ export class CesiumGlobe {
   /** The current selection spec, re-applied whenever the layer is redrawn. */
   private lpSelSpec: LandPotentialSelection | null = null;
   private lpPulse: { haloId: string; handler: () => void; phase: number } | null = null;
+
+  /* ------------------------------------------------------- 3d scenario --
+     A DEDICATED group, per spec §46. Scenario geometry lives in its own id
+     namespace and its own arrays, and `clearScenario()` removes exactly those
+     ids. It never touches buildings, roads, parcels, boundaries or imagery —
+     those are all separate groups with separate lifetimes. */
+  private scenarioEntities: string[] = [];
+  private scenarioStageEntities: string[] = [];
+  private scenarioRingEntities: string[] = [];
+  private scenarioLabelId: string | null = null;
+  /** Kept so opacity/split changes repaint in place instead of rebuilding. */
+  private scenarioSpec: ScenarioDrawSpec | null = null;
+  /** The scenario these entities were built from, for pick provenance. */
+  private scenarioMeta: LandScenario | null = null;
+  private scenarioOpacity = 1;
+  private scenarioVisible = false;
   private adminRings: { name: string; rings: number[][][] }[] = [];
   private ringEntities = new Map<string, string[]>();
 
@@ -468,6 +537,8 @@ export class CesiumGlobe {
       this.viewer.scene.postRender.removeEventListener(this.lpPulse.handler);
       this.lpPulse = null;
     }
+    // Scenario group goes with everything else on teardown (spec §29: no leaks).
+    this.clearScenario();
     const C = this.C;
     if (this.viewer && C) {
       try {
@@ -1446,6 +1517,263 @@ export class CesiumGlobe {
     this.flyTo(lon, lat, rangeMeters, tiltDeg);
   }
 
+  /* ------------------------------------------------------- 3d scenario */
+
+  /**
+   * Draw (or clear) a conceptual scenario INSIDE the selected parcel.
+   *
+   * Everything conceptual lives under the `sc:` id prefix and is tracked in
+   * `scenarioEntities`, so `clearScenario()` removes the previous scenario and
+   * nothing else. Buildings, roads, parcels, boundaries, imagery and terrain
+   * are untouched — that is the whole reason this is a separate group
+   * (spec §46, §28).
+   *
+   * The real surroundings are deliberately left ON. This is an overlay on the
+   * actual geography, not a replacement scene (spec §8).
+   */
+  setScenario(spec: ScenarioDrawSpec | null, meta?: LandScenario): void {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer) return;
+    this.clearScenario();
+    this.scenarioSpec = spec;
+    this.scenarioMeta = meta ?? null;
+    if (!spec) {
+      this.scenarioVisible = false;
+      this.requestRender();
+      return;
+    }
+    this.scenarioOpacity = spec.opacity;
+    this.scenarioVisible = true;
+    this.drawScenario();
+  }
+
+  /** Rebuild the scenario from the cached spec. Used after a rebuild of state. */
+  private drawScenario(): void {
+    const C = this.C;
+    const viewer = this.viewer;
+    const spec = this.scenarioSpec;
+    if (!C || !viewer || !spec) return;
+
+    /* Stage: the "this parcel is the scenario site" marker. Drawn UNDER the
+       geometry so the massing reads on top of it. */
+    const stageId = "sc:stage";
+    this.scenarioStageEntities.push(stageId);
+    viewer.entities.add({
+      id: stageId,
+      polygon: {
+        hierarchy: this.polygonHierarchy(spec.parcelRing),
+        heightReference: C.HeightReference.CLAMP_TO_GROUND,
+        material: spec.hatch
+          ? new C.StripeMaterialProperty({
+              evenColor: C.Color.fromCssColorString(SCENARIO_STAGE_OUTLINE).withAlpha(0.2),
+              oddColor: C.Color.TRANSPARENT,
+              repeat: 22,
+            })
+          : C.Color.TRANSPARENT,
+        outline: false,
+      },
+      properties: { kind: "scenario-element", scenarioElement: "stage", status: "SIMULATED" },
+    });
+
+    const outlineId = "sc:stage:outline";
+    this.scenarioStageEntities.push(outlineId);
+    viewer.entities.add({
+      id: outlineId,
+      polyline: {
+        positions: C.Cartesian3.fromDegreesArray(flatRing(spec.parcelRing)),
+        width: 3,
+        // Dashed: the visual language says "generated", not "boundary".
+        material: new C.PolylineDashMaterialProperty({
+          color: C.Color.fromCssColorString(SCENARIO_STAGE_OUTLINE).withAlpha(0.95),
+          dashLength: 14,
+        }),
+        clampToGround: true,
+      },
+      properties: { kind: "scenario-element", scenarioElement: "stage", status: "SIMULATED" },
+    });
+
+    /* Context rings (500 m / 1 km / 5 km) — opt-in, so they never clutter by
+       default (spec §20). */
+    for (const radius of spec.contextRings) {
+      const id = `sc:ring:${radius}`;
+      this.scenarioRingEntities.push(id);
+      viewer.entities.add({
+        id,
+        position: C.Cartesian3.fromDegrees(
+          ringCentre(spec.parcelRing)?.[0] ?? 0,
+          ringCentre(spec.parcelRing)?.[1] ?? 0,
+        ),
+        ellipse: {
+          semiMajorAxis: radius,
+          semiMinorAxis: radius,
+          material: C.Color.TRANSPARENT,
+          outline: true,
+          outlineColor: C.Color.fromCssColorString(CONTEXT_RING_COLOR).withAlpha(0.55),
+          outlineWidth: 1.5,
+          heightReference: C.HeightReference.CLAMP_TO_GROUND,
+        },
+        label: {
+          text: `${radius >= 1000 ? `${radius / 1000} km` : `${radius} m`}`,
+          font: "700 10px Inter, system-ui, sans-serif",
+          fillColor: C.Color.fromCssColorString("#e8f0e9"),
+          outlineColor: C.Color.fromCssColorString("#0d1411"),
+          outlineWidth: 3,
+          style: C.LabelStyle.FILL_AND_OUTLINE,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+        properties: { kind: "scenario-element", scenarioElement: "context-ring" },
+      });
+    }
+
+    for (const e of spec.elements) {
+      const id = `sc:el:${e.key}`;
+      const fill = C.Color.fromCssColorString(ELEMENT_FILL[e.kind]).withAlpha(
+        Math.max(0.04, ELEMENT_ALPHA[e.kind] * this.scenarioOpacity),
+      );
+      const outline = C.Color.fromCssColorString(ELEMENT_OUTLINE[e.kind]).withAlpha(
+        Math.min(1, this.scenarioOpacity),
+      );
+      const extruded = isExtruded(e.kind, e.heightM);
+      const height = displayHeightM(e.heightM);
+      viewer.entities.add({
+        id,
+        polygon: {
+          hierarchy: this.polygonHierarchy(e.ring),
+          // Draped elements clamp to ground so they follow real terrain.
+          // Extruded elements use an absolute height, also clamped at their
+          // base, so a block sits on the surface rather than through it.
+          heightReference: C.HeightReference.CLAMP_TO_GROUND,
+          ...(extruded ? { extrudedHeight: height } : {}),
+          material: fill,
+          outline: true,
+          outlineColor: outline,
+          outlineWidth: extruded ? 1.6 : 1.1,
+          classificationType: C.ClassificationType.BOTH,
+        },
+        properties: elementProperties(
+          this.scenarioMeta ??
+            ({
+              parcelId: spec.parcelId,
+              type: "logistics",
+              provenance: { disclaimer: "" },
+            } as unknown as LandScenario),
+          e.label,
+          e.kind,
+        ),
+      });
+      this.scenarioEntities.push(id);
+    }
+
+    /* Floating SIMULATED label over the parcel. This is the guard against
+       mistaking simulated geometry for real infrastructure (spec §39): it is
+       visible even when the massing is only a few pixels. */
+    if (spec.labelCentre) {
+      const lid = "sc:label";
+      this.scenarioLabelId = lid;
+      viewer.entities.add({
+        id: lid,
+        position: C.Cartesian3.fromDegrees(spec.labelCentre[0], spec.labelCentre[1]),
+        label: {
+          text: spec.label,
+          font: "800 11px Inter, system-ui, sans-serif",
+          fillColor: C.Color.fromCssColorString(SCENARIO_LABEL_COLOR),
+          outlineColor: C.Color.fromCssColorString("#0d1411"),
+          outlineWidth: 3.5,
+          style: C.LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: C.VerticalOrigin.TOP,
+          pixelOffset: new C.Cartesian2(0, 12),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+        properties: { kind: "scenario-element", scenarioElement: "label", status: "SIMULATED" },
+      });
+    }
+
+    this.requestRender();
+  }
+
+  /**
+   * Global opacity 0..1, applied by re-stamping material alpha IN PLACE.
+   *
+   * The slider must be smooth (spec §12), so this never rebuilds geometry —
+   * it walks the existing entities and sets their polygon materials. That keeps
+   * a drag at 60 fps instead of re-creating dozens of entities per frame.
+   */
+  setScenarioOpacity(opacity: number): void {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer) return;
+    this.scenarioOpacity = Math.min(1, Math.max(0, opacity));
+    for (const id of this.scenarioEntities) {
+      const e = viewer.entities.getById(id);
+      const poly = e?.polygon;
+      if (!poly) continue;
+      const kind = (e?.properties?.getValue?.() as Record<string, unknown> | undefined)?.[
+        "elementKind"
+      ] as ScenarioElementKind | undefined;
+      if (!kind) continue;
+      const mat = poly.material as unknown as {
+        color?: { setValue: (v: unknown) => void };
+      };
+      if (mat?.color && typeof mat.color.setValue === "function") {
+        mat.color.setValue(
+          C.Color.fromCssColorString(ELEMENT_FILL[kind]).withAlpha(
+            Math.max(0.0, ELEMENT_ALPHA[kind] * this.scenarioOpacity),
+          ),
+        );
+      }
+    }
+    this.requestRender();
+  }
+
+  /** Hide/show conceptual geometry without destroying it (spec §10 CURRENT view). */
+  setScenarioVisible(show: boolean): void {
+    const viewer = this.viewer;
+    if (!viewer) return;
+    this.scenarioVisible = show;
+    for (const id of [...this.scenarioEntities, ...this.scenarioStageEntities]) {
+      const e = viewer.entities.getById(id);
+      if (e) e.show = show;
+    }
+    if (this.scenarioLabelId) {
+      const e = viewer.entities.getById(this.scenarioLabelId);
+      if (e) e.show = show;
+    }
+    this.requestRender();
+  }
+
+  isScenarioVisible(): boolean {
+    return this.scenarioVisible;
+  }
+
+  /** Remove ONLY the scenario group. Nothing else on the globe is touched. */
+  clearScenario(): void {
+    const viewer = this.viewer;
+    if (!viewer) return;
+    for (const id of [
+      ...this.scenarioEntities,
+      ...this.scenarioStageEntities,
+      ...this.scenarioRingEntities,
+      ...(this.scenarioLabelId ? [this.scenarioLabelId] : []),
+    ]) {
+      viewer.entities.removeById(id);
+    }
+    this.scenarioEntities = [];
+    this.scenarioStageEntities = [];
+    this.scenarioRingEntities = [];
+    this.scenarioLabelId = null;
+    this.scenarioSpec = null;
+    this.scenarioMeta = null;
+    this.scenarioVisible = false;
+    this.requestRender();
+  }
+
+  /** Frame the scenario site from the parcel ring (spec §11). */
+  flyToScenario(lon: number, lat: number, areaHa: number): void {
+    const range = Math.min(24_000, Math.max(5_500, 3_800 + Math.sqrt(Math.max(areaHa, 1)) * 700));
+    this.flyTo(lon, lat, range, -52, 1.6);
+  }
+
   /* -------------------------------------------------------- floor stack */
 
   /**
@@ -1714,6 +2042,8 @@ export class CesiumGlobe {
     const kind = typeof read("kind") === "string" ? (read("kind") as string) : "";
     const osmKind = typeof read("osmKind") === "string" ? (read("osmKind") as string) : "";
     const lpLabel = typeof read("label") === "string" ? (read("label") as string) : "";
+    const scenarioTitle =
+      typeof read("scenarioTitle") === "string" ? (read("scenarioTitle") as string) : "";
     // Entities built from footprints carry no name - fall back to what they
     // actually are rather than showing a raw id at the cursor.
     const title =
@@ -1724,27 +2054,33 @@ export class CesiumGlobe {
           ? "Land parcel"
           : kind === "land-parcel"
             ? "Candidate parcel (DEMO)"
-            : kind === "region"
-              ? "Policy region"
-              : kind === "osm"
-                ? osmKind === "roads"
-                  ? "Road"
-                  : osmKind === "water"
-                    ? "Water body"
-                    : osmKind === "protected"
-                      ? "Protected area"
-                      : "OpenStreetMap feature"
-                : null);
+            : kind === "scenario-element"
+              ? "CONCEPTUAL SCENARIO"
+              : kind === "region"
+                ? "Policy region"
+                : kind === "osm"
+                  ? osmKind === "roads"
+                    ? "Road"
+                    : osmKind === "water"
+                      ? "Water body"
+                      : osmKind === "protected"
+                        ? "Protected area"
+                        : "OpenStreetMap feature"
+                  : null);
     if (!title) return null;
     const height = read("heightM");
     const detail =
       kind === "land-parcel"
         ? lpLabel || null
-        : typeof height === "number" && height > 0
-          ? `~${height.toFixed(1)} m tagged`
-          : kind === "building"
-            ? "height not tagged"
-            : null;
+        : kind === "scenario-element"
+          ? // Never let a generated element read as a real structure at the
+            // cursor either — the badge travels with the hover readout.
+            `${lpLabel || "Generated element"} · SIMULATED`
+          : typeof height === "number" && height > 0
+            ? `~${height.toFixed(1)} m tagged`
+            : kind === "building"
+              ? "height not tagged"
+              : null;
     return { title, detail };
   }
 

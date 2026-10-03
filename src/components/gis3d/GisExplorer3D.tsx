@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./land-potential.css";
+import "./scenario.css";
 import {
   ArrowLeft,
   Building2,
@@ -47,6 +48,26 @@ import { LandPotentialInspector } from "./LandPotentialInspector";
 import { LandPotentialQuery } from "./LandPotentialQuery";
 import { LandPotentialResults } from "./LandPotentialResults";
 import { LandPotentialScenario, type ScenarioHandoff } from "./LandPotentialScenario";
+import { ScenarioToolbar, ScenarioElementStrip } from "./ScenarioToolbar";
+import { ScenarioInspector, ScenarioFieldChecklist } from "./ScenarioInspector";
+import { ScenarioComparison, ScenarioWhy } from "./ScenarioWhy";
+import { ScenarioElementInspector, type ScenarioElementPick } from "./ScenarioElementInspector";
+import {
+  buildScenario,
+  clearScenarioCache,
+  displayOpacity,
+  scenarioGlobeLabel,
+  scenarioVisibleIn,
+} from "@/services/gis3d/landPotentialScenarioService";
+import {
+  DEFAULT_PARAMETERS,
+  type LandScenario,
+  type LandScenarioType,
+  type ScenarioDisplay,
+  type ScenarioParameters,
+} from "@/services/gis3d/landPotentialScenarioTypes";
+import { frameFrom } from "@/services/gis3d/scenarioLayout";
+import { LAND_SCENARIO_TYPES } from "@/services/gis3d/landPotentialScenarioTypes";
 import { FieldVerificationPanel } from "./FieldVerificationPanel";
 import { assessParcel } from "@/services/gis3d/landPotentialScoring";
 import {
@@ -98,6 +119,41 @@ const OSM_LAYER_ID: Record<OsmKind, string> = {
 };
 
 const PERF_ORDER: PerfMode[] = ["high", "medium", "low"];
+
+/** Valid scenario element kinds, mirrored here so a pick cannot inject a bad one. */
+const ELEMENT_KINDS = [
+  "massing",
+  "surface",
+  "water",
+  "vegetation",
+  "circulation",
+  "service",
+] as const;
+
+/**
+ * Ask Bhumi's vocabulary for each scenario type.
+ *
+ * These regexes are how a spoken or typed request becomes a scenario choice.
+ * They match the words an officer would actually use, not just the formal type
+ * names, because "show me the industrial one" has to work.
+ */
+const SCENARIO_WORDS: Record<LandScenarioType, RegExp> = {
+  renewable: /\b(solar|renewable|photovoltaic|panel|solar farm|energy)\b/i,
+  logistics: /\b(industrial|industry|factory|warehouse|logistic|storage|manufactur|plant)\b/i,
+  "public-infrastructure": /\b(public|school|hospital|health|clinic|government office|civic)\b/i,
+  ecological: /\b(ecolog|restoration|restore|green|biodiversity|habitat|forest|trees?)\b/i,
+  water: /\b(water|pond|retention|recharge|drain|wetland|lake)\b/i,
+  agricultural: /\b(agricultur|farm|crop|field|cultivat)\b/i,
+};
+
+const SCENARIO_NAMES: Record<LandScenarioType, string> = {
+  renewable: "Renewable energy",
+  logistics: "Industrial / Logistics",
+  "public-infrastructure": "Public infrastructure",
+  ecological: "Ecological restoration",
+  water: "Water management",
+  agricultural: "Agricultural restoration",
+};
 
 /** Native tileset rendering modes - restyle only, never a second tileset. */
 const BUILDING_MODES: { id: BuildingVisualMode; label: string; title: string }[] = [
@@ -173,6 +229,23 @@ export function GisExplorer3D({ search }: Props) {
   const [lpTasks, setLpTasks] = useState<FieldVerification[]>([]);
   const [lpHandoff, setLpHandoff] = useState<ScenarioHandoff | null>(null);
 
+  /* ------------------------------------------------------ 3d scenario state */
+  /*
+   * Scenario mode is a THIRD state alongside "no parcel" and "parcel selected".
+   * It never resets the parcel, the camera, the imagery year or the layer set —
+   * `exitScenario` deliberately restores nothing, because nothing was ever
+   * taken away (spec §28).
+   */
+  const [scMode, setScMode] = useState<"off" | "previewing" | "active">("off");
+  const [scType, setScType] = useState<LandScenarioType | null>(null);
+  const [scParams, setScParams] = useState<ScenarioParameters>(DEFAULT_PARAMETERS);
+  const [scDisplay, setScDisplay] = useState<ScenarioDisplay>("scenario");
+  const [scOpacity, setScOpacity] = useState(1);
+  const [scWhyOpen, setScWhyOpen] = useState(false);
+  const [scCompareOpen, setScCompareOpen] = useState(false);
+  const [scRings, setScRings] = useState<number[]>([]);
+  const [scElementPick, setScElementPick] = useState<ScenarioElementPick | null>(null);
+
   /* ------------------------------------------------- 3D mode / camera state */
   const [visualMode, setVisualMode] = useState<BuildingVisualMode>("standard");
   const [hover, setHover] = useState<GlobeHover | null>(null);
@@ -223,6 +296,179 @@ export function GisExplorer3D({ search }: Props) {
     if (selection.kind === "land-parcel") return;
     setLpSelectedId(null);
   }, [selection]);
+
+  /* ------------------------------------------------ 3d scenario: derived -- */
+
+  /** Real terrain only when the globe says so — never assumed (spec §45). */
+  const scTerrain = status.terrain === "real";
+
+  /** The explorer's own performance mode drives scenario detail (spec §30). */
+  const scDetail = useMemo<"high" | "medium" | "low">(
+    () => (perf === "high" ? "high" : perf === "medium" ? "medium" : "low"),
+    [perf],
+  );
+
+  /**
+   * The active scenario, generated here and nowhere else.
+   *
+   * `buildScenario` is cached, so re-rendering the panel, dragging the opacity
+   * slider or moving the camera never regenerates geometry (spec §36).
+   */
+  const scActive = useMemo<LandScenario | null>(() => {
+    if (scMode === "off" || !scType || !lpSelected) return null;
+    return buildScenario({
+      parcel: lpSelected,
+      type: scType,
+      parameters: scParams,
+      detail: scDetail,
+      terrainAvailable: scTerrain,
+    });
+  }, [scMode, scType, lpSelected, scParams, scDetail, scTerrain]);
+
+  /** The screening score for the scenario's own use, so score and 3D stay linked. */
+  const scScored = useMemo(() => {
+    if (!scActive || !lpAssessment) return null;
+    return lpAssessment.uses.find((u) => u.use.id === scActive.type) ?? null;
+  }, [scActive, lpAssessment]);
+
+  /** Every use for the COMPARE panel, with its screening score. */
+  const scCompareRows = useMemo(
+    () =>
+      LAND_SCENARIO_TYPES.map((t) => ({
+        type: t,
+        scored: lpAssessment?.uses.find((u) => u.use.id === t) ?? null,
+      })),
+    [lpAssessment],
+  );
+
+  /* --------------------------------------------- 3d scenario: globe wiring -- */
+
+  /*
+   * Push the scenario to the globe. This is the ONLY thing that draws it, and
+   * it runs on every scenario change — geometry is replaced, never accumulated,
+   * because `setScenario` clears the previous scenario group first.
+   */
+  useEffect(() => {
+    if (!ready) return;
+    const g = globeRef.current;
+    if (!g) return;
+    if (scMode === "off" || !scActive || !lpSelected) {
+      g.clearScenario();
+      return;
+    }
+    const centre = frameFrom(lpSelected.ring as number[][]);
+    const [minX, minY, maxX, maxY] = [
+      ...(() => {
+        let a = Infinity;
+        let b = Infinity;
+        let c = -Infinity;
+        let d = -Infinity;
+        for (const p of centre.ring) {
+          a = Math.min(a, p.x);
+          b = Math.min(b, p.y);
+          c = Math.max(c, p.x);
+          d = Math.max(d, p.y);
+        }
+        return [a, b, c, d] as [number, number, number, number];
+      })(),
+    ];
+    const labelCentre: [number, number] = centre.toLonLat({
+      x: (minX + maxX) / 2,
+      y: (minY + maxY) / 2,
+    });
+    g.setScenario(
+      {
+        parcelId: lpSelected.id,
+        parcelRing: lpSelected.ring as number[][],
+        elements: scActive.elements.map((e) => ({
+          key: e.key,
+          kind: e.kind,
+          label: e.label,
+          ring: e.ring,
+          heightM: e.heightM,
+        })),
+        label: scenarioGlobeLabel(scActive, lpSelected.areaHa),
+        labelCentre,
+        opacity: displayOpacity(scDisplay, scOpacity),
+        hatch: true,
+        contextRings: scRings,
+      },
+      scActive,
+    );
+    g.setScenarioVisible(scenarioVisibleIn(scDisplay));
+  }, [ready, scMode, scActive, lpSelected, scDisplay, scOpacity, scRings]);
+
+  /** Opacity and display changes repaint in place — no geometry rebuild. */
+  useEffect(() => {
+    if (!ready || scMode === "off") return;
+    const g = globeRef.current;
+    if (!g) return;
+    g.setScenarioVisible(scenarioVisibleIn(scDisplay));
+    if (scenarioVisibleIn(scDisplay)) {
+      g.setScenarioOpacity(displayOpacity(scDisplay, scOpacity));
+    }
+  }, [ready, scMode, scDisplay, scOpacity]);
+
+  /* ------------------------------------------------ 3d scenario: actions -- */
+
+  /** VIEW 3D SCENARIO — the signature interaction (spec §3, §11). */
+  const enterScenario = useCallback(
+    (type: LandScenarioType) => {
+      if (!lpSelected) return;
+      setScType(type);
+      setScMode("active");
+      setScDisplay("scenario");
+      setScOpacity(1);
+      setScWhyOpen(false);
+      setScCompareOpen(false);
+      setScElementPick(null);
+      setTab("inspect");
+      setRightOpen(true);
+      // The camera already frames the parcel; only nudge if the user has since
+      // flown far away, so the transition never yanks the view.
+      const h = viewport?.cameraHeight ?? 0;
+      if (h > frameParcelRange(lpSelected.areaHa) * 2.2) {
+        globeRef.current?.flyToScenario(lpSelected.lon, lpSelected.lat, lpSelected.areaHa);
+      }
+    },
+    [lpSelected, viewport],
+  );
+
+  /** TRY ANOTHER USE — keeps parcel, camera and layer state; swaps geometry only. */
+  const switchScenario = useCallback((type: LandScenarioType) => {
+    setScType(type);
+    setScDisplay("scenario");
+    setScWhyOpen(false);
+    setScElementPick(null);
+    // Deliberately NO camera move and NO refetch: spec §13 and §36.
+  }, []);
+
+  /**
+   * EXIT SCENARIO — removes the conceptual geometry and nothing else.
+   *
+   * There is deliberately no restore logic here: the parcel selection, camera,
+   * imagery year, layers and timeline were never modified, so there is nothing
+   * to put back (spec §28).
+   */
+  const exitScenario = useCallback(() => {
+    setScMode("off");
+    setScType(null);
+    setScDisplay("scenario");
+    setScOpacity(1);
+    setScWhyOpen(false);
+    setScCompareOpen(false);
+    setScRings([]);
+    setScElementPick(null);
+    globeRef.current?.clearScenario();
+  }, []);
+
+  /* Leaving LAND POTENTIAL entirely must take the scenario with it. */
+  useEffect(() => {
+    if (lpOn) return;
+    setScMode("off");
+    setScType(null);
+    clearScenarioCache();
+  }, [lpOn]);
 
   /**
    * Run the screening. Everything is local and deterministic: filter the
@@ -299,6 +545,14 @@ export function GisExplorer3D({ search }: Props) {
 
   /** Clicking a row in the analysis card = clicking the parcel on the globe. */
   const selectCandidate = useCallback((p: LandPotentialParcel) => {
+    // Selecting a DIFFERENT parcel retires any scenario: conceptual geometry
+    // belongs to one parcel, and leaving the old scenario up over the new
+    // parcel would be actively misleading.
+    setScMode("off");
+    setScType(null);
+    setScElementPick(null);
+    setScCompareOpen(false);
+    setScWhyOpen(false);
     setSelection({
       kind: "land-parcel",
       id: p.id,
@@ -470,6 +724,11 @@ export function GisExplorer3D({ search }: Props) {
     const next = !lpOn;
     setLpOn(next);
     if (!next) {
+      // Switching LAND POTENTIAL off takes the scenario with it — the concept
+      // and the parcel it belongs to go away together.
+      setScMode("off");
+      setScType(null);
+      setScElementPick(null);
       setLpSelectedId(null);
       setLpCompareView(false);
       setSelection({ kind: "none" });
@@ -556,6 +815,35 @@ export function GisExplorer3D({ search }: Props) {
       onViewport: (v) => !cancelled && setViewport(v),
       onPick: (p) => {
         if (cancelled) return;
+        /*
+         * A generated conceptual element. Handled BEFORE the land-parcel branch:
+         * scenario geometry sits on top of the parcel, and without this a click
+         * on a generated block would resolve to the parcel underneath and show
+         * the assessment instead of explaining the element (spec §32).
+         */
+        if (p && p.properties["kind"] === "scenario-element") {
+          const label = String(p.properties["label"] ?? "Generated element");
+          const kind = String(p.properties["elementKind"] ?? "massing");
+          setScElementPick({
+            label,
+            kind: (
+              ["massing", "surface", "water", "vegetation", "circulation", "service"] as const
+            ).includes(kind as never)
+              ? (kind as (typeof ELEMENT_KINDS)[number])
+              : "massing",
+            scenarioType: String(p.properties["scenarioType"] ?? ""),
+            scenarioTitle: String(p.properties["scenarioTitle"] ?? ""),
+            parcelId: String(p.properties["parcelId"] ?? ""),
+            description: String(p.properties["description"] ?? ""),
+            purpose: String(p.properties["purpose"] ?? ""),
+            disclaimer: String(p.properties["disclaimer"] ?? ""),
+            source: String(p.properties["source"] ?? ""),
+            modelVersion: String(p.properties["modelVersion"] ?? ""),
+          });
+          setTab("inspect");
+          setRightOpen(true);
+          return;
+        }
         // Land-potential cluster marker: zoom in rather than open an inspector
         // for something that is an aggregate, not a parcel.
         if (p && p.properties["kind"] === "land-parcel" && p.properties["cluster"]) {
@@ -1177,6 +1465,45 @@ export function GisExplorer3D({ search }: Props) {
   const resolveLandQuestion = useCallback(
     (text: string): string | null => {
       if (!lpOn) return null;
+      /*
+       * Scenario COMMANDS first (spec §41). These drive the SAME state and
+       * rendering APIs as the buttons — there is deliberately no AI-only
+       * scenario path, so the AI cannot produce a scenario the UI cannot.
+       */
+      if (lpSelected) {
+        if (
+          /\b(exit|leave|close|hide|done with)\b.*\b(scenario|3d|preview)\b|^\s*exit scenario\b/i.test(
+            text,
+          )
+        ) {
+          exitScenario();
+          return `Exited the 3D scenario for ${lpSelected.id}. The parcel, camera, imagery year, layers and timeline are unchanged.`;
+        }
+        const wantsScenario = /\b(scenario|3d|preview|show me|try|visuali[sz]e|massing)\b/i.test(
+          text,
+        );
+        const named = LAND_SCENARIO_TYPES.find((t) => SCENARIO_WORDS[t].test(text));
+        if (wantsScenario && named) {
+          if (scMode === "off") enterScenario(named);
+          else switchScenario(named);
+          return `Activated the ${SCENARIO_NAMES[named]} conceptual scenario for ${lpSelected.id} (${lpSelected.areaHa} ha). Conceptual geometry is drawn INSIDE the parcel over the real roads, terrain and buildings. It is a spatial planning illustration labelled SIMULATED — not an approved design, and it does not indicate any project will be built.`;
+        }
+        if (scMode !== "off" && /\b(why|explain|because|reason)\b/i.test(text)) {
+          const s = scActive;
+          if (s) {
+            const pos = s.basis.filter((b) => b.supported).map((b) => b.note);
+            const cau = s.basis.filter((b) => !b.supported).map((b) => b.note);
+            return [
+              `Why the ${s.title} conceptual scenario was drawn for ${s.parcelId}:`,
+              ...pos.map((p) => `• ${p}`),
+              ...cau.map((c) => `⚠ ${c}`),
+              `Assumptions: ${s.assumptions.slice(0, 4).join("; ")}.`,
+              `Constraints: ${s.constraints.slice(0, 3).join(" · ")}.`,
+              "The geometry is generated in code from these inputs. It implies no approval, ownership or construction.",
+            ].join("\n");
+          }
+        }
+      }
       if (
         lpSelected &&
         lpAssessment &&
@@ -1231,7 +1558,19 @@ export function GisExplorer3D({ search }: Props) {
       });
       return describeResult(res, use);
     },
-    [lpOn, lpSelected, lpAssessment, lpFilters, lpDistrict, viewport],
+    [
+      lpOn,
+      lpSelected,
+      lpAssessment,
+      lpFilters,
+      lpDistrict,
+      viewport,
+      scMode,
+      scActive,
+      exitScenario,
+      enterScenario,
+      switchScenario,
+    ],
   );
 
   const askContext: AskContext = {
@@ -1714,7 +2053,48 @@ export function GisExplorer3D({ search }: Props) {
                   selection={selection}
                   onClear={() => setSelection({ kind: "none" })}
                 />
-                {selection.kind === "land-parcel" && lpAssessment ? (
+                {/* A picked conceptual element takes priority: the user asked
+                    about the generated thing, not the parcel under it. */}
+                {scElementPick ? (
+                  <ScenarioElementInspector
+                    pick={scElementPick}
+                    onClear={() => setScElementPick(null)}
+                    onExit={exitScenario}
+                  />
+                ) : scCompareOpen && lpAssessment ? (
+                  <ScenarioComparison
+                    rows={scCompareRows}
+                    active={scType}
+                    onView={(t) => {
+                      setScCompareOpen(false);
+                      enterScenario(t);
+                    }}
+                    onBack={() => setScCompareOpen(false)}
+                  />
+                ) : scActive && lpSelected ? (
+                  <>
+                    <ScenarioInspector
+                      scenario={scActive}
+                      parcelId={lpSelected.id}
+                      areaHa={lpSelected.areaHa}
+                      scored={scScored}
+                      parameters={scParams}
+                      onParameters={setScParams}
+                      onWhy={() => setScWhyOpen((v) => !v)}
+                      onCompare={() => setScCompareOpen(true)}
+                      onFieldVerify={() => setLpFieldOpen(true)}
+                      onExit={exitScenario}
+                      fieldTasks={lpTasks}
+                    />
+                    {scWhyOpen && (
+                      <ScenarioWhy
+                        scenario={scActive}
+                        scored={scScored}
+                        onClose={() => setScWhyOpen(false)}
+                      />
+                    )}
+                  </>
+                ) : selection.kind === "land-parcel" && lpAssessment ? (
                   <LandPotentialInspector
                     assessment={lpAssessment}
                     activeUse={lpFilters.use}
@@ -1750,6 +2130,10 @@ export function GisExplorer3D({ search }: Props) {
                     }}
                     onFieldVerify={() => setLpFieldOpen(true)}
                     onEvidence={() => setInfo("lp-candidates")}
+                    onViewScenario={(u) => enterScenario(u)}
+                    onCompareUses={() => setScCompareOpen(true)}
+                    scenarioActive={scMode !== "off" ? scType : null}
+                    onExitScenario={exitScenario}
                     onPreview={(next) => {
                       setActive((prev) => {
                         const has = prev.includes("lp-zones");
@@ -1853,6 +2237,24 @@ export function GisExplorer3D({ search }: Props) {
         >
           <Info /> Inspect
         </button>
+
+        {/* ------------------------------------------------- 3d scenario bar */}
+        {scActive && (
+          <>
+            <ScenarioToolbar
+              scenario={scActive}
+              display={scDisplay}
+              onDisplay={setScDisplay}
+              opacity={scOpacity}
+              onOpacity={setScOpacity}
+              onType={switchScenario}
+              onExit={exitScenario}
+              rings={scRings}
+              onRings={setScRings}
+            />
+            <ScenarioElementStrip scenario={scActive} display={scDisplay} />
+          </>
+        )}
 
         {/* -------------------------------------------------------- legend */}
         {lpOn && (

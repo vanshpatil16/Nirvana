@@ -16,7 +16,15 @@
  */
 
 import { useMemo, useState } from "react";
-import { ChevronDown, Crosshair, ExternalLink, Flag, FlaskConical, ScanSearch } from "lucide-react";
+import {
+  Box,
+  ChevronDown,
+  Crosshair,
+  ExternalLink,
+  Flag,
+  FlaskConical,
+  ScanSearch,
+} from "lucide-react";
 import type {
   LandPotentialAssessment,
   LandPotentialMapMode,
@@ -54,6 +62,14 @@ interface Props {
   previewOn: boolean;
   /** Whether the real OSM context layers are currently on. */
   contextOn: boolean;
+  /** VIEW 3D SCENARIO — generate and draw conceptual geometry in the globe. */
+  onViewScenario: (use: PotentialUseId) => void;
+  /** Open the cross-scenario comparison table. */
+  onCompareUses: () => void;
+  /** Which scenario is currently up on the globe, if any. */
+  scenarioActive: PotentialUseId | null;
+  /** Exit scenario mode, keeping the parcel selected. */
+  onExitScenario: () => void;
 }
 
 const statusClass = (s: string) =>
@@ -83,6 +99,10 @@ export function LandPotentialInspector({
   onPreview,
   previewOn,
   contextOn,
+  onViewScenario,
+  onCompareUses,
+  scenarioActive,
+  onExitScenario,
 }: Props) {
   const parcel = assessment.parcel;
   const [whyOpen, setWhyOpen] = useState(false);
@@ -272,6 +292,49 @@ export function LandPotentialInspector({
           <button type="button" onClick={() => onCompare(true)}>
             COMPARE USES
           </button>
+        </div>
+
+        {/*
+          VIEW 3D SCENARIO — the signature interaction. It sits directly under
+          the scores so the link between "this use scores N" and "here is what
+          that use could look like here" is one click, not a menu (spec §18).
+        */}
+        <div className="g3d-lp-scenario-cta">
+          {scenarioActive !== null && scenarioActive === activeUse ? (
+            <>
+              <button
+                type="button"
+                className="g3d-lp-scenario-live"
+                onClick={() => onViewScenario(activeUse)}
+              >
+                <Box /> 3D SCENARIO ACTIVE — RECONSIDER
+              </button>
+              <button type="button" onClick={onExitScenario}>
+                EXIT SCENARIO
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="primary g3d-lp-scenario-view"
+                disabled={activeUse === "all"}
+                onClick={() => {
+                  if (activeUse !== "all") onViewScenario(activeUse);
+                }}
+                title="Generate a conceptual 3D scenario for this use inside the selected parcel"
+              >
+                <Box /> VIEW 3D SCENARIO
+              </button>
+              <button type="button" onClick={onCompareUses}>
+                COMPARE SCENARIOS
+              </button>
+            </>
+          )}
+          <p className="g3d-hint">
+            Generates conceptual massing INSIDE this parcel, over the real roads, terrain and
+            buildings. It is a spatial planning illustration, not an approved design.
+          </p>
         </div>
       </div>
       {/* ------------------------------------------------------------ WHY */}
