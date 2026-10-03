@@ -735,17 +735,51 @@ export function generateSolarScenario(input: ScenarioGeneratorInput): LandScenar
   const rowW = Math.min(9, rowPitch * 0.62);
 
   let count = 0;
-  for (let side = -1; side <= 1; side += 2) {
-    for (let i = 0; i < rowsEachSide; i++) {
-      const offset = rowPitch * (i + 0.7) * side + rowPitch * 0.3 * side;
-      const cy = spineY + offset;
-      // Rows stay inside the field, not just the parcel.
-      if (cy < minY + rowW || cy > maxY - rowW) continue;
-      const cx = spineX + (spanX - rowLen) / 2 - spanX * 0.06 * side;
-      const ring = rectRing(cx, cy, rowLen, rowW, rot);
+  /*
+   * Rows are laid at the parcel's snapped long axis first, which is what makes
+   * an array read as designed rather than accidentally rotated. On a narrow or
+   * irregular parcel those rotated rows can all fail the containment test, so
+   * there is a fallback to axis-aligned rows — an axis-aligned field is still
+   * perfectly legible, whereas "GEOMETRY LIMITED" on a 20 ha parcel for a
+   * cosmetic rotation is not.
+   */
+  const placeRows = (rotation: number): ScenarioElement[] => {
+    const placed: ScenarioElement[] = [];
+    /*
+     * Walk the AVAILABLE span at row pitch and take whatever fits, rather than
+     * stepping a fixed number of offsets out from the centre. On a narrow
+     * parcel the first offset already lands outside the field, and a fixed
+     * count therefore yields nothing even though several rows would fit.
+     */
+    const top = maxY - rowW;
+    const bottom = minY + rowW;
+    for (let cy = bottom + rowPitch * 0.5; cy <= top; cy += rowPitch) {
+      // Keep the maintenance corridor clear.
+      if (Math.abs(cy - spineY) < rowPitch * 0.55) continue;
+      if (placed.length >= rowsEachSide * 2) break;
+      // Centre the row on the field. Centring means the row's own coordinate
+      // IS the centre — adding half the leftover width instead of subtracting
+      // it slides every row off to one side by up to a fifth of the parcel.
+      const cx = spineX;
+      const ring = rectRing(cx, cy, rowLen, rowW, rotation);
       if (!verifyInside(field, ring)) continue;
-      draft.elements.push(el("surface", "Conceptual panel row", ring, frame));
-      count += 1;
+      placed.push(el("surface", "Conceptual panel row", ring, frame));
+    }
+    return placed;
+  };
+
+  const rotatedRows = placeRows(rot);
+  if (rotatedRows.length > 0) {
+    draft.elements.push(...rotatedRows);
+    count = rotatedRows.length;
+  } else {
+    const axisRows = placeRows(0);
+    if (axisRows.length > 0) {
+      draft.elements.push(...axisRows);
+      count = axisRows.length;
+      draft.assumptions.push(
+        "Panel rows are aligned to the parcel's bounding axis rather than its long axis, because the angled rows would not fit inside the boundary.",
+      );
     }
   }
 
@@ -1273,15 +1307,32 @@ export function generateAgriculturalScenario(input: ScenarioGeneratorInput): Lan
   const blockLen = (axisIsX ? spanY : spanX) * (0.72 + p.openSpace * 0.2);
 
   for (let i = 0; i < blockCount; i++) {
-    const along = minX + pitch * (i + 0.5) + (axisIsX ? 0 : 0);
-    const across = axisIsX ? minY + spanY / 2 - blockLen / 2 : minX + spanX / 2 - blockLen / 2;
-    const cx = axisIsX ? along : minX + spanX * 0.5;
-    const cy = axisIsX ? minY + spanY * 0.5 : along;
+    /*
+     * Blocks tile along the long axis and are centred across it. The position
+     * along that axis has to be read off whichever axis it actually is — using
+     * the X bound for a Y-tiling parcel puts every block at the same X, and
+     * they all fail containment for a parcel that plainly has room.
+     */
+    const t = minX + pitch * (i + 0.5);
+    const cx = axisIsX ? t : minX + spanX / 2;
+    const cy = axisIsX ? minY + spanY / 2 : t;
     const w = axisIsX ? blockDepth : blockLen;
     const h = axisIsX ? blockLen : blockDepth;
-    void across;
-    const ring = rectRing(cx, cy, w, h, axisIsX ? 0 : 90);
-    if (!verifyInside(area, ring)) continue;
+
+    let ring = rectRing(cx, cy, w, h, 0);
+    if (!verifyInside(area, ring)) {
+      // Narrow parcels: a narrower block still reads as a field division.
+      let shrunk = false;
+      for (let k = 0.85; k >= 0.4; k -= 0.15) {
+        const cand = rectRing(cx, cy, w * k, h * k, 0);
+        if (verifyInside(area, cand)) {
+          ring = cand;
+          shrunk = true;
+          break;
+        }
+      }
+      if (!shrunk) continue;
+    }
     draft.elements.push(el("surface", "Conceptual agricultural block", ring, frame));
   }
 

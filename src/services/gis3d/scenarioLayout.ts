@@ -268,8 +268,16 @@ export function polyRing(cx: number, cy: number, r: number, sides: number, rotDe
  *
  * Used for building footprints so a block never crosses the parcel edge. A
  * proper maximum-area inscribed rectangle is expensive and unnecessary here:
- * the search below steps a grid of candidate centres and keeps the best, which
- * is both fast and good enough for conceptual massing.
+ * the search steps a grid of candidate centres and, at each, shrinks the
+ * rectangle until its four corners are genuinely inside the polygon.
+ *
+ * The shrinking step is the load-bearing part. Testing only the largest
+ * rectangle at each centre and discarding the centre when it fails looks like
+ * a cheaper version of the same search, but on a non-rectangular parcel it
+ * returns null even when a comfortable building clearly fits — the width that
+ * reaches the bounding box is always wider than the polygon at that point, so
+ * EVERY centre fails and the caller reports "geometry limited" for parcels
+ * that are in fact perfectly buildable.
  */
 export function largestFittingRect(
   ring: LocalPt[],
@@ -288,19 +296,25 @@ export function largestFittingRect(
       const cx = minX + (bw * i) / steps;
       const cy = minY + (bh * j) / steps;
       // Largest rectangle of this aspect centred here that stays in the bbox…
-      let w = Math.min(bw, 2 * Math.min(cx - minX, maxX - cx));
-      let h = w / aspect;
-      if (h > 2 * Math.min(cy - minY, maxY - cy)) {
-        h = 2 * Math.min(cy - minY, maxY - cy);
-        w = h * aspect;
+      const wMax = Math.min(bw, 2 * Math.min(cx - minX, maxX - cx));
+      let hMax = wMax / aspect;
+      if (hMax > 2 * Math.min(cy - minY, maxY - cy)) {
+        hMax = 2 * Math.min(cy - minY, maxY - cy);
       }
-      if (w <= 1 || h <= 1) continue;
+      if (wMax <= 1 || hMax <= 1) continue;
       // …then shrink until all four corners are actually inside the polygon.
-      if (!cornersInside(ring, cx, cy, w, h)) continue;
-      const area = w * h;
-      if (area > bestArea) {
-        bestArea = area;
-        best = { cx, cy, w, h };
+      for (let scale = 1; scale >= 0.05; scale -= 0.05) {
+        const w = wMax * scale;
+        const h = hMax * scale;
+        if (w <= 1 || h <= 1) break;
+        if (!cornersInside(ring, cx, cy, w, h)) continue;
+        const area = w * h;
+        if (area > bestArea) {
+          bestArea = area;
+          best = { cx, cy, w, h };
+        }
+        // Largest that fits at this centre — no point trying smaller here.
+        break;
       }
     }
   }

@@ -19,6 +19,7 @@ import {
   clearScenarioCache,
 } from "../src/services/gis3d/landPotentialScenarioService";
 import { LAND_SCENARIO_TYPES } from "../src/services/gis3d/landPotentialScenarioTypes";
+import type { ScenarioElementKind } from "../src/services/gis3d/landPotentialScenarioTypes";
 import { DETAIL_BUDGET } from "../src/services/gis3d/landPotentialScenarioTypes";
 import { frameFrom, pointInPolygon } from "../src/services/gis3d/scenarioLayout";
 
@@ -26,6 +27,10 @@ let failures = 0;
 const fail = (m: string) => {
   failures += 1;
   console.log(`  FAIL ${m}`);
+};
+const check = (label: string, ok: boolean, extra = "") => {
+  console.log(`  ${ok ? "OK  " : "FAIL"} ${label}${extra ? ` — ${extra}` : ""}`);
+  if (!ok) failures += 1;
 };
 
 const parcels = demoCandidates();
@@ -104,6 +109,84 @@ for (const detail of ["high", "medium", "low"] as const) {
         `scenarios=${checked} limited=${limited} avgElements=${(totalElements / checked).toFixed(1)}`,
     );
   }
+}
+
+// PRODUCTIVITY: a generator that draws nothing is indistinguishable from one
+// that is broken. The containment harness above cannot catch this — empty output
+// trivially satisfies "nothing escapes the parcel" — and an earlier revision
+// shipped exactly that bug for two generators.
+//
+// This is the check that matters most for the ones that produce massing: on any
+// parcel above the minimum buildable area, the expected element kinds MUST be
+// present.
+console.log("\nProductivity (parcels >= 2 ha must actually draw):");
+const buildable = parcels.filter((p) => p.areaHa >= 2);
+const EXPECTED: Record<string, ScenarioElementKind[]> = {
+  renewable: ["surface"],
+  logistics: ["massing"],
+  "public-infrastructure": ["massing"],
+  ecological: ["vegetation"],
+  water: ["water"],
+  agricultural: ["surface"],
+};
+
+for (const type of LAND_SCENARIO_TYPES) {
+  const want = EXPECTED[type] ?? [];
+  let empty = 0;
+  let limited = 0;
+  const offenders: string[] = [];
+  for (const parcel of buildable) {
+    const s = buildScenario({ parcel, type, detail: "high", terrainAvailable: false });
+    if (s.status === "limited") {
+      limited += 1;
+      offenders.push(`${parcel.id}(limited)`);
+      continue;
+    }
+    const counts = s.summary.counts;
+    if (!want.every((k) => (counts[k] ?? 0) > 0)) {
+      empty += 1;
+      offenders.push(`${parcel.id}(${JSON.stringify(counts)})`);
+    }
+  }
+  check(
+    `${type} draws on every parcel >= 2 ha`,
+    empty === 0 && limited === 0,
+    `${empty} empty, ${limited} limited of ${buildable.length}` +
+      (offenders.length ? ` — ${offenders.slice(0, 3).join(", ")}` : ""),
+  );
+}
+
+// PUBLIC INFRASTRUCTURE: the subtype must change the massing, otherwise the
+// four subtype branches are indistinguishable and one of them is dead code.
+{
+  const parcel = buildable.find((p) => p.areaHa > 20) ?? buildable[0]!;
+  const heights: Record<string, number> = {};
+  const labels: Record<string, string> = {};
+  for (const subtype of ["school", "health", "government", "community"] as const) {
+    const s = buildScenario({
+      parcel,
+      type: "public-infrastructure",
+      detail: "high",
+      terrainAvailable: false,
+      subtype,
+    });
+    const massing = s.elements.filter((e) => e.kind === "massing");
+    heights[subtype] = s.summary.maxHeightM;
+    labels[subtype] = massing[0]?.label ?? "";
+    if (massing.length === 0) fail(`public/${subtype}: no massing generated`);
+  }
+  check(
+    "public subtypes produce distinct massing",
+    new Set(Object.values(labels)).size === 4,
+    Object.entries(labels)
+      .map(([k, v]) => `${k}:${v}`)
+      .join(" | "),
+  );
+  check(
+    "health facility is taller than a school (massing varies by subtype)",
+    (heights["health"] ?? 0) > (heights["school"] ?? 0),
+    `health ${heights["health"]}m vs school ${heights["school"]}m`,
+  );
 }
 
 // DETERMINISM: clearing the cache and regenerating must produce identical rings.
