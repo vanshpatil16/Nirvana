@@ -368,6 +368,7 @@ this repo: the edge entry is `src/server.ts`, the AI pipeline is
 and the statutory model is loaded by `src/server/policies.ts`.
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#ffffff", "actorBkg": "#ffffff", "actorBorder": "#979797", "actorLineColor": "#979797", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#979797", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#979797", "noteBkgColor": "#ffffff", "noteBorderColor": "#979797", "noteTextColor": "#000000"}}}%%
 sequenceDiagram
     autonumber
     actor U as 👤 User
@@ -379,18 +380,15 @@ sequenceDiagram
     participant EXT as 🛰️ Upstreams
     participant AUX as ✨ Gemini + ElevenLabs
 
-    rect rgb(27, 94, 32)
-    Note over U,AUX: 1 · Boot — code-split routes, Cesium behind an SSR guard
+    U->>U: **1 · Boot** — code-split routes, Cesium behind an SSR guard
     U->>FE: open /gis-explorer-3d
     FE->>EDGE: GET route
     EDGE->>EDGE: /api/* short-circuits, else the SSR server entry
     EDGE-->>FE: HTML shell + lazy route chunk
     FE->>MAP: dynamic import Cesium, then init the viewer
     MAP-->>FE: globe ready · layer registry mounted · attribution live
-    end
 
-    rect rgb(13, 107, 69)
-    Note over U,AUX: 2 · Ask Bhumi — plan, ground, explain, act, speak
+    U->>U: **2 · Ask Bhumi** — plan, ground, explain, act, speak
     U->>FE: ask a land question — typed or voice, STT auto-submits
     FE->>EDGE: POST /api/ai with message, history, map context
     EDGE->>EDGE: detectLanguage — local, no model call
@@ -402,14 +400,12 @@ sequenceDiagram
     LLM-->>EDGE: submit_answer — summary, framework, risk, spoken line
     EDGE-->>FE: plan, data, evidence, chips, map actions, spoken text
     FE->>MAP: flyTo place and toggle the layers the plan named
-    Note right of EDGE: model down → the reply still returns as data only, flagged degraded
+    EDGE->>EDGE: model down → the reply still returns as data only, flagged degraded
     FE->>EDGE: POST /api/tts with the spoken line
     EDGE->>AUX: ElevenLabs text-to-speech
     AUX-->>FE: audio — falls back to browser speechSynthesis when unconfigured
-    end
 
-    rect rgb(38, 50, 56)
-    Note over U,AUX: 3 · Map data — tiles straight to the browser, records through the edge
+    U->>U: **3 · Map data** — tiles straight to the browser, records through the edge
     FE->>EXT: OSM raster, EOX Sentinel-2, MRSAC cadastral, WRIS + NDEM vectors
     EXT-->>FE: tiles and TileJSON
     FE->>EDGE: GET /api/parcels?bbox=w,s,e,n
@@ -420,10 +416,8 @@ sequenceDiagram
     EDGE->>EXT: IMD city weather API
     EXT-->>EDGE: 43 station readings
     EDGE-->>FE: station JSON — proxied server-side so no key leaks to the browser
-    end
 
-    rect rgb(231, 184, 75)
-    Note over U,AUX: 4 · Land Stack — open standards over federated sources
+    U->>U: **4 · Land Stack** — open standards over federated sources
     FE->>EDGE: GET /api/landstack?path=/collections
     EDGE->>EDGE: GET only, read allowlist, timeout budget, 60s cache
     EDGE->>LS: forward server-side — gateway CORS stays strict
@@ -432,11 +426,9 @@ sequenceDiagram
     EXT-->>LS: features, items, source health
     LS-->>EDGE: payload plus provenance envelope
     EDGE-->>FE: same-origin JSON
-    Note over LS,EXT: RBIH owner details stay behind the government role — one route, never cached
-    end
+    LS->>LS: RBIH owner details stay behind the government role — one route, never cached
 
-    rect rgb(74, 59, 181)
-    Note over U,AUX: 5 · Policy Lab — model ships in the bundle, no Python at request time
+    U->>U: **5 · Policy Lab** — model ships in the bundle, no Python at request time
     U->>FE: run a statutory search on /policy-lab
     FE->>EDGE: GET /api/policies/search?q=...
     EDGE->>EDGE: load model_ts.json and the evidence index from public/data
@@ -447,26 +439,22 @@ sequenceDiagram
     EDGE->>AUX: Gemini document read
     AUX-->>EDGE: structured policy parameters with citations
     EDGE-->>FE: quotes plus provenance
-    end
 
-    rect rgb(0, 105, 92)
-    Note over U,AUX: 6 · Innovation assistant — citations validated against the source pack
+    U->>U: **6 · Innovation assistant** — citations validated against the source pack
     FE->>EDGE: POST /api/innovation/ai with action, question, source pack
     EDGE->>LLM: answer grounded only in the supplied sources
     LLM-->>EDGE: answer plus citation list
     EDGE->>EDGE: drop any citation not in the pack — reported, never silently kept
     EDGE-->>FE: answer, verified citations, gaps, cannot-answer list
-    end
 
-    rect rgb(90, 90, 90)
-    Note over U,AUX: 7 · Every payload carries provenance — OBSERVED · DERIVED · MODELLED · SCENARIO · DEMO
-    Note over EDGE,EXT: missing fields read Not publicly available — never invented
-    end
+    U->>U: **7 · Provenance** — every payload tagged OBSERVED · DERIVED · MODELLED · SCENARIO · DEMO
+    EDGE->>EDGE: missing fields read Not publicly available — never invented
 ```
 
 ### Request flow on the edge
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#ffffff", "actorBkg": "#ffffff", "actorBorder": "#979797", "actorLineColor": "#979797", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#979797", "labelTextColor": "#000000"}}}%%
 sequenceDiagram
     participant B as Browser
     participant E as nitro edge
