@@ -9,6 +9,7 @@ import {
   Menu,
   Moon,
   Plus,
+  Scale,
   Search,
   X,
 } from "lucide-react";
@@ -19,16 +20,50 @@ import logo from "@/assets/logo.png";
 import sidenavBottom from "@/assets/sidenav-bottom.png";
 import { ExistingPolicyView } from "./views/ExistingPolicyView";
 import { NewPolicyView } from "./views/NewPolicyView";
-import { OverviewView } from "./views/OverviewView";
+import { OverviewView, type CorpusCounts } from "./views/OverviewView";
+import { StatutorySearchView } from "./views/StatutorySearchView";
 import { Toast } from "./parts/States";
 import "./policy-lab.css";
 
 const ACTIVE_ITEM = "Policy Lab";
 
-export type LabMode = "overview" | "existing" | "new";
+export type LabMode = "overview" | "statute" | "existing" | "new";
+
+/**
+ * Real corpus counts, fetched once here and handed to OverviewView.
+ *
+ * Lives at the shell so the hero has numbers on first paint rather than
+ * animating up from em dashes, and so the request is not repeated per tab.
+ */
+function useCorpusCounts(): CorpusCounts | null {
+  const [counts, setCounts] = useState<CorpusCounts | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      try {
+        const res = await fetch("/api/policies/source-status");
+        if (!res.ok) return;
+        const body = (await res.json()) as CorpusCounts;
+        // available:false means the artefacts are missing. Stay null so the UI
+        // says "not installed" instead of showing zero as if it were a finding.
+        if (live && body.available !== false) setCounts(body);
+      } catch {
+        /* offline or route absent: the hero falls back to em dashes */
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  return counts;
+}
 
 const SUBNAV: { mode: LabMode; label: string; icon: typeof Home }[] = [
   { mode: "overview", label: "Overview", icon: Home },
+  // First, because it is the only tab backed entirely by real data.
+  { mode: "statute", label: "Statutory Search", icon: Scale },
   { mode: "existing", label: "Existing Policy", icon: BarChart3 },
   { mode: "new", label: "New Policy", icon: FlaskConical },
 ];
@@ -171,8 +206,9 @@ function PageHeader({ openMenu, onSearch }: { openMenu: () => void; onSearch: ()
 
 export function PolicyLab({ initialMode }: { initialMode?: LabMode }) {
   const [drawer, setDrawer] = useState(false);
-  const [mode, setMode] = useState<LabMode>(initialMode ?? "overview");
+  const [mode, setMode] = useState<LabMode>(initialMode ?? "statute");
   const [toast, setToast] = useState<string | null>(null);
+  const corpus = useCorpusCounts();
 
   useEffect(() => {
     if (initialMode) setMode(initialMode);
@@ -221,7 +257,8 @@ export function PolicyLab({ initialMode }: { initialMode?: LabMode }) {
               </div>
 
               <div style={{ paddingTop: 24 }}>
-                {mode === "overview" && <OverviewView onMode={go} />}
+                {mode === "overview" && <OverviewView onMode={go} corpus={corpus} />}
+                {mode === "statute" && <StatutorySearchView />}
                 {mode === "existing" && <ExistingPolicyView />}
                 {mode === "new" && <NewPolicyView onToast={setToast} />}
               </div>

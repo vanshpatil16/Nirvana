@@ -2050,3 +2050,350 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ==========================================================================
+   Statutory Search - the real-corpus view.
+   Every surface here is a citation: the user must be able to reach the
+   official India Code document from any result, so provenance is given the
+   same visual weight as the score.
+   ========================================================================== */
+.pl-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.pl-stack > .pl-card {
+  padding: 18px 20px;
+}
+
+.pl-card-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 12px;
+}
+.pl-card-head > svg {
+  width: 17px;
+  height: 17px;
+  color: var(--pl-emerald);
+}
+.pl-card-head > h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pl-stack .pl-muted {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* ---- Notices: measured facts and warnings, never decorative ---- */
+.pl-notice {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--pl-line);
+  border-left: 3px solid var(--pl-emerald);
+  border-radius: 10px;
+  background: var(--pl-pale);
+}
+.pl-notice > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--pl-emerald);
+}
+.pl-notice p {
+  margin: 4px 0 0;
+  color: var(--pl-muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.pl-notice strong {
+  color: var(--pl-ink);
+}
+.pl-notice.warn {
+  border-left-color: var(--pl-orange);
+}
+.pl-notice.warn > svg {
+  color: var(--pl-orange);
+}
+
+/* ---- Query ---- */
+.pl-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.pl-search input {
+  min-height: 40px;
+  flex: 1 1 320px;
+  padding: 0 14px;
+  border: 1px solid var(--pl-line-strong);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--pl-ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+.pl-search input::placeholder {
+  color: var(--pl-muted);
+}
+
+.spin {
+  animation: pl-spin 0.9s linear infinite;
+}
+@keyframes pl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+}
+
+/* ---- Results ---- */
+.pl-hits {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pl-hit {
+  padding: 14px 16px;
+  border: 1px solid var(--pl-line);
+  border-radius: 12px;
+  background: #fff;
+}
+.pl-hit-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.pl-hit-head strong {
+  display: block;
+  color: var(--pl-ink);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.pl-hit-head .pl-muted {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+.pl-hit-rel {
+  flex: none;
+  min-width: 48px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: var(--pl-mint);
+  color: var(--pl-forest);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.pl-hit-sub {
+  margin: 8px 0 0;
+  color: var(--pl-ink);
+  font-size: 12.5px;
+  font-style: italic;
+}
+.pl-hit-excerpt {
+  margin: 8px 0 0;
+  color: var(--pl-muted);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+.pl-hit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+.pl-hit-tags span {
+  padding: 2px 8px;
+  border: 1px solid var(--pl-line);
+  border-radius: 999px;
+  background: var(--pl-ivory);
+  color: var(--pl-muted);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.pl-hit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ---- Provenance: the point of the screen ---- */
+.pl-prov {
+  display: grid;
+  grid-template-columns: minmax(120px, max-content) 1fr;
+  gap: 4px 14px;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--pl-pale);
+  font-size: 12px;
+}
+.pl-prov dt {
+  color: var(--pl-muted);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.pl-prov dd {
+  margin: 0;
+  color: var(--pl-ink);
+  overflow-wrap: anywhere;
+}
+.pl-prov a {
+  color: var(--pl-forest);
+}
+
+/* ---- Overview hero: live corpus provenance ---- */
+.pl-live {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--pl-mint);
+  color: var(--pl-forest);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+.pl-hero-source {
+  max-width: 62ch;
+  margin: 12px 0 0;
+  color: var(--pl-muted);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+.pl-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--pl-forest);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.pl-link:hover {
+  color: var(--pl-emerald);
+}
+/* ---- Source document resolver ---- */
+.pl-docres {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pl-line);
+}
+.pl-docres h4 {
+  margin: 0 0 6px;
+  color: var(--pl-ink);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.pl-docres code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--pl-pale);
+  color: var(--pl-ink);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+.pl-docref {
+  margin-top: 12px;
+  padding: 13px 15px;
+  border: 1px solid var(--pl-line);
+  border-left: 3px solid var(--pl-orange);
+  border-radius: 10px;
+  background: var(--pl-pale);
+}
+.pl-docref.ok {
+  border-left-color: var(--pl-emerald);
+}
+.pl-docref-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: var(--pl-ink);
+  font-size: 13px;
+}
+.pl-docref-head > svg {
+  width: 15px;
+  height: 15px;
+  color: var(--pl-orange);
+}
+.pl-docref.ok .pl-docref-head > svg {
+  color: var(--pl-emerald);
+}
+.pl-docref-head em {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--pl-mint);
+  color: var(--pl-forest);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 700;
+}
+.pl-docref > p {
+  margin: 7px 0 0;
+  color: var(--pl-muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.pl-docref-match b {
+  color: var(--pl-ink);
+}
+.pl-docref-note {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+}
+.pl-docref-note > svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--pl-orange);
+}
+.pl-docref details {
+  margin-top: 9px;
+  font-size: 12px;
+}
+.pl-docref summary {
+  cursor: pointer;
+  color: var(--pl-forest);
+  font-weight: 700;
+}
+.pl-docref ul {
+  margin: 7px 0 0;
+  padding-left: 18px;
+  color: var(--pl-muted);
+  line-height: 1.6;
+}
+.pl-docref li b {
+  color: var(--pl-ink);
+}

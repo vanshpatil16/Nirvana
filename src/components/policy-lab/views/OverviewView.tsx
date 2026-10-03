@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Database,
@@ -11,7 +11,6 @@ import {
   DATASETS,
   GEOGRAPHIES,
   INDICATORS,
-  MOCK_LAYER_MANIFEST,
   POLICIES,
   citationCount,
   datasetByPolicy,
@@ -19,8 +18,17 @@ import {
   unsourcedCount,
   type Policy,
 } from "@/data/policySimulation";
+export interface CorpusCounts {
+  available?: boolean;
+  acts_indexed?: number;
+  provisions_indexed?: number;
+  jurisdictions_indexed?: number;
+  subject_count?: number;
+}
+
 import heroVideo from "@/assets/policy_home.mp4";
 import { compact, listSentence, pluralise } from "../lab-helpers";
+import type { LabMode } from "../PolicyLab";
 import { PrototypeTag } from "../parts/States";
 
 /** Decorative, muted loop feathered into the hero; a still frame under reduced motion. */
@@ -56,8 +64,47 @@ function HeroVideo() {
   );
 }
 
-export function OverviewView({ onMode }: { onMode: (mode: "existing" | "new") => void }) {
+/**
+ * Live corpus counts for the hero.
+ *
+ * These replace what used to sit here: four counters taken from the simulation
+ * layer (`POLICIES.length`, `citationTotal`, `INDICATORS.length`,
+ * `GEOGRAPHIES.length`), which described mock instruments and nothing the user
+ * could open.
+ *
+ * The fetch lives in PolicyLab and arrives as a prop, so the numbers are present
+ * on first paint instead of flashing through as em dashes. Until they resolve the
+ * slots render as an em dash rather than a plausible-looking number, because a
+ * fabricated count in a hero banner is the most believable lie in a product.
+ */
+function CorpusStat({ value, label, live }: { value: string; label: string; live: boolean }) {
+  return (
+    <div>
+      <strong>{value}</strong>
+      <span>
+        {label}
+        {live && <em className="pl-live">live</em>}
+      </span>
+    </div>
+  );
+}
+
+export function OverviewView({
+  onMode,
+  corpus,
+}: {
+  onMode: (mode: LabMode) => void;
+  corpus: CorpusCounts | null;
+}) {
   const citationTotal = POLICIES.reduce((sum, p) => sum + citationCount(p), 0);
+
+  const n = (v: number | undefined) => (v === undefined ? "—" : v.toLocaleString("en-IN"));
+  const heroStats = [
+    { v: n(corpus?.acts_indexed), l: "Enactments" },
+    { v: n(corpus?.provisions_indexed), l: "Provisions" },
+    { v: n(corpus?.jurisdictions_indexed), l: "Jurisdictions" },
+    { v: n(corpus?.subject_count), l: "Subject areas" },
+  ];
   return (
     <div className="pl-view">
       <div className="pl-hero">
@@ -87,18 +134,28 @@ export function OverviewView({ onMode }: { onMode: (mode: "existing" | "new") =>
             </button>
           </div>
           <div className="pl-hero-stats">
-            {[
-              { v: String(MOCK_LAYER_MANIFEST.policies), l: "Instruments" },
-              { v: String(citationTotal), l: "Citations" },
-              { v: String(MOCK_LAYER_MANIFEST.indicators), l: "Indicators" },
-              { v: String(MOCK_LAYER_MANIFEST.geographies), l: "Study units" },
-            ].map((s) => (
-              <div key={s.l}>
-                <strong>{s.v}</strong>
-                <span>{s.l}</span>
-              </div>
+            {heroStats.map((s) => (
+              <CorpusStat key={s.l} value={s.v} label={s.l} live={corpus !== null} />
             ))}
           </div>
+          <p className="pl-hero-source">
+            {corpus ? (
+              <>
+                Counted from the statutory corpus indexed in this build — parsed from India Code,
+                with an official link on every provision.{" "}
+                <button className="pl-link" onClick={() => onMode("statute")}>
+                  Search it
+                </button>
+                .
+              </>
+            ) : (
+              <>
+                The statutory corpus is not installed in this build, so these counts are
+                unavailable. {POLICIES.length} instruments and {citationTotal} citations below are
+                prototype simulation data, not measured results.
+              </>
+            )}
+          </p>
           <div className="pl-hero-meta">
             <PrototypeTag />
           </div>

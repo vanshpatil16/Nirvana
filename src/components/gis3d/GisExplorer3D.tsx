@@ -3,12 +3,14 @@ import {
   ArrowLeft,
   Building2,
   Compass,
+  Crosshair,
   Home,
   Info,
   Layers3,
   LocateFixed,
   Maximize2,
   Minus,
+  MousePointer2,
   Plus,
   RotateCw,
   Search,
@@ -116,6 +118,8 @@ export function GisExplorer3D({ search }: Props) {
   const [visualMode, setVisualMode] = useState<BuildingVisualMode>("standard");
   const [hover, setHover] = useState<GlobeHover | null>(null);
   const [camera, setCamera] = useState<GlobeCameraInfo>({
+    inspecting: false,
+    hasFocus: false,
     headingDeg: 0,
     pitchDeg: -90,
     orbiting: false,
@@ -174,8 +178,10 @@ export function GisExplorer3D({ search }: Props) {
       if (!ok) setFailed(true);
       else {
         setReady(true);
-        // Open on India rather than the default whole-ellipsoid view.
-        globe.flyHome(0);
+        // Open on the default study view (Mumbai, close oblique) rather than the
+        // whole ellipsoid. flyHome(0) remains the "Home" button, which goes to
+        // the national view - the two are deliberately different actions now.
+        globe.applyDefaultCamera(0);
       }
     });
     return () => {
@@ -928,6 +934,23 @@ export function GisExplorer3D({ search }: Props) {
               onClick={() => globeRef.current?.setOrbit(!camera.orbiting)}
             >
               <RotateCw /> {camera.orbiting ? "STOP" : "ORBIT"}
+            </button>
+            <span className="g3d-vsep" aria-hidden="true" />
+            <button
+              className={`g3d-vbtn ${camera.inspecting ? "on" : ""}`}
+              title="Mouse orbit: left-drag circles the picked building, right-drag moves it, wheel zooms. Turn on by clicking a building first."
+              disabled={!camera.hasFocus && !camera.inspecting}
+              onClick={() => globeRef.current?.setInspect(!camera.inspecting)}
+            >
+              <MousePointer2 /> {camera.inspecting ? "EXIT ORBIT" : "MOUSE ORBIT"}
+            </button>
+            <button
+              className="g3d-vbtn"
+              title="Fly the camera round to face the picked building"
+              disabled={!camera.hasFocus}
+              onClick={() => globeRef.current?.faceFocus()}
+            >
+              <Crosshair /> FACE
             </button>
             <span className="g3d-vread" title="Camera heading and tilt">
               {camera.headingDeg}° · {Math.abs(camera.pitchDeg)}°

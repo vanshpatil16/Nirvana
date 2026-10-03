@@ -64,10 +64,37 @@ import {
   type CadastreProvider,
 } from "@/services/cadastre";
 import { getDataSource } from "@/data/data-sources";
-const INDIA_BOUNDS: [[number, number], [number, number]] = [
-  [66.5, 5.0],
-  [98.5, 37.5],
-];
+
+/**
+ * Default camera: Goa, at a zoom where parcel boundaries are actually visible.
+ *
+ * Two constraints, both measured from this file:
+ *
+ *  1. The map used to open on the full national extent ([66.5, 5] - [98.5, 37.5]),
+ *     which put every detail layer far below its useful zoom and made the first
+ *     view look empty.
+ *  2. The cadastral fill and line layers and the parcel label layer all declare
+ *     `minzoom: 11`. Below that, MapLibre does not even request them, so a
+ *     default under 11 shows no parcel boundaries at all.
+ *
+ * DEFAULT_VIEW is therefore 11.6 - just above that floor so the boundaries draw,
+ * not so far above it that the user starts at a single survey. At 11.6 and this
+ * latitude one pixel is about 49 m, so a 1400 px viewport spans roughly 68 km:
+ * the whole of Goa, with parcels in frame.
+ *
+ * Users can still zoom out to the national view; minZoom is 3.
+ *
+ * `resetView` returns here too, so the reset button means "back to the default
+ * view" rather than "back to India" - otherwise reset would silently undo it.
+ */
+const DEFAULT_VIEW = {
+  center: [73.83, 15.49] as [number, number],
+  /** Must stay >= PARCEL_MIN_ZOOM below. */
+  zoom: 11.6,
+};
+
+/** The `minzoom` on the cadastral fill/line and parcel label layers. */
+const PARCEL_MIN_ZOOM = 11;
 const NO_DATA_FILL = "#e9e4d6";
 const BOUNDARY_LINE = "#9aa48f";
 const SELECT_LINE = "#1e4632";
@@ -582,7 +609,7 @@ export function IndiaMap({
     lastParcelLoadAt.current = Date.now();
     const bbox: BBox = [lon - span, lat - span, lon + span, lat + span];
     const request = ++parcelReq.current;
-    const useResult = (collection: ParcelCollection) => {
+    const acceptResult = (collection: ParcelCollection) => {
       if (parcelReq.current !== request) return false;
       setParcelData(collection);
       setParcelSource(collection.features[0]?.properties.source ?? null);
@@ -596,7 +623,7 @@ export function IndiaMap({
       const timer = window.setTimeout(() => controller.abort(), 15000);
       try {
         const fromApi = await api.query(bbox, controller.signal);
-        if (fromApi.features.length > 0 && useResult(fromApi)) return;
+        if (fromApi.features.length > 0 && acceptResult(fromApi)) return;
       } catch {
         /* endpoint absent (dev) or no imported cadastre here — fall through */
       } finally {
@@ -607,7 +634,7 @@ export function IndiaMap({
     }
 
     const demo = filterParcelsByBBox(getDemoParcels(), bbox);
-    if (demo.features.length > 0 && useResult(demo)) return;
+    if (demo.features.length > 0 && acceptResult(demo)) return;
 
     setParcelsLoading(true);
     setParcelsNote(null);
@@ -956,8 +983,8 @@ export function IndiaMap({
     try {
       map = new maplibregl.Map({
         container: container.current,
-        bounds: INDIA_BOUNDS,
-        fitBoundsOptions: { padding: 28 },
+        center: DEFAULT_VIEW.center,
+        zoom: DEFAULT_VIEW.zoom,
         minZoom: 3,
         maxZoom: 16,
         attributionControl: false,
@@ -1144,7 +1171,7 @@ export function IndiaMap({
         id: PARCEL_LABEL_LAYER,
         type: "symbol",
         source: "parcels",
-        minzoom: 11,
+        minzoom: PARCEL_MIN_ZOOM,
         layout: {
           "text-field": ["concat", ["get", "landuse"], " · ", ["get", "shortId"]],
           "text-size": 9,
@@ -1621,7 +1648,7 @@ export function IndiaMap({
             type: "fill",
             source: CAD_SOURCE,
             "source-layer": sourceLayer,
-            minzoom: 11,
+            minzoom: PARCEL_MIN_ZOOM,
             paint: { "fill-color": "#8fe0b0", "fill-opacity": 0.1 },
           },
           SELECTED_FILL_LAYER,
@@ -1632,7 +1659,7 @@ export function IndiaMap({
             type: "line",
             source: CAD_SOURCE,
             "source-layer": sourceLayer,
-            minzoom: 11,
+            minzoom: PARCEL_MIN_ZOOM,
             paint: {
               "line-color": "#f2fff7",
               "line-width": [
@@ -1844,7 +1871,11 @@ export function IndiaMap({
     setParcels(null);
     setParcelSource(null);
     setParcelsNote(null);
-    mapRef.current?.fitBounds(INDIA_BOUNDS, { padding: 28, duration: 700 });
+    mapRef.current?.flyTo({
+      center: DEFAULT_VIEW.center,
+      zoom: DEFAULT_VIEW.zoom,
+      duration: 700,
+    });
   };
 
   const switchBaseMode = (mode: "map" | "satellite") => {

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Owns the CesiumJS `Viewer` for the 3D GIS Explorer.
  *
  * Design notes:
@@ -71,12 +71,16 @@ export interface GlobeCameraInfo {
   headingDeg: number;
   pitchDeg: number;
   orbiting: boolean;
+  /** Mouse-driven orbit mode is on: left-drag circles the focus target. */
+  inspecting: boolean;
+  /** A focus target exists, so faceFocus() has something to frame. */
+  hasFocus: boolean;
 }
 
 export interface ChoroplethSpec {
-  /** state name â†’ fill colour (CSS) */
+  /** state name → fill colour (CSS) */
   colors: Record<string, string>;
-  /** state name â†’ short value shown in the inspector */
+  /** state name → short value shown in the inspector */
   values: Record<string, string>;
 }
 
@@ -99,8 +103,8 @@ const SATELLITE_YEAR_URL = (year: number) =>
 
 const OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
-const SAT_CREDIT = "Copernicus Sentinel-2 cloudless mosaic © EOX";
-const OSM_CREDIT = "© OpenStreetMap contributors";
+const SAT_CREDIT = "Copernicus Sentinel-2 cloudless mosaic � EOX";
+const OSM_CREDIT = "� OpenStreetMap contributors";
 
 export class CesiumGlobe {
   private C: CesiumModule | null = null;
@@ -142,6 +146,11 @@ export class CesiumGlobe {
   private focusTarget: { lon: number; lat: number; height: number } | null = null;
   private orbitFrame: number | null = null;
   private orbiting = false;
+  /** Mouse-driven orbit mode: see `setInspect`. */
+  private inspecting = false;
+  private dragLast: { x: number; y: number } | null = null;
+  private inspectRange = 0;
+  private focusHeightM = 0;
   private floorEntities: string[] = [];
   private floorSpec: FloorStackSpec | null = null;
   private floorExplosion = 0;
@@ -174,7 +183,7 @@ export class CesiumGlobe {
     if (typeof window === "undefined") return false;
     // The globe only ever exists in the browser. Keeping this as a literal SSR
     // guard lets the bundler drop the dynamic `import("cesium")` from the server
-    // graph entirely â€” Cesium is several MB and must never ship with the worker.
+    // graph entirely — Cesium is several MB and must never ship with the worker.
     if (import.meta.env.SSR) return false;
     // Runtime guarantee for buildModuleUrl(): Cesium reads the bare global
     // `CESIUM_BASE_URL`. The vite `define` covers bundled builds; this covers
@@ -238,9 +247,55 @@ export class CesiumGlobe {
       (evt: { position: import("cesium").Cartesian2 }) => this.pick(evt.position),
       C.ScreenSpaceEventType.LEFT_CLICK,
     );
+    // Inspect-mode drag. Registered on DOWN/UP/MOVE rather than LEFT_DRAG so the
+    // hover handler below keeps working outside inspect mode, and so a plain
+    // click is still a click rather than the tail of a zero-length drag.
     viewer.screenSpaceEventHandler.setInputAction(
-      (evt: { endPosition: import("cesium").Cartesian2 }) => this.hover(evt.endPosition),
+      (evt: { position: import("cesium").Cartesian2 }) => {
+        this.dragLast = { x: evt.position.x, y: evt.position.y };
+      },
+      C.ScreenSpaceEventType.LEFT_DOWN,
+    );
+    viewer.screenSpaceEventHandler.setInputAction(() => {
+      this.dragLast = null;
+    }, C.ScreenSpaceEventType.LEFT_UP);
+    viewer.screenSpaceEventHandler.setInputAction(() => {
+      this.dragLast = null;
+    }, C.ScreenSpaceEventType.RIGHT_UP);
+    viewer.screenSpaceEventHandler.setInputAction(
+      (evt: {
+        endPosition: import("cesium").Cartesian2;
+        movement?: import("cesium").Cartesian2;
+        buttons?: number;
+      }) => {
+        // Inspect mode consumes the move as an orbit/pan; otherwise it stays a
+        // hover probe so picking still reports what is under the cursor.
+        if (this.inspecting) {
+          if (evt.buttons) {
+            const x = evt.endPosition.x;
+            const y = evt.endPosition.y;
+            if (this.dragLast) {
+              this.dragOrbit(x - this.dragLast.x, y - this.dragLast.y, (evt.buttons & 2) !== 0);
+              this.dragLast = { x, y };
+            }
+          } else {
+            this.dragLast = null;
+          }
+          return;
+        }
+        this.hover(evt.endPosition);
+      },
       C.ScreenSpaceEventType.MOUSE_MOVE,
+    );
+    viewer.screenSpaceEventHandler.setInputAction(
+      (evt: {
+        startPosition: import("cesium").Cartesian2;
+        endPosition: import("cesium").Cartesian2;
+      }) => {
+        const dy = evt.startPosition.y - evt.endPosition.y;
+        if (this.wheelOrbit(dy)) return;
+      },
+      C.ScreenSpaceEventType.WHEEL,
     );
 
     let lastEmit = 0;
@@ -374,7 +429,7 @@ export class CesiumGlobe {
 
   /**
    * Probe Ion world terrain. Uses Cesium's bundled default Ion token when no
-   * `VITE_CESIUM_ION_TOKEN` is configured â€” if that is rate-limited or blocked
+   * `VITE_CESIUM_ION_TOKEN` is configured — if that is rate-limited or blocked
    * we fall back to the ellipsoid and say so, rather than showing fake relief.
    */
   private async probeTerrain(): Promise<void> {
@@ -771,7 +826,7 @@ export class CesiumGlobe {
         outlineWidth: opts.outlineWidth ?? 1,
         // Clamped features keep `height` / `extrudedHeight` relative to the
         // ground surface, so extrusions sit on the terrain wherever it exists
-        // and on the ellipsoid where it does not â€” no elevation is invented.
+        // and on the ellipsoid where it does not — no elevation is invented.
         heightReference: opts.clamp ? C.HeightReference.CLAMP_TO_GROUND : C.HeightReference.NONE,
         ...(opts.height !== undefined ? { height: opts.height } : {}),
         ...(opts.extrudedHeight !== undefined ? { extrudedHeight: opts.extrudedHeight } : {}),
@@ -803,7 +858,7 @@ export class CesiumGlobe {
     });
   }
 
-  /** State / UT outlines â€” draped polylines, always cheap. */
+  /** State / UT outlines — draped polylines, always cheap. */
   setAdmin(show: boolean, rings: { name: string; rings: number[][][] }[]): void {
     this.adminRings = rings;
     const viewer = this.viewer;
@@ -1074,7 +1129,7 @@ export class CesiumGlobe {
           },
           properties: {
             kind: "building",
-            name: `Level ${level.floorCode} · demo floor`,
+            name: `Level ${level.floorCode} � demo floor`,
             heightM: level.heightM,
             origin: "demo-floor",
           },
@@ -1270,7 +1325,7 @@ export class CesiumGlobe {
     if (height !== null) bits.push(`~${Math.round(height)} m`);
     const word = floors.floors === 1 ? "floor" : "floors";
     bits.push(floors.basis === "tagged" ? `${floors.floors} ${word}` : `${floors.floors} ${word}*`);
-    return { title, detail: bits.length ? bits.join(" · ") : "height not tagged" };
+    return { title, detail: bits.length ? bits.join(" � ") : "height not tagged" };
   }
 
   private entityReadout(id: string): { title: string; detail: string | null } | null {
@@ -1383,6 +1438,9 @@ export class CesiumGlobe {
       this.selectedFeature = feature;
       this.tintRefresh = 0;
       this.focusTarget = { lon: focusLon, lat: focusLat, height: focusM };
+      // Kept so `faceFocus()` can frame the building rather than guess a range.
+      const hNum = typeof heightM === "number" ? heightM : Number(heightM);
+      this.focusHeightM = Number.isFinite(hNum) && hNum > 0 ? hNum : 0;
       this.hooks.onPick({
         kind: "building",
         id: `tileset:${osmId ?? feature.featureId}`,
@@ -1497,12 +1555,14 @@ export class CesiumGlobe {
     if (!C || !viewer || !this.hooks.onCamera) return;
     const twoPi = Math.PI * 2;
     let heading = Math.round((((viewer.camera.heading % twoPi) + twoPi) % twoPi) * (180 / Math.PI));
-    // Rounding a heading of 359.7° gives 360 - fold it back to 0.
+    // Rounding a heading of 359.7� gives 360 - fold it back to 0.
     if (heading >= 360) heading -= 360;
     this.hooks.onCamera({
       headingDeg: heading,
       pitchDeg: Math.round(C.Math.toDegrees(viewer.camera.pitch)),
       orbiting: this.orbiting,
+      inspecting: this.inspecting,
+      hasFocus: this.orbitTarget() !== null,
     });
   }
 
@@ -1516,7 +1576,7 @@ export class CesiumGlobe {
   }
 
   /**
-   * Shared path behind every preset and every ±45° step: one
+   * Shared path behind every preset and every �45� step: one
    * `flyToBoundingSphere` around the current target, ending with an identity
    * transform so later camera maths stays in world space.
    */
@@ -1553,7 +1613,7 @@ export class CesiumGlobe {
     this.emitCamera();
   }
 
-  /** NORTH / TOP / 45° / ISOMETRIC camera presets. */
+  /** NORTH / TOP / 45� / ISOMETRIC camera presets. */
   setViewPreset(preset: "north" | "top" | "oblique45" | "isometric"): void {
     const C = this.C;
     const viewer = this.viewer;
@@ -1575,7 +1635,7 @@ export class CesiumGlobe {
     this.orient({ pitchDeg: pitch < -75 ? -45 : pitch, headingDeg: 0 });
   }
 
-  /** ±45° step rotation around the current target. */
+  /** �45� step rotation around the current target. */
   stepHeading(deltaDeg: number): void {
     const C = this.C;
     const viewer = this.viewer;
@@ -1589,7 +1649,7 @@ export class CesiumGlobe {
   }
 
   /**
-   * True 360° turntable: a requestAnimationFrame loop that recentres the camera
+   * True 360� turntable: a requestAnimationFrame loop that recentres the camera
    * on the target every frame. Returns the resulting state.
    */
   setOrbit(on: boolean): boolean {
@@ -1643,6 +1703,182 @@ export class CesiumGlobe {
     this.orbiting = false;
     if (this.viewer && this.C) this.viewer.camera.lookAtTransform(this.C.Matrix4.IDENTITY);
     this.emitCamera();
+  }
+
+  /* --------------------------------------- mouse orbit + building framing */
+
+  /**
+   * Mouse-driven orbit around the current focus target.
+   *
+   * Why this is hand-rolled instead of leaving it to Cesium's controller: with
+   * the camera in the default world frame, a left-drag rotates the view about a
+   * point far off-screen and tilting drifts away from the building, so the model
+   * slides out of frame while you think you are circling it. Here every drag is
+   * re-applied against `orbitTarget()` - the picked surface point - which is what
+   * "orbit the building" has to mean.
+   *
+   * The existing auto-turntable `setOrbit` proved the pattern: set the pose with
+   * `lookAt`, then immediately restore the world frame with
+   * `lookAtTransform(IDENTITY)`. That keeps the camera in world coordinates, so
+   * collision detection, the heading/tilt readout and every existing camera
+   * helper keep behaving exactly as before. Cesium's own rotate and tilt are
+   * switched off while inspect mode is on because this owns them; zoom, pan and
+   * pick are untouched.
+   *
+   * Controls while on: left-drag orbits, right-drag pans the focus along the
+   * ground, wheel dollies in and out.
+   */
+  setInspect(on: boolean): boolean {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer) return false;
+    const ctrl = viewer.scene.screenSpaceCameraController;
+
+    if (!on) {
+      this.inspecting = false;
+      this.dragLast = null;
+      ctrl.enableRotate = true;
+      ctrl.enableTilt = true;
+      this.emitCamera();
+      return false;
+    }
+
+    // Turntable and inspect both drive the camera; only one may own it.
+    if (this.orbiting) this.stopOrbit();
+
+    const target = this.orbitTarget();
+    if (!target) return false;
+
+    const center = C.Cartesian3.fromDegrees(target.lon, target.lat, target.height);
+    const range = Math.min(
+      Math.max(C.Cartesian3.distance(viewer.camera.position, center), 45),
+      20_000,
+    );
+    this.inspecting = true;
+    this.inspectRange = range;
+    ctrl.enableRotate = false;
+    ctrl.enableTilt = false;
+    this.applyOrbit(center);
+    this.emitCamera();
+    return true;
+  }
+
+  /** True when inspect mode is active. */
+  isInspecting(): boolean {
+    return this.inspecting;
+  }
+
+  /** Re-apply the current orbit pose to the focus target, in world coordinates. */
+  private applyOrbit(center: import("cesium").Cartesian3): void {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer) return;
+    viewer.camera.lookAt(
+      center,
+      new C.HeadingPitchRange(viewer.camera.heading, viewer.camera.pitch, this.inspectRange),
+    );
+    viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);
+    viewer.scene.requestRender();
+  }
+
+  /**
+   * Handle a drag while inspect mode is on. `dx`/`dy` are pixel deltas.
+   * Returns true when the drag was consumed.
+   */
+  private dragOrbit(dx: number, dy: number, pan: boolean): boolean {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer || !this.inspecting) return false;
+    const target = this.orbitTarget();
+    if (!target) return false;
+    const center = C.Cartesian3.fromDegrees(target.lon, target.lat, target.height);
+
+    if (pan) {
+      // Shift the focus along the ground, moving it with the cursor.
+      const frustum = viewer.camera.frustum as { fov?: number };
+      const fov = typeof frustum.fov === "number" ? frustum.fov : 0.8;
+      const metresPerPx = (this.inspectRange * 0.0016) / Math.max(fov, 0.1);
+      const bearing = viewer.camera.heading;
+      const east = -Math.sin(bearing) * dx * metresPerPx;
+      const north = Math.cos(bearing) * dy * metresPerPx;
+      const rad = 111_320;
+      target.lat += north / rad;
+      target.lon += east / (rad * Math.max(Math.cos((target.lat * Math.PI) / 180), 0.05));
+      this.focusTarget = { ...target };
+    } else {
+      // 0.0055 rad/px: a full turn is ~1150 px of drag, which feels like a
+      // turntable rather than a twitch.
+      const heading = viewer.camera.heading - dx * 0.0055;
+      const pitch = viewer.camera.pitch + dy * 0.0055;
+      // Stop short of straight down and straight sideways: past ~85 deg the
+      // model flattens out and the building is no longer readable in 3D.
+      viewer.camera.lookAt(
+        center,
+        new C.HeadingPitchRange(heading, C.Math.clamp(pitch, -1.4835, -0.0873), this.inspectRange),
+      );
+      viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);
+    }
+
+    this.applyOrbit(center);
+    this.emitCamera();
+    return true;
+  }
+
+  /** Wheel while inspecting dollies the orbit range instead of moving the camera. */
+  private wheelOrbit(delta: number): boolean {
+    if (!this.inspecting) return false;
+    // Scale with distance so the gesture feels the same at any range.
+    const factor = Math.exp(delta * 0.0012);
+    this.inspectRange = Math.min(Math.max(this.inspectRange * factor, 30), 60_000);
+    const target = this.orbitTarget();
+    if (!target || !this.C) return true;
+    this.applyOrbit(this.C.Cartesian3.fromDegrees(target.lon, target.lat, target.height));
+    this.emitCamera();
+    return true;
+  }
+
+  /**
+   * Bring the camera round to face the current focus - normally the building the
+   * user just clicked - framed so the whole model fits.
+   *
+   * Range is derived from the building's own height rather than a fixed number,
+   * because OSM Buildings features range from a single storey to a tower and one
+   * constant would frame either a bungalow off-screen or a skyscraper too far
+   * away to read.
+   */
+  faceFocus(duration = 1.7): boolean {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer) return false;
+    const target = this.orbitTarget();
+    if (!target) return false;
+    this.stopOrbit();
+
+    const height = this.focusHeightM;
+    // Frame the midpoint of the facade, not the ground at its foot.
+    const centreHeight = height > 0 ? height / 2 : target.height;
+    const radius = Math.max(45, height * 0.75 + 30);
+
+    const centre = C.Cartesian3.fromDegrees(target.lon, target.lat, centreHeight);
+    const heading = viewer.camera.heading;
+    // A shallow oblique reads the massing; nadir or horizon both flatten it.
+    const pitch = C.Math.toRadians(-28);
+    const range = radius * 3.4;
+
+    viewer.camera.flyToBoundingSphere(new C.BoundingSphere(centre, radius), {
+      duration,
+      offset: new C.HeadingPitchRange(heading, pitch, range),
+    });
+    this.inspecting = false;
+    viewer.scene.screenSpaceCameraController.enableRotate = true;
+    viewer.scene.screenSpaceCameraController.enableTilt = true;
+    this.emitCamera();
+    return true;
+  }
+
+  /** True when there is something to face - i.e. a focus target has been set. */
+  hasFocusTarget(): boolean {
+    return this.orbitTarget() !== null;
   }
 
   flyTo(lon: number, lat: number, rangeMeters: number, tiltDeg = -55, duration = 2.2): void {
@@ -1702,6 +1938,87 @@ export class CesiumGlobe {
     viewer.camera.flyTo({ destination, orientation, duration });
   }
 
+  /**
+   * The default view the explorer opens on.
+   *
+   * `rangeMeters` is a distance from the CENTRE to the camera, not an altitude.
+   * The two are not interchangeable: at a -55 deg pitch the camera sits at
+   * `range * sin(55 deg)` above the ground, so 523 m puts it ~428 m up.
+   *
+   * That 523 m is not a guess. It was solved by replicating `viewBBox()` - a 5x5
+   * grid of pickEllipsoid probes, printed to 2 d.p. - and searching for the
+   * range whose bbox reproduces the reference screenshot exactly. 523 m yields
+   * bbox 72.82, 18.96, 72.86, 18.98 at every canvas aspect from 1.8 to 2.35.
+   *
+   * It cannot be exact at every aspect: a fixed altitude with a fixed 60 deg FOV
+   * necessarily shows more east-west ground on a wider window. Above aspect ~2.4
+   * the east edge rounds to 72.87 instead of 72.86, which is one printed unit
+   * on one edge. The range was chosen to maximise how many window shapes land
+   * exactly on the reference rather than to fit a single width.
+   *
+   * Note the reference screenshot's own numbers are not self-consistent: it
+   * reads "1 km" in the status bar, but "1 km" is raw
+   * `camera.positionCartographic.height / 1000`, and at Cesium's 60 deg default
+   * FOV an altitude of 1 km would show roughly 2.3x more ground than the bbox
+   * printed beside it. This constant matches the FRAMING, because the framing is
+   * what the user actually sees; the readout will therefore print 0 km here
+   * where the reference printed 1.
+   */
+  private static readonly DEFAULT = {
+    lon: 72.84216,
+    lat: 18.96178,
+    headingDeg: 0,
+    pitchDeg: -55,
+    rangeMeters: 523,
+  } as const;
+
+  /**
+   * Move the camera to the default view.
+   *
+   * Uses `lookAt` with a HeadingPitchRange and then restores the world frame,
+   * the same pattern the turntable uses, so the centre of the screen is exactly
+   * these coordinates rather than approximately so.
+   */
+  applyDefaultCamera(duration = 0): void {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer) return;
+    const d = CesiumGlobe.DEFAULT;
+    this.stopOrbit();
+    this.inspecting = false;
+    const ctrl = viewer.scene.screenSpaceCameraController;
+    ctrl.enableRotate = true;
+    ctrl.enableTilt = true;
+
+    const center = C.Cartesian3.fromDegrees(d.lon, d.lat, 0);
+    const hpr = new C.HeadingPitchRange(
+      C.Math.toRadians(d.headingDeg),
+      C.Math.toRadians(d.pitchDeg),
+      d.rangeMeters,
+    );
+
+    if (duration <= 0) {
+      viewer.camera.lookAt(center, hpr);
+      viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);
+      viewer.scene.requestRender();
+      this.emitViewport();
+      this.emitCamera();
+      return;
+    }
+
+    // A fly that ends in lookAt leaves the camera in the orbit frame, so it is
+    // flown to the pose and only then snapped back to world coordinates.
+    viewer.camera.flyToBoundingSphere(new C.BoundingSphere(center, 0), {
+      duration,
+      offset: hpr,
+      complete: () => {
+        viewer.camera.lookAtTransform(C.Matrix4.IDENTITY);
+        this.emitViewport();
+      },
+    });
+    this.emitCamera();
+  }
+
   resetBearing(duration = 1.2): void {
     const viewer = this.viewer;
     const C = this.C;
@@ -1726,7 +2043,7 @@ export class CesiumGlobe {
     setTimeout(() => this.requestRender(), duration * 1000 + 100);
   }
 
-  /** Best-effort device geolocation â†’ fly there. Returns false when denied. */
+  /** Best-effort device geolocation → fly there. Returns false when denied. */
   async locateMe(): Promise<boolean> {
     if (!navigator.geolocation) return false;
     const pos = await new Promise<GeolocationPosition | null>((resolve) => {

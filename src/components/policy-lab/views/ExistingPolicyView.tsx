@@ -43,6 +43,7 @@ import {
   SectionHead,
 } from "../parts/Results";
 import { PrototypeTag } from "../parts/States";
+import { SourceDocumentResolver } from "../parts/SourceDocumentResolver";
 
 /**
  * Existing policy evaluation — one screen, one button.
@@ -494,6 +495,27 @@ function PolicySetup({
             </dd>
           </div>
         </dl>
+        <div className="pl-docres">
+          <h4>Open the source document</h4>
+          <p className="pl-muted">
+            The prototype library names its source file but does not ship it. This looks the title
+            up in the indexed India Code corpus and gives you the real official link, or says
+            plainly that there is none.
+          </p>
+          {policy.sourceDocument.sourceFile && (
+            <p className="pl-muted">
+              Declared source file: <code>{policy.sourceDocument.sourceFile}</code>
+            </p>
+          )}
+          <SourceDocumentResolver
+            title={policy.sourceDocument.title}
+            jurisdiction={
+              policy.sourceDocument.issuer?.toLowerCase().includes("maharashtra")
+                ? "maharashtra"
+                : "auto"
+            }
+          />
+        </div>
       </div>
 
       <div className="pl-card pl-panel">

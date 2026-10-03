@@ -9,6 +9,7 @@ import { handleTtsApi } from "./server/tts";
 import { handlePolicyExtract } from "./server/policy-extract";
 import { handleWeatherApi } from "./server/weather-india";
 import { handleLandStackProxy } from "./server/landstack-proxy";
+import { handlePoliciesApi } from "./server/policies";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -85,6 +86,11 @@ export default {
       // the browser is never subject to the gateway's CORS allowlist.
       if (url.pathname === "/api/landstack") {
         return handleLandStackProxy(request);
+      }
+      // Statutory applicability search over real Indian land legislation, scored
+      // by the XGBoost model exported from ml/train_model.py. No Python runtime.
+      if (url.pathname === "/api/policies" || url.pathname.startsWith("/api/policies/")) {
+        return handlePoliciesApi(request);
       }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
