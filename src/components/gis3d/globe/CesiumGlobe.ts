@@ -17,7 +17,8 @@ import type { PerfMode, Viewport } from "../types";
 /** Type-only reference so `tsc` sees the module without bundling it here. */
 type CesiumModule = typeof import("cesium");
 
-export type GlobePickKind = "parcel" | "building" | "state" | "region" | "place" | "none";
+export type GlobePickKind =
+  "parcel" | "land-parcel" | "building" | "state" | "region" | "place" | "none";
 
 export interface GlobePick {
   kind: GlobePickKind;
@@ -77,6 +78,46 @@ export interface GlobeCameraInfo {
   hasFocus: boolean;
 }
 
+/* ------------------------------------------------------ land potential -- */
+
+/** One candidate parcel handed to the globe for drawing. Colours pre-resolved. */
+export interface LandPotentialDrawParcel {
+  id: string;
+  /** Outer ring as `[lon, lat]` pairs. Synthetic fixture geometry (DEMO). */
+  ring: number[][];
+  fill: string;
+  alpha: number;
+  outline: string;
+  outlineWidth: number;
+  /** Picked back out as `kind: "land-parcel"` with these properties. */
+  properties: Record<string, unknown>;
+}
+
+/** Zoomed-out aggregate marker: one circle per taluka cluster. */
+export interface LandPotentialCluster {
+  id: string;
+  lon: number;
+  lat: number;
+  count: number;
+  totalAreaHa: number;
+  label: string;
+}
+
+/** Current selection on the land-potential layer. */
+export interface LandPotentialSelection {
+  id: string;
+  ring: number[][];
+  /** Conceptual (SIMULATED) use overlay drawn inside the parcel. */
+  conceptual: { color: string; label: string } | null;
+  /**
+   * The parcel's pick properties, stamped onto every selection entity so a
+   * second click on the highlighted land resolves to the SAME parcel instead
+   * of hitting the translucent assessment volume and falling through to a
+   * generic "place" pick.
+   */
+  properties?: Record<string, unknown>;
+}
+
 export interface ChoroplethSpec {
   /** state name → fill colour (CSS) */
   colors: Record<string, string>;
@@ -120,6 +161,14 @@ export class CesiumGlobe {
   private osmEntities = new Map<string, string[]>();
   private regionEntities: string[] = [];
   private adminEntities: string[] = [];
+  /** Land-potential layer: candidates + clusters + selection + labels. */
+  private lpEntities: string[] = [];
+  private lpLabelEntities: string[] = [];
+  private lpSelectionEntities: string[] = [];
+  private lpSelectedId: string | null = null;
+  /** The current selection spec, re-applied whenever the layer is redrawn. */
+  private lpSelSpec: LandPotentialSelection | null = null;
+  private lpPulse: { haloId: string; handler: () => void; phase: number } | null = null;
   private adminRings: { name: string; rings: number[][][] }[] = [];
   private ringEntities = new Map<string, string[]>();
 
@@ -329,6 +378,7 @@ export class CesiumGlobe {
     const height = viewer.camera.positionCartographic?.height ?? 1_000_000;
     const bbox = this.viewBBox();
     this.hooks.onViewport({ bbox, rangeMeters: height, cameraHeight: height });
+    this.updateLandPotentialLod();
   }
 
   /**
@@ -414,6 +464,10 @@ export class CesiumGlobe {
       this.tintHandler = null;
     }
     this.selectedFeature = null;
+    if (this.lpPulse && this.viewer) {
+      this.viewer.scene.postRender.removeEventListener(this.lpPulse.handler);
+      this.lpPulse = null;
+    }
     const C = this.C;
     if (this.viewer && C) {
       try {
@@ -1075,6 +1129,323 @@ export class CesiumGlobe {
     this.requestRender();
   }
 
+  /* -------------------------------------------------------- land potential */
+
+  /**
+   * Draw the LAND POTENTIAL layer: candidate parcels at parcel scale, taluka
+   * clusters at district scale. Progressive disclosure — the caller decides
+   * which based on camera range, so national zoom never spawns 124 polygons.
+   *
+   * Every parcel carries `kind: "land-parcel"` and its DEMO provenance in
+   * `properties`, so a click explains exactly what (and how honestly) it is.
+   */
+  setLandPotential(
+    show: boolean,
+    parcels: LandPotentialDrawParcel[],
+    clusters: LandPotentialCluster[] = [],
+  ): void {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer) return;
+    const previousSelection = this.lpSelSpec;
+    this.clearLandPotential();
+    if (!show) {
+      this.lpSelSpec = null;
+      this.requestRender();
+      return;
+    }
+
+    for (const p of parcels) {
+      const id = `lp:${p.id}`;
+      this.lpEntities.push(id);
+      this.addPolygon(id, [p.ring], {
+        fill: p.fill,
+        alpha: p.alpha,
+        outline: true,
+        outlineColor: p.outline,
+        outlineWidth: p.outlineWidth,
+        clamp: true,
+        properties: {
+          kind: "land-parcel",
+          id: p.id,
+          ...p.properties,
+          outlineColor: p.outline,
+          outlineWidth: p.outlineWidth,
+        },
+      });
+      /*
+       * A clamped POLYLINE around the ring, not just `polygon.outline`:
+       * ground-clamped polygon outlines are unreliable across Cesium
+       * versions/terrain, and a candidate boundary you cannot see is a
+       * boundary the feature might as well not have. Same colour and width
+       * as the fill's outline, so the colour coding is legible at a glance.
+       */
+      const lineId = `lp:line:${p.id}`;
+      this.lpEntities.push(lineId);
+      this.addLine(lineId, p.ring, {
+        color: p.outline,
+        width: Math.max(2, p.outlineWidth + 0.4),
+        properties: {
+          kind: "land-parcel",
+          id: p.id,
+          label: p.properties["label"],
+          areaHa: p.properties["areaHa"],
+        },
+      });
+      // Label only becomes visible once the camera is close enough for it to
+      // be readable — `updateLandPotentialLod()` flips `show` on moveEnd.
+      const labelId = `lp:label:${p.id}`;
+      const centre = ringCentre(p.ring);
+      if (centre) {
+        this.lpLabelEntities.push(labelId);
+        viewer.entities.add({
+          id: labelId,
+          show: false,
+          position: C.Cartesian3.fromDegrees(centre[0], centre[1]),
+          label: {
+            text: String(p.properties["label"] ?? p.id),
+            font: "700 11px Inter, system-ui, sans-serif",
+            fillColor: C.Color.fromCssColorString("#f8f7f1"),
+            outlineColor: C.Color.fromCssColorString("#0d1411"),
+            outlineWidth: 3,
+            style: C.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: C.VerticalOrigin.BOTTOM,
+            pixelOffset: new C.Cartesian2(0, -8),
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            // NearFarScalar is (near, nearValue, far, farValue): reversing the
+            // order makes far <= near, which Cesium rejects by THROWING inside
+            // the render loop — "Rendering has stopped" — freezing the camera.
+            translucencyByDistance: new C.NearFarScalar(20_000, 1, 120_000, 0.15),
+          },
+          /* The label sits directly above its parcel, so a click on the name
+             IS a click on the parcel. Without properties it degraded to a
+             generic "place" pick and the assessment never opened. */
+          properties: {
+            kind: "land-parcel",
+            id: p.id,
+            label: p.properties["label"],
+            areaHa: p.properties["areaHa"],
+          },
+        });
+      }
+    }
+
+    for (const c of clusters) {
+      const id = `lp:cluster:${c.id}`;
+      this.lpEntities.push(id);
+      const radius = 1_800 + Math.min(120, c.count) * 55;
+      viewer.entities.add({
+        id,
+        position: C.Cartesian3.fromDegrees(c.lon, c.lat),
+        ellipse: {
+          semiMajorAxis: radius,
+          semiMinorAxis: radius,
+          material: C.Color.fromCssColorString("#9db357").withAlpha(0.34),
+          outline: true,
+          outlineColor: C.Color.fromCssColorString("#d8c06a"),
+          heightReference: C.HeightReference.CLAMP_TO_GROUND,
+        },
+        label: {
+          text: `${c.count} candidates\n${c.label}`,
+          font: "800 11px Inter, system-ui, sans-serif",
+          fillColor: C.Color.fromCssColorString("#f8f7f1"),
+          outlineColor: C.Color.fromCssColorString("#0d1411"),
+          outlineWidth: 3,
+          style: C.LabelStyle.FILL_AND_OUTLINE,
+          verticalOrigin: C.VerticalOrigin.CENTER,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+        properties: { kind: "land-parcel", id: c.id, cluster: true },
+      });
+    }
+    // Re-drawing the candidates cleared the selection entities: put the
+    // selected parcel (and its conceptual overlay) straight back, so panning
+    // never silently drops the parcel the user is assessing.
+    if (previousSelection) this.setLandPotentialSelection(previousSelection);
+    this.updateLandPotentialLod();
+    this.requestRender();
+  }
+
+  /**
+   * Selected parcel: bright outline, a subtle translucent extrusion so the
+   * land pops off the terrain, an optional CONCEPTUAL overlay and a slow
+   * outline pulse. The extrusion is a translucent marker volume — no wall, no
+   * roof, nothing that could read as a building that already exists.
+   */
+  setLandPotentialSelection(sel: LandPotentialSelection | null): void {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer) return;
+    this.clearLandPotentialSelection();
+    this.lpSelSpec = sel;
+    if (!sel) {
+      this.requestRender();
+      return;
+    }
+    const add = (id: string) => this.lpSelectionEntities.push(id);
+    // The selected parcel's own boundary line steps aside so the bright
+    // selection outline cannot z-fight with it.
+    if (this.lpSelectedId) {
+      const ownLine = viewer.entities.getById(`lp:line:${this.lpSelectedId}`);
+      if (ownLine) ownLine.show = true;
+    }
+    const selProps: Record<string, unknown> = {
+      kind: "land-parcel",
+      id: sel.id,
+      label: sel.properties?.["label"] ?? sel.id,
+      ...(sel.properties ?? {}),
+    };
+
+    // Assessment volume: short, translucent, deliberately unfinished-looking.
+    const volumeId = `lp:sel:volume:${sel.id}`;
+    add(volumeId);
+    viewer.entities.add({
+      id: volumeId,
+      polygon: {
+        hierarchy: this.polygonHierarchy(sel.ring),
+        heightReference: C.HeightReference.CLAMP_TO_GROUND,
+        height: 0,
+        extrudedHeight: 70,
+        material: C.Color.fromCssColorString("#5ef0c8").withAlpha(0.13),
+        outline: false,
+      },
+      properties: selProps,
+    });
+
+    const outlineId = `lp:sel:outline:${sel.id}`;
+    add(outlineId);
+    const ownLine = viewer.entities.getById(`lp:line:${sel.id}`);
+    if (ownLine) ownLine.show = false;
+    this.lpSelectedId = sel.id;
+    viewer.entities.add({
+      id: outlineId,
+      polyline: {
+        positions: C.Cartesian3.fromDegreesArray(flatRing(sel.ring)),
+        width: 3.5,
+        material: C.Color.fromCssColorString("#5ef0c8"),
+        clampToGround: true,
+      },
+      properties: selProps,
+    });
+
+    if (sel.conceptual) {
+      const cid = `lp:sel:concept:${sel.id}`;
+      add(cid);
+      const base = C.Color.fromCssColorString(sel.conceptual.color);
+      viewer.entities.add({
+        id: cid,
+        polygon: {
+          hierarchy: this.polygonHierarchy(sel.ring),
+          heightReference: C.HeightReference.CLAMP_TO_GROUND,
+          material: new C.StripeMaterialProperty({
+            evenColor: base.withAlpha(0.5),
+            oddColor: C.Color.TRANSPARENT,
+            repeat: 14,
+          }),
+          outline: true,
+          outlineColor: base,
+          outlineWidth: 1,
+        },
+        properties: selProps,
+      });
+      const centre = ringCentre(sel.ring);
+      if (centre) {
+        const tid = `lp:sel:tag:${sel.id}`;
+        add(tid);
+        viewer.entities.add({
+          id: tid,
+          position: C.Cartesian3.fromDegrees(centre[0], centre[1]),
+          label: {
+            text: sel.conceptual.label,
+            font: "800 11px Inter, system-ui, sans-serif",
+            fillColor: C.Color.fromCssColorString("#f6e3ae"),
+            outlineColor: C.Color.fromCssColorString("#0d1411"),
+            outlineWidth: 3,
+            style: C.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: C.VerticalOrigin.TOP,
+            pixelOffset: new C.Cartesian2(0, 14),
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          },
+          properties: selProps,
+        });
+      }
+    }
+
+    this.startLandPulse(outlineId);
+    this.requestRender();
+  }
+
+  /** Outline pulse — subtle, slow, one entity. Removed on deselect/destroy. */
+  private startLandPulse(haloId: string): void {
+    const C = this.C;
+    const viewer = this.viewer;
+    if (!C || !viewer) return;
+    const handler = () => {
+      if (this.destroyed) return;
+      const entity = viewer.entities.getById(haloId);
+      const line = entity?.polyline;
+      if (!line) return;
+      if (this.lpPulse) this.lpPulse.phase += 0.045;
+      const s = (Math.sin(this.lpPulse?.phase ?? 0) + 1) / 2; // 0..1
+      const width = 2.6 + s * 2.4;
+      const color = C.Color.fromCssColorString("#5ef0c8").withAlpha(0.55 + s * 0.45);
+      const mat = line.material as unknown as { color?: { setValue: (v: unknown) => void } };
+      if (mat && mat.color && typeof mat.color.setValue === "function") mat.color.setValue(color);
+      const w = line.width as unknown as { setValue?: (v: unknown) => void };
+      if (w && typeof w.setValue === "function") w.setValue(width);
+    };
+    this.lpPulse = { haloId, handler, phase: 0 };
+    viewer.scene.postRender.addEventListener(handler);
+  }
+
+  private clearLandPotentialSelection(): void {
+    if (this.lpPulse && this.viewer) {
+      this.viewer.scene.postRender.removeEventListener(this.lpPulse.handler);
+      this.lpPulse = null;
+    }
+    const viewer = this.viewer;
+    if (!viewer) return;
+    if (this.lpSelectedId) {
+      const ownLine = viewer.entities.getById(`lp:line:${this.lpSelectedId}`);
+      if (ownLine) ownLine.show = true;
+    }
+    for (const id of this.lpSelectionEntities) viewer.entities.removeById(id);
+    this.lpSelectionEntities = [];
+    this.lpSelectedId = null;
+  }
+
+  /** Full teardown of the land-potential layer (switch-off or destroy). */
+  clearLandPotential(): void {
+    this.clearLandPotentialSelection();
+    const viewer = this.viewer;
+    if (!viewer) return;
+    for (const id of [...this.lpEntities, ...this.lpLabelEntities]) viewer.entities.removeById(id);
+    this.lpEntities = [];
+    this.lpLabelEntities = [];
+    this.requestRender();
+  }
+
+  /**
+   * Progressive detail: parcel labels only appear once the camera is close
+   * enough to read them (spec §7 / §32). Cluster labels stay on — they ARE the
+   * district-scale view.
+   */
+  private updateLandPotentialLod(): void {
+    const viewer = this.viewer;
+    if (!viewer || this.lpLabelEntities.length === 0) return;
+    const height = viewer.camera.positionCartographic?.height ?? 1_000_000;
+    const show = height < 90_000;
+    for (const id of this.lpLabelEntities) {
+      const e = viewer.entities.getById(id);
+      if (e) e.show = show;
+    }
+  }
+
+  /** Convenience API mirroring the other fly-to helpers (spec §43). */
+  flyToLandPotential(lon: number, lat: number, rangeMeters = 12_000, tiltDeg = -55): void {
+    this.flyTo(lon, lat, rangeMeters, tiltDeg);
+  }
+
   /* -------------------------------------------------------- floor stack */
 
   /**
@@ -1342,6 +1713,7 @@ export class CesiumGlobe {
       entity.name ?? (typeof read("name") === "string" ? (read("name") as string) : null) ?? null;
     const kind = typeof read("kind") === "string" ? (read("kind") as string) : "";
     const osmKind = typeof read("osmKind") === "string" ? (read("osmKind") as string) : "";
+    const lpLabel = typeof read("label") === "string" ? (read("label") as string) : "";
     // Entities built from footprints carry no name - fall back to what they
     // actually are rather than showing a raw id at the cursor.
     const title =
@@ -1350,25 +1722,29 @@ export class CesiumGlobe {
         ? "Building"
         : kind === "parcel"
           ? "Land parcel"
-          : kind === "region"
-            ? "Policy region"
-            : kind === "osm"
-              ? osmKind === "roads"
-                ? "Road"
-                : osmKind === "water"
-                  ? "Water body"
-                  : osmKind === "protected"
-                    ? "Protected area"
-                    : "OpenStreetMap feature"
-              : null);
+          : kind === "land-parcel"
+            ? "Candidate parcel (DEMO)"
+            : kind === "region"
+              ? "Policy region"
+              : kind === "osm"
+                ? osmKind === "roads"
+                  ? "Road"
+                  : osmKind === "water"
+                    ? "Water body"
+                    : osmKind === "protected"
+                      ? "Protected area"
+                      : "OpenStreetMap feature"
+                : null);
     if (!title) return null;
     const height = read("heightM");
     const detail =
-      typeof height === "number" && height > 0
-        ? `~${height.toFixed(1)} m tagged`
-        : kind === "building"
-          ? "height not tagged"
-          : null;
+      kind === "land-parcel"
+        ? lpLabel || null
+        : typeof height === "number" && height > 0
+          ? `~${height.toFixed(1)} m tagged`
+          : kind === "building"
+            ? "height not tagged"
+            : null;
     return { title, detail };
   }
 
@@ -1379,10 +1755,27 @@ export class CesiumGlobe {
     const entity = viewer.entities.getById(id);
     if (!entity) return;
     if (entity.polygon) {
-      entity.polygon.outlineWidth = new C.ConstantProperty(on ? 3 : 1.5);
+      // Restore the entity's OWN baseline colour on unhover: the land-potential
+      // parcels are colour-coded by suitability band, and stamping the generic
+      // outline back would silently destroy that coding after one mouse-over.
+      const raw = (entity.properties ?? {}) as Record<string, unknown>;
+      const read = (k: string): unknown => {
+        const v = raw[k];
+        return v && typeof (v as { getValue?: () => unknown }).getValue === "function"
+          ? (v as { getValue: () => unknown }).getValue()
+          : v;
+      };
+      const isLand = read("kind") === "land-parcel";
+      const base =
+        typeof read("outlineColor") === "string" ? (read("outlineColor") as string) : "#3d5a45";
+      const baseWidth =
+        typeof read("outlineWidth") === "number" ? (read("outlineWidth") as number) : 1.5;
+      entity.polygon.outlineWidth = new C.ConstantProperty(
+        on ? (isLand ? 3.2 : Math.max(3, baseWidth)) : baseWidth,
+      );
       if (entity.polygon.outlineColor)
         (entity.polygon.outlineColor as import("cesium").ConstantProperty).setValue(
-          C.Color.fromCssColorString(on ? "#004e2b" : "#3d5a45"),
+          C.Color.fromCssColorString(on ? (isLand ? "#5ef0c8" : "#004e2b") : base),
         );
     }
   }
@@ -1498,12 +1891,24 @@ export class CesiumGlobe {
       }
     }
 
-    const raw = entity.properties ?? {};
+    const raw = entity.properties as
+      | (Record<string, unknown> & { getValue?: (d: unknown) => Record<string, unknown> })
+      | undefined;
     const properties: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(raw)) {
-      properties[k] = (v as { getValue?: () => unknown })?.getValue
-        ? (v as { getValue: () => unknown }).getValue()
-        : v;
+    /* Cesium wraps `entity.options.properties` in a PropertyBag. Iterating the
+       bag with Object.entries() only surfaces its INTERNAL fields (_kind,
+       _id, …), which silently dropped every user property and turned a parcel
+       pick into a generic "place". Ask the bag for its value instead; the
+       plain-object fallback keeps working for anything not wrapped. */
+    if (raw && typeof raw.getValue === "function") {
+      const bag = raw.getValue(C.JulianDate.now());
+      if (bag) Object.assign(properties, bag);
+    } else if (raw) {
+      for (const [k, v] of Object.entries(raw)) {
+        properties[k] = (v as { getValue?: () => unknown })?.getValue
+          ? (v as { getValue: () => unknown }).getValue()
+          : v;
+      }
     }
     const kind = (properties["kind"] as string | undefined) ?? "none";
     this.focusTarget = { lon, lat, height: 0 };
@@ -2122,6 +2527,28 @@ function ensureWidgetsCss(href: string): void {
   link.href = href;
   link.setAttribute("data-gis3d-cesium", "1");
   document.head.appendChild(link);
+}
+
+/** `[lon, lat]` pairs → the flat degree array Cesium's polyline API wants. */
+function flatRing(ring: number[][]): number[] {
+  const out: number[] = [];
+  for (const pt of ring) out.push(pt[0] ?? 0, pt[1] ?? 0);
+  if (out.length >= 4 && (out[0] !== out[out.length - 2] || out[1] !== out[out.length - 1])) {
+    out.push(out[0] ?? 0, out[1] ?? 0);
+  }
+  return out;
+}
+
+/** Average of the ring vertices — good enough for a label anchor at parcel scale. */
+function ringCentre(ring: number[][]): [number, number] | null {
+  if (ring.length === 0) return null;
+  let lon = 0;
+  let lat = 0;
+  for (const pt of ring) {
+    lon += pt[0] ?? 0;
+    lat += pt[1] ?? 0;
+  }
+  return [lon / ring.length, lat / ring.length];
 }
 
 function pointInRing(ring: number[][], lon: number, lat: number): boolean {

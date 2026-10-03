@@ -47,12 +47,7 @@ export const DEMO_DISTRICT = "Pune";
 export const DEMO_TALUKAS = ["Haveli", "Mulshi", "Baramati", "Junnar", "Shirur"] as const;
 
 /** Roughly the Pune district footprint, used for aggregation and "locate". */
-export const DEMO_BBOX: [number, number, number, number] = [
-  73.68,
-  18.28,
-  74.22,
-  18.79,
-];
+export const DEMO_BBOX: [number, number, number, number] = [73.68, 18.28, 74.22, 18.79];
 
 /** How many candidates the prototype publishes. */
 export const DEMO_CANDIDATE_COUNT = 124;
@@ -133,10 +128,7 @@ const TRANSITIONS: Record<ObservedCondition, ObservedCondition[]> = {
  * the entry carries `condition: null` and a reason, so the timeline can print
  * "Classification unavailable" instead of inventing a transition.
  */
-function makeHistory(
-  current: ObservedCondition,
-  rng: () => number,
-): ConditionHistoryEntry[] {
+function makeHistory(current: ObservedCondition, rng: () => number): ConditionHistoryEntry[] {
   const years = [2018, 2019, 2020, 2021, 2022, 2023, 2024];
   // Walk backwards from 2024 so the series is consistent with `current`.
   const chain: ObservedCondition[] = [current];
@@ -166,10 +158,7 @@ function makeHistory(
 }
 
 function makeContext(rng: () => number): LandPotentialParcel["context"] {
-  const band = (
-    label: string,
-    max: number,
-  ): ContextBand => ({
+  const band = (label: string, max: number): ContextBand => ({
     label,
     roads: Math.floor(rng() * max),
     buildings: Math.floor(rng() * max * 1.4),
@@ -194,10 +183,7 @@ function makeContext(rng: () => number): LandPotentialParcel["context"] {
  * each carries a status — because a constraint layer that is not connected must
  * not be presented as if it were checked.
  */
-function makeHardConstraints(
-  rng: () => number,
-  condition: ObservedCondition,
-): HardConstraint[] {
+function makeHardConstraints(rng: () => number, condition: ObservedCondition): HardConstraint[] {
   const out: HardConstraint[] = [];
 
   if (rng() < 0.09) {
@@ -317,12 +303,12 @@ function makeFactors(
 function buildParcel(index: number, rng: () => number): LandPotentialParcel {
   // Golden-angle scatter inside the district bbox: even coverage, no clumps,
   // and completely reproducible.
-  const gx = (0.5 + 0.48 * Math.cos(index * 2.39996)) ;
-  const gy = (0.5 + 0.48 * Math.sin(index * 2.39996 + 0.7));
+  const gx = 0.5 + 0.48 * Math.cos(index * 2.39996);
+  const gy = 0.5 + 0.48 * Math.sin(index * 2.39996 + 0.7);
   const lon = DEMO_BBOX[0] + gx * (DEMO_BBOX[2] - DEMO_BBOX[0]);
   const lat = DEMO_BBOX[1] + gy * (DEMO_BBOX[3] - DEMO_BBOX[1]);
 
-  const ring = makeRing(lon, lat, 0.0032 + rng() * 0.0062, rng);
+  const ring = makeRing(lon, lat, 0.0018 + rng() * 0.0056, rng);
   const areaHa = round(ringAreaHa(ring), 1);
 
   const roll = rng();
@@ -449,7 +435,10 @@ export function clusterCandidates(list: LandPotentialParcel[]): CandidateCluster
       lat: rows.reduce((s, r) => s + r.lat, 0) / rows.length,
       lon: rows.reduce((s, r) => s + r.lon, 0) / rows.length,
       count: rows.length,
-      totalAreaHa: round(rows.reduce((s, r) => s + r.areaHa, 0), 1),
+      totalAreaHa: round(
+        rows.reduce((s, r) => s + r.areaHa, 0),
+        1,
+      ),
       byCondition,
     };
   });

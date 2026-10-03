@@ -33,11 +33,23 @@ export interface AskContext {
   visualMode: string;
   /** `enhanced demo` only while the Patna floor stack is on screen. */
   gisMode: "standard" | "enhanced-demo";
+  /** Live Land Potential context — candidates in view, selected parcel, scores. */
+  landPotential?: string;
+  /** Criteria currently in force on the Land Potential layer. */
+  landPlan?: string;
 }
 
 interface Props {
   context: AskContext;
   onFlyTo: (place: string, lat: number | null, lon: number | null, zoom: number | null) => void;
+  /**
+   * Deterministic land-potential resolver. Questions it recognises are answered
+   * locally from the fixture with a plain-language plan — the model is never
+   * handed a tool that can execute arbitrary queries (spec §27).
+   */
+  localLandAnswer?: ((question: string) => string | null) | undefined;
+  /** Example questions shown while the capability is on. */
+  prompts?: string[] | undefined;
 }
 
 function composePrompt(question: string, ctx: AskContext): string {
@@ -52,12 +64,17 @@ function composePrompt(question: string, ctx: AskContext): string {
     `globe mode: ${ctx.gisMode}${ctx.gisMode === "enhanced-demo" ? " (Patna floor-stack demo fixture)" : ""}`,
     `building rendering mode: ${ctx.visualMode}`,
     `scenario region: ${ctx.region}`,
+    ctx.landPotential ? `land potential layer: ${ctx.landPotential}` : "land potential layer: off",
+    ctx.landPlan ? `land potential criteria: ${ctx.landPlan}` : "",
+    ctx.landPotential && ctx.landPotential !== "off"
+      ? "Answer land-potential questions with counts and screening scores (X / 100), state when something is DEMO or MODELLED, and always close with: these are screening assessments based on available data, not legal land-use decisions. Never invent parcel ids, ownership or scores — quote only the context above."
+      : "",
     "Only state facts you can source; when something is a demo aggregate or a modelled value, say so explicitly. Never invent coordinates or statistics.",
   ].filter(Boolean);
   return `${bits.join("\n")}\n\nQuestion: ${question}`;
 }
 
-export function GisAskBhumi({ context, onFlyTo }: Props) {
+export function GisAskBhumi({ context, onFlyTo, localLandAnswer, prompts }: Props) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -78,6 +95,14 @@ export function GisAskBhumi({ context, onFlyTo }: Props) {
       .slice(-8)
       .map((t) => ({ role: t.role, content: t.text ?? t.reply?.summary ?? "" }));
     setTurns((prev) => [...prev, { id: myId, role: "user", text }]);
+    // Safe local resolver first: recognised land-potential questions are
+    // answered deterministically from the fixture, no model call, no SQL.
+    const local = localLandAnswer?.(question) ?? null;
+    if (local) {
+      setTurns((prev) => [...prev, { id: ++seq.current, role: "assistant", text: local }]);
+      setBusy(false);
+      return;
+    }
     try {
       const res = await fetch("/api/ai", {
         method: "POST",
@@ -178,6 +203,15 @@ export function GisAskBhumi({ context, onFlyTo }: Props) {
           The question is sent with the live camera bounding box, active layers and selection, so
           the agent answers about what is actually on screen. Answers reuse the app's existing
           evidence pipeline — this is not a second chatbot.
+          {prompts && prompts.length > 0 && (
+            <div className="g3d-lp-prompts">
+              {prompts.map((p) => (
+                <button type="button" key={p} onClick={() => void send(p)} disabled={busy}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

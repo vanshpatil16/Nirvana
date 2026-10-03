@@ -167,10 +167,7 @@ function evidenceFor(parcel: LandPotentialParcel): EvidenceRef[] {
 
 /* --------------------------------------------------------------- positives -- */
 
-function positivesFor(
-  parcel: LandPotentialParcel,
-  useId: PotentialUseId,
-): string[] {
+function positivesFor(parcel: LandPotentialParcel, useId: PotentialUseId): string[] {
   const f = parcel.factors;
   const out: string[] = [];
 
@@ -199,17 +196,16 @@ function positivesFor(
   }
 
   if (out.length === 0) {
-    out.push("No factor stands out strongly for this use; the score is an average of middling inputs.");
+    out.push(
+      "No factor stands out strongly for this use; the score is an average of middling inputs.",
+    );
   }
   return out;
 }
 
 /* ------------------------------------------------------------- missing data -- */
 
-function missingFor(
-  parcel: LandPotentialParcel,
-  useId: PotentialUseId,
-): string[] {
+function missingFor(parcel: LandPotentialParcel, useId: PotentialUseId): string[] {
   const out: string[] = [];
   if (parcel.ownershipStatus === "unknown") {
     out.push("Ownership status — no connected land-record source.");
@@ -245,9 +241,7 @@ function scoreUse(parcel: LandPotentialParcel, useId: PotentialUseId): ScoredUse
       suitability: 0,
       band: "Restricted",
       suppressed: true,
-      suppressionReason: blockers
-        .map((b) => `${b.label} — ${b.detail}`)
-        .join(" "),
+      suppressionReason: blockers.map((b) => `${b.label} — ${b.detail}`).join(" "),
       factorValues: parcel.factors,
       positiveFactors: positivesFor(parcel, useId),
       constraints: blockers.map((b) => `${b.label}: ${b.detail}`),
@@ -320,7 +314,8 @@ export function assessParcel(
   parcel: LandPotentialParcel,
   options: { use?: PotentialUseId | "all" } = {},
 ): LandPotentialAssessment {
-  const useIds = options.use && options.use !== "all" ? [options.use] : POTENTIAL_USES.map((u) => u.id);
+  const useIds =
+    options.use && options.use !== "all" ? [options.use] : POTENTIAL_USES.map((u) => u.id);
   const uses = useIds
     .map((id) => scoreUse(parcel, id))
     // Ordered by score so the panel reads as a screening list, but never as a

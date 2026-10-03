@@ -941,6 +941,206 @@ export const GIS_LAYERS: GisLayerDef[] = [
     statField: null,
     landClass: null,
   },
+
+  /* ------------------------------------------------------- LAND POTENTIAL -- */
+  /*
+   * Rendered by the dedicated LAND POTENTIAL card (LandPotentialLayer.tsx),
+   * not by GisLayerManager — but kept in this registry on purpose so every row
+   * inherits the same DATA INFO dialog, evidence classification and
+   * unavailable-layer discipline as every other layer on the globe.
+   *
+   * The candidate geometry behind these rows is SYNTHETIC (see
+   * src/services/gis3d/landPotentialData.ts). The imagery, terrain, roads and
+   * buildings underneath it are real.
+   */
+  {
+    id: "lp-candidates",
+    group: "landpotential",
+    label: "Candidate land",
+    hint: "Screening candidates drawn from available spatial evidence",
+    status: "demo",
+    unavailableNote: null,
+    render: "land-potential",
+    defaultOn: false,
+    color: "#9db357",
+    legend: [],
+    evidence: {
+      source: "NIRVANA candidate-parcel fixture (DEMO)",
+      provider: "Generated in code over Pune-district coordinates",
+      date: "Deterministic fixture, stable ids",
+      resolution: "Parcel-like polygons, 0.4–6 ha",
+      coverage: "Pune district, Maharashtra (124 candidates)",
+      license: "Synthetic — no licence to grant; not a public dataset",
+      processing:
+        "Fixed-seed generator lays irregular polygons inside the district bbox, then scores them with the Land Potential Screening Model v1. NOT cadastral, NOT a land registry, ids prefixed DEMO-.",
+      kind: "demo",
+      confidence:
+        "DEMO geometry and ownership. Real satellite imagery, terrain, roads and buildings are drawn underneath; only the land-status overlay is synthetic.",
+    },
+    statField: null,
+    landClass: null,
+  },
+  {
+    id: "lp-public",
+    group: "landpotential",
+    label: "Government / public land",
+    hint: "Ownership as recorded in the fixture — never inferred from appearance",
+    status: "demo",
+    unavailableNote: null,
+    render: "land-potential",
+    defaultOn: false,
+    color: "#4f9d63",
+    legend: [],
+    evidence: {
+      source: "Ownership status (DEMO fixture; land record NOT CONNECTED)",
+      provider: "NIRVANA prototype — no land-record source is wired",
+      date: "n/a",
+      resolution: "Per candidate parcel",
+      coverage: "Pune district fixture only",
+      license: "Synthetic — not a public dataset",
+      processing:
+        "Filter only. No connected source can confirm ownership, so a share of fixtures are deliberately 'unknown' and those parcels never score as available land.",
+      kind: "demo",
+      confidence:
+        "DEMO. Barren appearance never implies government ownership anywhere in this feature.",
+    },
+    statField: null,
+    landClass: null,
+  },
+  {
+    id: "lp-barren",
+    group: "landpotential",
+    label: "Barren / unused land",
+    hint: "Observed-condition filter from the fixture land-cover series",
+    status: "demo",
+    unavailableNote: null,
+    render: "land-potential",
+    defaultOn: false,
+    color: "#d79b34",
+    legend: [],
+    evidence: {
+      source: "Observed land condition (DEMO series, 2018–2024)",
+      provider: "NIRVANA fixture — no land-cover classifier is connected",
+      date: "2018–2024 fixture series",
+      resolution: "Per candidate parcel per year",
+      coverage: "Pune district fixture only",
+      license: "Synthetic — not a public dataset",
+      processing:
+        "Condition labels come from the fixture. Years with no classification print 'Classification unavailable' instead of inventing a transition.",
+      kind: "demo",
+      confidence:
+        "DEMO. Satellite imagery is real; the label attached to each parcel is not an observation made in this build.",
+    },
+    statField: null,
+    landClass: null,
+  },
+  {
+    id: "lp-suitability",
+    group: "landpotential",
+    label: "Suitability heatmap",
+    hint: "Screening suitability 0–100 per potential use",
+    status: "connected",
+    unavailableNote: null,
+    render: "land-potential",
+    defaultOn: false,
+    color: "#2f9e6f",
+    legend: [],
+    evidence: {
+      source: "Land Potential Screening Model v1",
+      provider: "NIRVANA prototype (in-repo)",
+      date: "v1.0 — prototype, unvalidated",
+      resolution: "Per parcel per potential use",
+      coverage: "Wherever candidate parcels are drawn",
+      license: "In-repo model",
+      processing:
+        "Six weighted factors (accessibility, terrain, infrastructure, resource, environment, availability) combined into 0–100, then soft penalties, then a hard-constraint gate that SUPPRESSES scoring entirely where a restriction applies.",
+      kind: "modelled",
+      confidence:
+        "MODELLED screening score. Not a probability of success, not a recommendation, not a legal land-use decision.",
+    },
+    statField: null,
+    landClass: null,
+  },
+  {
+    id: "lp-infrastructure",
+    group: "landpotential",
+    label: "Infrastructure context",
+    hint: "Roads, buildings and water around each candidate — existing OSM layers",
+    status: "connected",
+    unavailableNote: null,
+    render: "land-potential",
+    defaultOn: false,
+    color: "#b08a4a",
+    legend: [],
+    evidence: {
+      source: "OpenStreetMap roads / buildings / water",
+      provider: "OpenStreetMap contributors",
+      date: "rolling",
+      resolution: "Viewport-scoped ways and footprints",
+      coverage: "Camera viewport only",
+      license: "ODbL 1.0",
+      processing:
+        "Switching this on enables the explorer's existing Overpass layers — no separate infrastructure dataset exists behind this row.",
+      kind: "observed",
+      confidence: "Crowd-sourced ground survey; completeness varies by region.",
+    },
+    statField: null,
+    landClass: null,
+  },
+  {
+    id: "lp-constraints",
+    group: "landpotential",
+    label: "Environmental constraints",
+    hint: "Hard-constraint parcels plus protected / reserved areas",
+    status: "connected",
+    unavailableNote: null,
+    render: "land-potential",
+    defaultOn: false,
+    color: "#b4574f",
+    legend: [],
+    evidence: {
+      source: "Protected / reserved areas (OpenStreetMap) + NIRVANA constraint fixture",
+      provider: "OpenStreetMap contributors · NIRVANA prototype",
+      date: "rolling (OSM)",
+      resolution: "Area polygons inside the viewport",
+      coverage: "Camera viewport for OSM areas; fixture constraints on candidate parcels",
+      license: "ODbL 1.0 (OSM)",
+      processing:
+        "A hard constraint suppresses scoring for the affected use — it is never folded into the score as a small deduction. Forest classification and flood inundation have no 3D render path here and say so.",
+      kind: "observed",
+      confidence:
+        "Protected-area geometry is real OSM; per-parcel fixture constraints are DEMO and labelled as such.",
+    },
+    statField: null,
+    landClass: null,
+  },
+  {
+    id: "lp-zones",
+    group: "landpotential",
+    label: "Potential-use zones",
+    hint: "Conceptual overlay for a selected potential use — never built assets",
+    status: "demo",
+    unavailableNote: null,
+    render: "land-potential",
+    defaultOn: false,
+    color: "#e7b84b",
+    legend: [],
+    evidence: {
+      source: "Conceptual scenario overlay (SIMULATED)",
+      provider: "NIRVANA prototype",
+      date: "v1.0",
+      resolution: "Translucent pattern inside the selected parcel",
+      coverage: "The selected candidate only",
+      license: "In-repo prototype",
+      processing:
+        "A striped translucent tint drawn over the parcel footprint. It renders no panel, building or field — the land underneath remains visible precisely so the overlay can never read as something already built.",
+      kind: "scenario",
+      confidence:
+        "SIMULATED SCENARIO / CONCEPTUAL OVERLAY. Not an approval, not a design, not a construction.",
+    },
+    statField: null,
+    landClass: null,
+  },
 ];
 
 const LAYER_INDEX = new Map(GIS_LAYERS.map((l) => [l.id, l]));

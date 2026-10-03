@@ -7,8 +7,17 @@
  * boundary and present it as observed fact.
  */
 
-/** Groups mirror the layer-manager sections in the product spec (Part 6). */
-export type GisGroup = "base" | "land" | "environment" | "governance" | "socioeconomic" | "policy";
+/**
+ * Groups mirror the layer-manager sections in the product spec (Part 6).
+ *
+ * `landpotential` is deliberately NOT in `GisLayerManager.GROUP_ORDER`: those
+ * rows are rendered by the dedicated LAND POTENTIAL card
+ * (`LandPotentialLayer.tsx`), which has its own activation switch and status
+ * line. They still live in the registry so they inherit the same DATA INFO /
+ * provenance machinery as every other layer.
+ */
+export type GisGroup =
+  "base" | "land" | "environment" | "governance" | "socioeconomic" | "policy" | "landpotential";
 
 export const GROUP_LABELS: Record<GisGroup, string> = {
   base: "Base",
@@ -17,6 +26,7 @@ export const GROUP_LABELS: Record<GisGroup, string> = {
   governance: "Governance",
   socioeconomic: "Socioeconomic",
   policy: "Policy",
+  landpotential: "Land Potential",
 };
 
 /**
@@ -64,6 +74,7 @@ export interface LegendEntry {
 
 /** How a layer is realised on the Cesium globe. */
 export type LayerRender =
+  | "land-potential"
   | "satellite-imagery"
   | "street-imagery"
   | "terrain"
@@ -115,6 +126,14 @@ export type Selection =
   | { kind: "none" }
   | { kind: "place"; name: string; lat: number; lon: number }
   | { kind: "parcel"; id: string; lat: number; lon: number; properties: Record<string, unknown> }
+  /** A Land Potential candidate parcel — synthetic geometry, DEMO provenance. */
+  | {
+      kind: "land-parcel";
+      id: string;
+      lat: number;
+      lon: number;
+      properties: Record<string, unknown>;
+    }
   | { kind: "building"; id: string; lat: number; lon: number; properties: Record<string, unknown> }
   | { kind: "state"; name: string; lat: number; lon: number };
 

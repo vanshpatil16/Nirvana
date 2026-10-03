@@ -650,15 +650,7 @@ export function Landing() {
       {/* Small screens lose the nav links at 1100px and the dashboard CTA at
           560px, which reduced the header to a bare logo. This is a compact
           scroll rail so the page stays navigable on a phone. */}
-      <nav className="ld-jump" aria-label="Sections">
-        <a href="#dive">Dive</a>
-        <a href="#method">Method</a>
-        <a href="#platform">Platform</a>
-        <a href="#ledger">Ledger</a>
-        <a href="/dashboard" className="ld-jump-cta">
-          Open
-        </a>
-      </nav>
+      
 
       {/* ============================ THE DIVE ============================ */}
       <section className="ld-dive" id="top">

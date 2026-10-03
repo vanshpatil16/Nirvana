@@ -108,7 +108,8 @@ export type DataCategory =
   | "INFRASTRUCTURE"
   | "SOCIOECONOMIC"
   | "LEGAL"
-  | "POLICY";
+  | "POLICY"
+  | "MODEL";
 
 export const CATEGORY_LABELS: Record<DataCategory, string> = {
   CADASTRAL: "Cadastral parcels",
@@ -124,6 +125,7 @@ export const CATEGORY_LABELS: Record<DataCategory, string> = {
   SOCIOECONOMIC: "Socio-economic",
   LEGAL: "Legal case law",
   POLICY: "Acts, rules & policy",
+  MODEL: "Screening & statistical models",
 };
 
 export type SourceStatus = "connected" | "available-not-connected" | "external" | "unavailable";
@@ -583,6 +585,59 @@ export const DATA_SOURCES: DataSourceRecord[] = [
     lastVerified: null,
     limitations:
       "Not publicly available / not connected: no verified open soil endpoint is wired into this app, so no soil values are ever rendered.",
+  },
+
+  // --- Land Potential (3D GIS Explorer) ----------------------------------
+  {
+    id: "land-potential-candidate-fixtures",
+    name: "Land Potential candidate parcels (DEMO fixtures)",
+    category: "PARCEL_BOUNDARY",
+    provider: "NIRVANA prototype — generated in code (src/services/gis3d/landPotentialData.ts)",
+    upstream: null,
+    url: null,
+    license: "Synthetic; no licence to grant",
+    spatialResolution: "Parcel-like polygons, roughly 0.4–6 ha",
+    temporalCoverage: "Stable deterministic fixture",
+    geography: "Pune district, Maharashtra (124 candidates)",
+    status: "connected",
+    reliabilityClass: "F",
+    lastVerified: null,
+    limitations:
+      "DEMO ONLY. Geometry, ownership and land-condition labels are SYNTHETIC and generated in code — not cadastral parcels, not government land records, ids prefixed DEMO-. Real Sentinel-2 imagery, terrain and OpenStreetMap features are drawn underneath. Ownership is never inferred from appearance.",
+  },
+  {
+    id: "land-potential-model-v1",
+    name: "Land Potential Screening Model v1",
+    category: "MODEL",
+    provider: "NIRVANA prototype (src/services/gis3d/landPotentialScoring.ts)",
+    upstream: null,
+    url: null,
+    license: "In-repo prototype",
+    spatialResolution: "Per candidate parcel per potential use",
+    temporalCoverage: "v1.0",
+    geography: "Wherever candidate parcels are drawn",
+    status: "connected",
+    reliabilityClass: "F",
+    lastVerified: null,
+    limitations:
+      "PROTOTYPE, UNVALIDATED. Six hand-weighted factors combined into a 0–100 screening score with a hard-constraint gate that suppresses scoring entirely where a restriction applies. Not a probability of success, not a recommendation, not legal authorisation or a land-use decision.",
+  },
+  {
+    id: "land-record-ownership-india",
+    name: "Ownership / land-record data (India)",
+    category: "LAND_RECORD",
+    provider: "State revenue departments / registration portals",
+    upstream: "No single open national endpoint",
+    url: null,
+    license: null,
+    spatialResolution: null,
+    temporalCoverage: null,
+    geography: "India",
+    status: "available-not-connected",
+    reliabilityClass: "C",
+    lastVerified: null,
+    limitations:
+      "NOT CONNECTED in this app: no licensed land-record source is wired into the 3D explorer, so the Land Potential feature reports ownership as DEMO fixture values or 'Not verified' and NEVER infers ownership from satellite imagery or from land appearing barren.",
   },
 ];
 

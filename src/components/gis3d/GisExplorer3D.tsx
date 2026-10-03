@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import "./land-potential.css";
 import {
   ArrowLeft,
   Building2,
@@ -14,6 +15,7 @@ import {
   Plus,
   RotateCw,
   Search,
+  Sprout,
   X,
 } from "lucide-react";
 import {
@@ -38,6 +40,39 @@ import { GisLayerManager } from "./GisLayerManager";
 import { EvidenceBody, GisIntelPanel, SelectionHeader } from "./GisIntelPanel";
 import { GisAskBhumi, type AskContext } from "./GisAskBhumi";
 import { GisScenarioDrawer } from "./GisScenarioDrawer";
+import { LandPotentialLayer } from "./LandPotentialLayer";
+import { LandPotentialToolbar, type LpFilters } from "./LandPotentialToolbar";
+import { LandPotentialLegend } from "./LandPotentialLegend";
+import { LandPotentialInspector } from "./LandPotentialInspector";
+import { LandPotentialQuery } from "./LandPotentialQuery";
+import { LandPotentialResults } from "./LandPotentialResults";
+import { LandPotentialScenario, type ScenarioHandoff } from "./LandPotentialScenario";
+import { FieldVerificationPanel } from "./FieldVerificationPanel";
+import { assessParcel } from "@/services/gis3d/landPotentialScoring";
+import {
+  DEMO_BBOX,
+  PUNE_CENTRE,
+  candidateById,
+  clusterCandidates,
+} from "@/services/gis3d/landPotentialData";
+import {
+  CONDITION_LABEL,
+  USE_BY_ID,
+  type FieldVerification,
+  type LandPotentialAssessment,
+  type LandPotentialMapMode,
+  type LandPotentialParcel,
+} from "@/services/gis3d/landPotentialTypes";
+import { CONCEPTUAL_COLOR, modeFactor, parcelVisual } from "@/services/gis3d/landPotentialVisual";
+import {
+  describeResult,
+  isLandPotentialQuestion,
+  parseLandQuery,
+  planAnchor,
+  runLandQuery,
+  type AppliedCriteria,
+  type LandQueryPlan,
+} from "@/services/gis3d/landPotentialQueries";
 import { buildChoropleth, pickChoroplethLayer } from "./chropleth";
 import { stateRings, fetchPlaceRing } from "@/services/gis3d/adminGeo";
 import { fetchGisParcels } from "@/services/gis3d/parcels";
@@ -114,6 +149,30 @@ export function GisExplorer3D({ search }: Props) {
   const [didStates, setDidStates] = useState<[string, string]>(["Maharashtra", "Gujarat"]);
   const [ringName, setRingName] = useState<string | null>(null);
 
+  /* ------------------------------------------------- land potential state */
+  const [lpOn, setLpOn] = useState(false);
+  const [lpFilters, setLpFilters] = useState<LpFilters>({
+    scope: "candidates",
+    use: "all",
+    minAreaHa: 0,
+    condition: "all",
+    evidence: "all",
+  });
+  const [lpDistrict, setLpDistrict] = useState<string | null>(null);
+  const [lpMapMode, setLpMapMode] = useState<LandPotentialMapMode>("overall");
+  const [lpCandidates, setLpCandidates] = useState<LandPotentialParcel[]>([]);
+  const [lpBusy, setLpBusy] = useState(false);
+  const [lpResult, setLpResult] = useState({
+    count: 0,
+    message: "Land Potential is off.",
+    empty: false,
+  });
+  const [lpSelectedId, setLpSelectedId] = useState<string | null>(null);
+  const [lpCompareView, setLpCompareView] = useState(false);
+  const [lpFieldOpen, setLpFieldOpen] = useState(false);
+  const [lpTasks, setLpTasks] = useState<FieldVerification[]>([]);
+  const [lpHandoff, setLpHandoff] = useState<ScenarioHandoff | null>(null);
+
   /* ------------------------------------------------- 3D mode / camera state */
   const [visualMode, setVisualMode] = useState<BuildingVisualMode>("standard");
   const [hover, setHover] = useState<GlobeHover | null>(null);
@@ -142,6 +201,349 @@ export function GisExplorer3D({ search }: Props) {
     setRuntimes((prev) => ({ ...prev, [id]: { ...(prev[id] ?? IDLE), ...patch } }));
   }, []);
 
+  /* ------------------------------------------- land potential: derived data */
+  const landLayers = useMemo(() => layers.filter((l) => l.group === "landpotential"), [layers]);
+
+  /** The selected candidate, resolved from the id the globe handed back. */
+  const lpSelected = useMemo(
+    () => (lpSelectedId ? (candidateById(lpSelectedId) ?? null) : null),
+    [lpSelectedId],
+  );
+
+  const lpAssessment = useMemo<LandPotentialAssessment | null>(
+    () =>
+      lpSelected
+        ? assessParcel(lpSelected, lpFilters.use !== "all" ? { use: lpFilters.use } : {})
+        : null,
+    [lpSelected, lpFilters.use],
+  );
+
+  /** Single selection discipline: nothing else is selected while a candidate is. */
+  useEffect(() => {
+    if (selection.kind === "land-parcel") return;
+    setLpSelectedId(null);
+  }, [selection]);
+
+  /**
+   * Run the screening. Everything is local and deterministic: filter the
+   * fixture, apply the evidence gate, report an honest count. No network, no
+   * invented rows, and an empty result says so instead of guessing.
+   */
+  const analyze = useCallback(
+    (f: LpFilters, district: string | null, bbox: Viewport["bbox"] | null) => {
+      setLpBusy(true);
+      const res = runLandQuery({
+        district,
+        ownership: f.scope === "public" ? "government" : null,
+        condition: f.condition !== "all" ? f.condition : f.scope === "barren" ? "barren" : null,
+        minAreaHa: f.minAreaHa > 0 ? f.minAreaHa : null,
+        use: f.use !== "all" ? f.use : null,
+        inViewOnly: bbox !== null,
+        bbox,
+      });
+      let list = res.parcels;
+      if (f.evidence === "ownership") list = list.filter((p) => p.ownershipStatus !== "unknown");
+      if (f.evidence === "classification") {
+        list = list.filter((p) => !p.hardConstraints.some((c) => c.status === "not-connected"));
+      }
+      // Rebuild only when the set actually changes — panning re-runs this often.
+      setLpCandidates((prev) =>
+        prev.length === list.length && prev.every((p, i) => p === list[i]) ? prev : list,
+      );
+      const useLabel = f.use !== "all" ? USE_BY_ID[f.use].label : null;
+      setLpResult(
+        list.length === 0
+          ? {
+              count: 0,
+              empty: true,
+              message:
+                "NO CANDIDATES IN CURRENT VIEW — try expanding the view, lowering the minimum area, or changing land condition.",
+            }
+          : {
+              count: list.length,
+              empty: false,
+              message: `${list.length} candidate parcel${list.length === 1 ? "" : "s"} in view${
+                useLabel ? ` · screening for ${useLabel.toLowerCase()}` : ""
+              }. Screening assessment only.`,
+            },
+      );
+      setLpBusy(false);
+      return list.length;
+    },
+    [],
+  );
+
+  /* Criteria echoed on the analysis card, so the list always says what it
+     filtered by (spec §6: the plan is a proposal the user can read back). */
+  const lpCriteria = useMemo<string[]>(() => {
+    const out: string[] = [];
+    if (lpDistrict) out.push(`District: ${lpDistrict}`);
+    if (lpFilters.scope === "public") out.push("Ownership: Government");
+    if (lpFilters.scope === "barren" && lpFilters.condition === "all") {
+      out.push("Condition: Barren / unused");
+    }
+    if (lpFilters.condition !== "all")
+      out.push(`Condition: ${CONDITION_LABEL[lpFilters.condition]}`);
+    if (lpFilters.minAreaHa > 0) out.push(`Min area: ${lpFilters.minAreaHa} ha`);
+    if (lpFilters.use !== "all") out.push(`Potential use: ${USE_BY_ID[lpFilters.use].label}`);
+    if (lpFilters.evidence === "ownership") out.push("Ownership status required");
+    if (lpFilters.evidence === "classification") out.push("No missing-data gates");
+    if (active.includes("lp-public")) out.push("Public-land sub-layer on");
+    if (active.includes("lp-barren")) out.push("Barren-only sub-layer on");
+    return out;
+  }, [lpDistrict, lpFilters, active]);
+
+  /** Camera range that frames a parcel whole, whatever its size. */
+  const frameParcelRange = (areaHa: number) =>
+    Math.min(26_000, Math.max(6_500, 4_200 + Math.sqrt(Math.max(areaHa, 1)) * 640));
+
+  /** Clicking a row in the analysis card = clicking the parcel on the globe. */
+  const selectCandidate = useCallback((p: LandPotentialParcel) => {
+    setSelection({
+      kind: "land-parcel",
+      id: p.id,
+      lat: p.lat,
+      lon: p.lon,
+      properties: {
+        kind: "land-parcel",
+        id: p.id,
+        areaHa: p.areaHa,
+        label: `${p.id} · ${p.areaHa} ha`,
+        district: p.district,
+        taluka: p.taluka,
+        condition: p.observedCondition,
+        ownership: p.ownershipStatus,
+        provenance: "DEMO — synthetic candidate geometry, not a cadastral parcel",
+      },
+    });
+    setLpSelectedId(p.id);
+    setLpCompareView(false);
+    setTab("inspect");
+    setRightOpen(true);
+    globeRef.current?.flyToLandPotential(p.lon, p.lat, frameParcelRange(p.areaHa), -50);
+  }, []);
+
+  /** ANALYZE VISIBLE AREA: re-screen, then show the results card on the right. */
+  const runAnalysisNow = useCallback(() => {
+    analyze(lpFilters, lpDistrict, viewport?.bbox ?? null);
+    setSelection({ kind: "none" });
+    setTab("inspect");
+    setRightOpen(true);
+  }, [analyze, lpFilters, lpDistrict, viewport]);
+
+  /* Re-screen whenever the view or the criteria change (debounced: the camera
+     emits on every settle, and this is pure local computation anyway). */
+  useEffect(() => {
+    if (!lpOn || !ready) return;
+    const t = setTimeout(() => {
+      analyze(lpFilters, lpDistrict, viewport?.bbox ?? null);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [lpOn, ready, viewport, lpFilters, lpDistrict, analyze]);
+
+  /* -------------------------------------------------- land potential → globe
+     Progressive disclosure (spec §31/§32): aggregate clusters at district
+     scale, detailed polygons only once the camera is close enough for parcel
+     geometry to mean anything. Colours are pre-resolved in the visual module
+     so the legend, the score bars and the globe can never disagree. */
+  /*
+   * The candidate list that is actually ON SCREEN: the analysis results and
+   * the drawn parcels read from the same memo, so the right-hand card can
+   * never disagree with what the globe is showing.
+   */
+  const lpList = useMemo(() => {
+    const showPublic = active.includes("lp-public");
+    const showBarren = active.includes("lp-barren");
+    return lpCandidates.filter(
+      (p) =>
+        (!showPublic || p.ownershipStatus === "government") &&
+        (!showBarren || p.observedCondition === "barren" || p.observedCondition === "sparse"),
+    );
+  }, [lpCandidates, active]);
+
+  const lpDraw = useMemo(() => {
+    if (!lpOn || !active.includes("lp-candidates")) return null;
+    const range = viewport?.rangeMeters ?? Number.MAX_SAFE_INTEGER;
+    const heat = active.includes("lp-suitability");
+    const useId = lpFilters.use !== "all" ? lpFilters.use : null;
+    const list = lpList;
+
+    if (range >= 260_000) {
+      return { mode: "clusters" as const, clusters: clusterCandidates(list), count: list.length };
+    }
+
+    const mf = modeFactor(lpMapMode);
+    const parcels = list.map((p) => {
+      const a = assessParcel(p, useId ? { use: useId } : {});
+      const scored =
+        useId || heat ? (a.uses.find((u) => !u.suppressed) ?? a.uses[0] ?? null) : null;
+      const v = parcelVisual({
+        mode: lpMapMode,
+        scored,
+        hardConstraintCount: p.hardConstraints.filter((c) => c.severity === "blocking").length,
+        softCautionCount: p.softConstraints.filter((s) => s.severity === "caution").length,
+        factorValue: mf ? p.factors[mf] : 0,
+        ownerUnknown: p.ownershipStatus === "unknown",
+      });
+      return {
+        id: p.id,
+        ring: p.ring as number[][],
+        fill: v.fill,
+        alpha: v.alpha,
+        outline: v.outline,
+        outlineWidth: v.outlineWidth,
+        properties: {
+          areaHa: p.areaHa,
+          label: `${p.id} · ${p.areaHa} ha`,
+          district: p.district,
+          taluka: p.taluka,
+          condition: p.observedCondition,
+          ownership: p.ownershipStatus,
+          provenance: "DEMO — synthetic candidate geometry, not a cadastral parcel",
+          band: scored?.band ?? "unscored",
+          suitability: scored?.suitability ?? null,
+        },
+      };
+    });
+    return { mode: "parcels" as const, parcels, count: list.length };
+  }, [lpOn, active, lpList, viewport, lpFilters.use, lpMapMode]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const g = globeRef.current;
+    if (!g) return;
+    if (!lpDraw) {
+      g.setLandPotential(false, [], []);
+      return;
+    }
+    if (lpDraw.mode === "clusters") {
+      g.setLandPotential(
+        true,
+        [],
+        lpDraw.clusters.map((c) => ({
+          id: c.key,
+          lon: c.lon,
+          lat: c.lat,
+          count: c.count,
+          totalAreaHa: c.totalAreaHa,
+          label: c.label,
+        })),
+      );
+    } else g.setLandPotential(true, lpDraw.parcels, []);
+  }, [ready, lpDraw]);
+
+  /* Selected parcel: bright outline + conceptual overlay (spec §8 / §22). */
+  useEffect(() => {
+    if (!ready) return;
+    const g = globeRef.current;
+    if (!g) return;
+    if (!lpOn || !lpSelected) {
+      g.setLandPotentialSelection(null);
+      return;
+    }
+    const conceptualOn =
+      active.includes("lp-zones") && lpFilters.use !== "all" && !lpAssessment?.restricted;
+    g.setLandPotentialSelection({
+      id: lpSelected.id,
+      ring: lpSelected.ring as number[][],
+      properties: {
+        areaHa: lpSelected.areaHa,
+        label: `${lpSelected.id} · ${lpSelected.areaHa} ha`,
+        district: lpSelected.district,
+        taluka: lpSelected.taluka,
+        condition: lpSelected.observedCondition,
+        ownership: lpSelected.ownershipStatus,
+        provenance: "DEMO — synthetic candidate geometry, not a cadastral parcel",
+      },
+      conceptual:
+        conceptualOn && lpFilters.use !== "all"
+          ? {
+              color: USE_BY_ID[lpFilters.use].accent ?? CONCEPTUAL_COLOR,
+              label: "CONCEPTUAL SCENARIO · SIMULATED",
+            }
+          : null,
+    });
+  }, [ready, lpOn, lpSelected, active, lpFilters.use, lpAssessment]);
+
+  /* ------------------------------------------------ land potential toggles */
+  const toggleLandPotential = useCallback(() => {
+    const next = !lpOn;
+    setLpOn(next);
+    if (!next) {
+      setLpSelectedId(null);
+      setLpCompareView(false);
+      setSelection({ kind: "none" });
+      setLpCandidates([]);
+      setLpResult({ count: 0, message: "Land Potential is off.", empty: false });
+      return;
+    }
+    setActive((prev) => (prev.includes("lp-candidates") ? prev : [...prev, "lp-candidates"]));
+    // The inspector opens on the analysis card — the feature's own
+    // "map → discover" moment (spec §40).
+    setTab("inspect");
+    setRightOpen(true);
+    // Signature moment (spec §40): if the camera is nowhere near the candidate
+    // region, move toward it so the candidates illuminate on real geography.
+    const vp = viewport;
+    const overPune =
+      vp &&
+      !(
+        vp.bbox[2] < DEMO_BBOX[0] ||
+        vp.bbox[0] > DEMO_BBOX[2] ||
+        vp.bbox[3] < DEMO_BBOX[1] ||
+        vp.bbox[1] > DEMO_BBOX[3]
+      );
+    if (!overPune) {
+      const anchor = planAnchor(parseLandQuery(lpDistrict ?? "Pune"));
+      globeRef.current?.flyToLandPotential(anchor.lon, anchor.lat, 130_000, -60);
+    }
+    // Screen the whole candidate district immediately when the camera is
+    // somewhere else: reusing the stale viewport bbox here would show
+    // "NO CANDIDATES" for the two seconds the flight takes, which is exactly
+    // the moment the feature is meant to land. The debounced re-screen below
+    // re-scopes to the actual view once the camera settles.
+    analyze(lpFilters, lpDistrict, overPune ? (vp?.bbox ?? null) : null);
+  }, [lpOn, viewport, lpFilters, lpDistrict, analyze]);
+
+  /* Infrastructure context rides the explorer's own OSM layers — no second
+     infrastructure dataset exists behind this toggle (spec §20/§21). Layers
+     the USER had already switched on are never switched off by us: only the
+     ids this feature injected are tracked and withdrawn. */
+  const lpInjected = useRef<Set<string>>(new Set());
+  const lpInfraOn = active.includes("lp-infrastructure");
+  const lpConstraintsOn = active.includes("lp-constraints");
+
+  useEffect(() => {
+    if (!lpOn) return;
+    const inject = (ids: string[]) => {
+      const add = ids.filter((id) => !active.includes(id));
+      if (add.length === 0) return;
+      for (const id of add) lpInjected.current.add(id);
+      setActive((prev) => [...prev, ...add.filter((id) => !prev.includes(id))]);
+    };
+    const withdraw = (ids: string[]) => {
+      const remove = ids.filter((id) => lpInjected.current.has(id) && active.includes(id));
+      if (remove.length === 0) return;
+      setActive((prev) => prev.filter((id) => !remove.includes(id)));
+    };
+
+    if (lpInfraOn) inject(["roads", "water"]);
+    else withdraw(["roads", "water"]);
+
+    // Environmental constraints also drape the real protected-area layer,
+    // fetched through the existing OSM path.
+    if (lpConstraintsOn) inject(["protected"]);
+    else withdraw(["protected"]);
+  }, [lpOn, lpInfraOn, lpConstraintsOn, active]);
+
+  /* Switching the feature off withdraws anything we added and clears the map. */
+  useEffect(() => {
+    if (lpOn || lpInjected.current.size === 0) return;
+    const remove = [...lpInjected.current];
+    lpInjected.current.clear();
+    setActive((prev) => prev.filter((id) => !remove.includes(id)));
+  }, [lpOn]);
+
   /* --------------------------------------------------------- globe init */
   useEffect(() => {
     const container = containerRef.current;
@@ -154,6 +556,27 @@ export function GisExplorer3D({ search }: Props) {
       onViewport: (v) => !cancelled && setViewport(v),
       onPick: (p) => {
         if (cancelled) return;
+        // Land-potential cluster marker: zoom in rather than open an inspector
+        // for something that is an aggregate, not a parcel.
+        if (p && p.properties["kind"] === "land-parcel" && p.properties["cluster"]) {
+          globe.flyTo(p.lon, p.lat, 42_000, -60);
+          return;
+        }
+        if (p && p.properties["kind"] === "land-parcel") {
+          const areaHa = Number(p.properties["areaHa"] ?? 0);
+          // Frame the parcel: bigger land takes a higher orbit to stay whole.
+          const range = Math.min(
+            26_000,
+            Math.max(6_500, 4_200 + Math.sqrt(Math.max(areaHa, 1)) * 640),
+          );
+          setSelection(pickToSelection(p));
+          setLpSelectedId(String(p.properties["id"] ?? p.id));
+          setLpCompareView(false);
+          setTab("inspect");
+          setRightOpen(true);
+          globe.flyTo(p.lon, p.lat, range, -50);
+          return;
+        }
         setSelection(pickToSelection(p));
         if (p) setRightOpen(true);
       },
@@ -652,6 +1075,45 @@ export function GisExplorer3D({ search }: Props) {
     setActive((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
+  /* ------------------------------------- land potential query from search */
+  const [lpPlanDismissed, setLpPlanDismissed] = useState(false);
+  useEffect(() => setLpPlanDismissed(false), [query]);
+  const lpSearchPlan = useMemo<LandQueryPlan | null>(() => {
+    if (lpPlanDismissed) return null;
+    if (!showHits || query.trim().length < 6) return null;
+    const plan = parseLandQuery(query);
+    return plan.recognised ? plan : null;
+  }, [query, showHits, lpPlanDismissed]);
+
+  /** Apply the interpreted query: set criteria, fly to the anchor, screen. */
+  const applyLandPlan = () => {
+    const plan = lpSearchPlan;
+    if (!plan) return;
+    const next: LpFilters = {
+      ...lpFilters,
+      minAreaHa: plan.minAreaHa ?? lpFilters.minAreaHa,
+      condition: plan.condition ?? lpFilters.condition,
+      scope: plan.ownership === "government" ? "public" : lpFilters.scope,
+      use: plan.use ?? lpFilters.use,
+    };
+    const district = plan.district ?? lpDistrict;
+    setLpFilters(next);
+    setLpDistrict(district);
+    setShowHits(false);
+    setLpOn(true);
+    setActive((prev) => (prev.includes("lp-candidates") ? prev : [...prev, "lp-candidates"]));
+    const anchor = planAnchor(plan);
+    globeRef.current?.flyToLandPotential(anchor.lon, anchor.lat, 95_000, -60);
+    setCrumbs((prev) =>
+      district && !prev.some((c) => c.label.toLowerCase() === district.toLowerCase())
+        ? [...prev, { label: district, lat: anchor.lat, lon: anchor.lon, range: 95_000 }]
+        : prev,
+    );
+    // bbox null: the whole district is screened first, the camera then narrows
+    // it to the view through the debounced re-screen below.
+    analyze(next, district, null);
+  };
+
   const locateRegion = (r: string) => {
     const g = globeRef.current;
     if (!g) return;
@@ -696,6 +1158,82 @@ export function GisExplorer3D({ search }: Props) {
       : selection.kind === "building"
         ? "not tagged"
         : null;
+  /* --------------------------------------------- Ask Bhumi: land answers */
+  const LP_PROMPTS = [
+    "Show government barren land above 10 hectares",
+    "Which candidate parcels are near major roads?",
+    "Why is this parcel suitable for solar?",
+    "Show me possible uses for this land",
+    "Compare this parcel for solar and public infrastructure",
+    "Which constraints affect this parcel?",
+    "Show land potential around Pune",
+  ];
+
+  /**
+   * Deterministic resolver (spec §27): recognised land-potential questions are
+   * answered from the fixture with plain language and no model call. The plan
+   * it emits is a fixed shape — there is no path from a question to SQL.
+   */
+  const resolveLandQuestion = useCallback(
+    (text: string): string | null => {
+      if (!lpOn) return null;
+      if (
+        lpSelected &&
+        lpAssessment &&
+        /\b(why|constraint|compare|scor|suitab|evidence|potential use|possible use)\b/i.test(text)
+      ) {
+        const a = lpAssessment;
+        const lines: string[] = [
+          `Parcel ${a.parcel.id} — ${a.parcel.areaHa} ha (DEMO fixture). Observed condition: ${CONDITION_LABEL[a.parcel.observedCondition]}. Ownership: ${
+            a.parcel.ownershipStatus === "unknown"
+              ? "NOT VERIFIED — no connected land record"
+              : `${a.parcel.ownershipStatus} (DEMO fixture, not a land record)`
+          }.`,
+          "Screening suitability:",
+          ...a.uses.map(
+            (u) =>
+              `• ${u.use.label} — ${
+                u.suppressed
+                  ? "restricted (scoring suppressed)"
+                  : `${u.suitability} / 100 (${u.band})`
+              }`,
+          ),
+        ];
+        const top = a.uses.find((u) => !u.suppressed);
+        if (top) {
+          lines.push(`Why ${top.use.label}: ${top.positiveFactors.join("; ")}.`);
+          lines.push(`Constraints: ${top.constraints.slice(0, 4).join(" · ")}`);
+        }
+        if (a.blockingConstraints.length > 0) {
+          lines.push(
+            `Hard constraint: ${a.blockingConstraints.map((c) => c.label).join(", ")}. Scoring for the affected uses is suppressed.`,
+          );
+        }
+        lines.push(
+          "These are screening assessments based on available data, not legal land-use decisions.",
+        );
+        return lines.join("\n");
+      }
+      if (!isLandPotentialQuestion(text)) return null;
+      const plan = parseLandQuery(text);
+      // Nothing could be structured out of the sentence: don't fake an answer,
+      // hand it to the model with the live land-potential context instead.
+      if (!plan.recognised) return null;
+      const use = plan.use ?? (lpFilters.use !== "all" ? lpFilters.use : null);
+      const res = runLandQuery({
+        district: plan.district ?? lpDistrict,
+        ownership: plan.ownership ?? (lpFilters.scope === "public" ? "government" : null),
+        condition: plan.condition ?? (lpFilters.condition !== "all" ? lpFilters.condition : null),
+        minAreaHa: plan.minAreaHa ?? (lpFilters.minAreaHa > 0 ? lpFilters.minAreaHa : null),
+        use,
+        inViewOnly: true,
+        bbox: viewport?.bbox ?? null,
+      });
+      return describeResult(res, use);
+    },
+    [lpOn, lpSelected, lpAssessment, lpFilters, lpDistrict, viewport],
+  );
+
   const askContext: AskContext = {
     selection:
       selection.kind === "none"
@@ -715,6 +1253,31 @@ export function GisExplorer3D({ search }: Props) {
     region,
     visualMode: BUILDING_MODES.find((m) => m.id === visualMode)?.label ?? visualMode,
     gisMode: floorOpen ? "enhanced-demo" : "standard",
+    landPotential: lpOn
+      ? lpSelected
+        ? `candidate parcel ${lpSelected.id}, ${lpSelected.areaHa} ha, observed ${CONDITION_LABEL[lpSelected.observedCondition]}, ownership ${lpSelected.ownershipStatus} (DEMO fixture), ` +
+          (lpAssessment
+            ? `screening scores: ${lpAssessment.uses
+                .map(
+                  (u) => `${u.use.label} ${u.suppressed ? "restricted" : `${u.suitability}/100`}`,
+                )
+                .join(", ")}`
+            : "")
+        : `${lpResult.count} candidate parcels in the current view (${lpResult.message})`
+      : "off",
+    landPlan: lpOn
+      ? `criteria — ${
+          [
+            lpDistrict ? `district ${lpDistrict}` : null,
+            lpFilters.scope === "public" ? "ownership: government" : null,
+            lpFilters.condition !== "all" ? `condition: ${lpFilters.condition}` : null,
+            lpFilters.minAreaHa > 0 ? `min area ${lpFilters.minAreaHa} ha` : null,
+            lpFilters.use !== "all" ? `potential use: ${USE_BY_ID[lpFilters.use].label}` : null,
+          ]
+            .filter(Boolean)
+            .join("; ") || "default"
+        }`
+      : "",
   };
 
   if (failed) {
@@ -789,6 +1352,11 @@ export function GisExplorer3D({ search }: Props) {
           </div>
           {showHits && query.trim().length >= 3 && (
             <div className="g3d-search-list">
+              <LandPotentialQuery
+                plan={lpSearchPlan}
+                onApply={applyLandPlan}
+                onDismiss={() => setLpPlanDismissed(true)}
+              />
               {hits.length === 0 ? (
                 <p className="g3d-search-note">
                   {searching ? "Searching Nominatim…" : "No match in India for that query."}
@@ -868,6 +1436,24 @@ export function GisExplorer3D({ search }: Props) {
           </button>
           <button className="g3d-tbtn" title="Fullscreen" onClick={toggleFullscreen}>
             <Maximize2 />
+          </button>
+          {/*
+            The LAND POTENTIAL master switch lives in the navbar: it is a
+            primary capability of the explorer, not a sub-layer, so it sits
+            beside IMAGERY rather than buried in the left card.
+          */}
+          <button
+            id="g3d-lp-toggle"
+            className={`g3d-tbtn wide lp ${lpOn ? "on" : ""}`}
+            aria-pressed={lpOn}
+            title={
+              lpOn
+                ? "Turn Land Potential off — hides candidates and the screening panel"
+                : "Turn Land Potential on — screening candidates appear on the globe and the analysis opens on the right"
+            }
+            onClick={toggleLandPotential}
+          >
+            <Sprout /> LAND POTENTIAL
           </button>
           <button
             className={`g3d-tbtn wide ${active.includes("satellite") ? "on" : ""}`}
@@ -991,6 +1577,21 @@ export function GisExplorer3D({ search }: Props) {
           </div>
         </div>
 
+        {/* ------------------------------------------ land potential control */}
+        {ready && lpOn && (
+          <LandPotentialToolbar
+            filters={lpFilters}
+            onFilters={setLpFilters}
+            onAnalyze={runAnalysisNow}
+            busy={lpBusy}
+            result={lpResult}
+            mapMode={lpMapMode}
+            onMapMode={setLpMapMode}
+            showMapMode={true}
+            onClose={toggleLandPotential}
+          />
+        )}
+
         {/* ------------------------------------------------- hover readout */}
         {ready && hover && (
           <div className="g3d-hovertip" style={{ left: hover.x, top: hover.y }} role="status">
@@ -1040,6 +1641,24 @@ export function GisExplorer3D({ search }: Props) {
               runtimes={runtimes}
               onToggle={toggleLayer}
               onInfo={(l) => setInfo(l.id)}
+            />
+            <LandPotentialLayer
+              layers={landLayers}
+              active={active}
+              on={lpOn}
+              onToggle={toggleLayer}
+              onInfo={(id) => setInfo(id)}
+              status={
+                !lpOn
+                  ? { word: "OFF", tone: "off", text: "switch on to screen candidate land" }
+                  : lpResult.empty
+                    ? { word: "NO MATCH", tone: "warn", text: lpResult.message }
+                    : {
+                        word: "DEMO DATA",
+                        tone: "demo",
+                        text: `${lpResult.count} candidate${lpResult.count === 1 ? "" : "s"} in view · ownership not connected`,
+                      }
+              }
             />
             <p className="g3d-hint">
               DATA UPDATED {DATA_UPDATED}. Layers marked “Not connected” are listed because the spec
@@ -1095,32 +1714,99 @@ export function GisExplorer3D({ search }: Props) {
                   selection={selection}
                   onClear={() => setSelection({ kind: "none" })}
                 />
-                <GisIntelPanel selection={selection} year={year} onInfo={setInfo} />
-                {demoAvailable && (
-                  <GisFloorStack
-                    record={DEMO_BUILDING}
-                    open={floorOpen}
-                    explosion={floorExplosion}
-                    selected={floorSelected}
-                    onOpen={(next) => {
-                      setFloorOpen(next);
-                      if (!next) {
-                        setFloorExplosion(0);
-                        setFloorSelected(null);
-                      }
-                    }}
-                    onExplosion={setFloorExplosion}
-                    onSelect={setFloorSelected}
-                    onLocate={() =>
-                      globeRef.current?.flyTo(DEMO_BUILDING.lon, DEMO_BUILDING.lat, 420, -42)
+                {selection.kind === "land-parcel" && lpAssessment ? (
+                  <LandPotentialInspector
+                    assessment={lpAssessment}
+                    activeUse={lpFilters.use}
+                    onSelectUse={(u) =>
+                      setLpFilters((f) => ({ ...f, use: f.use === u ? "all" : u }))
                     }
+                    mapMode={lpMapMode}
+                    compare={lpCompareView}
+                    onCompare={setLpCompareView}
+                    year={year}
+                    onSplit={() => {
+                      setCompareYears([2018, 2024]);
+                      setCompare(true);
+                    }}
+                    onContext3d={() => {
+                      setActive((prev) => {
+                        const add = ["roads", "water", "buildings"].filter(
+                          (id) => !prev.includes(id),
+                        );
+                        for (const id of add) lpInjected.current.add(id);
+                        return add.length ? [...prev, ...add] : prev;
+                      });
+                    }}
+                    onScenario={(u) => {
+                      setLpHandoff({
+                        parcelId: lpSelected?.id ?? lpAssessment.parcel.id,
+                        use: u,
+                        areaHa: lpSelected?.areaHa ?? lpAssessment.parcel.areaHa,
+                        condition:
+                          lpSelected?.observedCondition ?? lpAssessment.parcel.observedCondition,
+                      });
+                      setTab("scenario");
+                    }}
+                    onFieldVerify={() => setLpFieldOpen(true)}
+                    onEvidence={() => setInfo("lp-candidates")}
+                    onPreview={(next) => {
+                      setActive((prev) => {
+                        const has = prev.includes("lp-zones");
+                        if (next === has) return prev;
+                        return next
+                          ? [...prev, "lp-zones"]
+                          : prev.filter((id) => id !== "lp-zones");
+                      });
+                    }}
+                    previewOn={active.includes("lp-zones")}
+                    contextOn={active.includes("roads") && active.includes("water")}
                   />
+                ) : selection.kind === "none" && lpOn ? (
+                  <LandPotentialResults
+                    parcels={lpList}
+                    use={lpFilters.use}
+                    criteria={lpCriteria}
+                    message={lpResult.message}
+                    empty={lpResult.empty}
+                    busy={lpBusy}
+                    selectedId={lpSelectedId}
+                    onAnalyze={runAnalysisNow}
+                    onSelect={selectCandidate}
+                    onClose={toggleLandPotential}
+                  />
+                ) : (
+                  <>
+                    <GisIntelPanel selection={selection} year={year} onInfo={setInfo} />
+                    {demoAvailable && (
+                      <GisFloorStack
+                        record={DEMO_BUILDING}
+                        open={floorOpen}
+                        explosion={floorExplosion}
+                        selected={floorSelected}
+                        onOpen={(next) => {
+                          setFloorOpen(next);
+                          if (!next) {
+                            setFloorExplosion(0);
+                            setFloorSelected(null);
+                          }
+                        }}
+                        onExplosion={setFloorExplosion}
+                        onSelect={setFloorSelected}
+                        onLocate={() =>
+                          globeRef.current?.flyTo(DEMO_BUILDING.lon, DEMO_BUILDING.lat, 420, -42)
+                        }
+                      />
+                    )}
+                  </>
                 )}
               </>
             )}
             {tab === "ask" && (
               <GisAskBhumi
                 context={askContext}
+                localLandAnswer={resolveLandQuestion}
+                prompts={lpOn ? LP_PROMPTS : undefined}
                 onFlyTo={(place, lat, lon, zoom) => {
                   if (lat !== null && lon !== null) {
                     globeRef.current?.flyTo(lon, lat, zoom ? 40_000 / zoom : 20_000, -55);
@@ -1135,16 +1821,19 @@ export function GisExplorer3D({ search }: Props) {
               />
             )}
             {tab === "scenario" && (
-              <GisScenarioDrawer
-                region={region}
-                year={year}
-                deltas={deltas}
-                didStates={didStates}
-                onRegion={setRegion}
-                onDeltas={setDeltas}
-                onDid={(s) => setDidStates(s)}
-                onLocate={locateRegion}
-              />
+              <>
+                <LandPotentialScenario handoff={lpHandoff} onClear={() => setLpHandoff(null)} />
+                <GisScenarioDrawer
+                  region={region}
+                  year={year}
+                  deltas={deltas}
+                  didStates={didStates}
+                  onRegion={setRegion}
+                  onDeltas={setDeltas}
+                  onDid={(s) => setDidStates(s)}
+                  onLocate={locateRegion}
+                />
+              </>
             )}
           </div>
         </aside>
@@ -1166,8 +1855,14 @@ export function GisExplorer3D({ search }: Props) {
         </button>
 
         {/* -------------------------------------------------------- legend */}
+        {lpOn && (
+          <LandPotentialLegend
+            mode={lpMapMode}
+            useLabel={lpFilters.use !== "all" ? USE_BY_ID[lpFilters.use].label : null}
+          />
+        )}
         {firstLegend.length > 0 && (
-          <div className="g3d-legendbar">
+          <div className={`g3d-legendbar ${lpOn ? "lifted" : ""}`}>
             <strong>{choroLayer ? choroLayer.label : "Legend"}</strong>
             <div className="g3d-legend">
               {firstLegend.map((entry) => (
@@ -1182,7 +1877,13 @@ export function GisExplorer3D({ search }: Props) {
 
         {/* ------------------------------------------------------ timeline */}
         <div className="g3d-timeline">
-          <span className="g3d-tl-label">{compare ? "COMPARE" : "TIMELINE"}</span>
+          <span className="g3d-tl-label">
+            {compare
+              ? "COMPARE"
+              : lpSelected
+                ? `${year}: ${lpConditionAt(lpSelected, year)}`
+                : "TIMELINE"}
+          </span>
           {compare ? (
             <div style={{ display: "flex", gap: 7, alignItems: "center", flex: 1 }}>
               <select
@@ -1369,9 +2070,25 @@ export function GisExplorer3D({ search }: Props) {
             </div>
           </div>
         )}
+
+        {lpFieldOpen && lpSelected && (
+          <FieldVerificationPanel
+            parcelId={lpSelected.id}
+            tasks={lpTasks}
+            onClose={() => setLpFieldOpen(false)}
+            onCreate={(task) => setLpTasks((prev) => [...prev, task])}
+          />
+        )}
       </main>
     </div>
   );
+}
+
+/** Year-by-year condition readout for the timeline label — honest about gaps. */
+function lpConditionAt(p: LandPotentialParcel, year: number): string {
+  const entry = p.history.find((h) => h.year === year);
+  if (!entry) return "classification unavailable";
+  return entry.condition ? CONDITION_LABEL[entry.condition] : "classification unavailable";
 }
 
 function pickToSelection(p: import("./globe/CesiumGlobe").GlobePick | null): Selection {
@@ -1382,6 +2099,15 @@ function pickToSelection(p: import("./globe/CesiumGlobe").GlobePick | null): Sel
   }
   if (p.kind === "building") {
     return { kind: "building", id: p.id, lat: p.lat, lon: p.lon, properties: props };
+  }
+  if (p.kind === "land-parcel") {
+    return {
+      kind: "land-parcel",
+      id: String(props["id"] ?? p.id),
+      lat: p.lat,
+      lon: p.lon,
+      properties: props,
+    };
   }
   if (p.kind === "parcel") {
     return { kind: "parcel", id: p.id, lat: p.lat, lon: p.lon, properties: props };

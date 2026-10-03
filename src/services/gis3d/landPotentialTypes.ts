@@ -33,12 +33,7 @@ import type { EvidenceKind } from "@/components/gis3d/types";
  * modelled, and the UI must be able to say both.
  */
 export type FieldStatus =
-  | "connected"
-  | "public"
-  | "modelled"
-  | "demo"
-  | "simulated"
-  | "not-connected";
+  "connected" | "public" | "modelled" | "demo" | "simulated" | "not-connected";
 
 export const FIELD_STATUS_LABEL: Record<FieldStatus, string> = {
   connected: "Connected",
@@ -90,12 +85,7 @@ export const CONDITION_LABEL: Record<ObservedCondition, string> = {
 /* ------------------------------------------------------------ potential uses -- */
 
 export type PotentialUseId =
-  | "renewable"
-  | "agricultural"
-  | "ecological"
-  | "water"
-  | "public-infrastructure"
-  | "logistics";
+  "renewable" | "agricultural" | "ecological" | "water" | "public-infrastructure" | "logistics";
 
 export interface PotentialUseDef {
   id: PotentialUseId;
@@ -115,12 +105,7 @@ export interface PotentialUseDef {
  * a low score in any one of them never blocks a use on its own.
  */
 export type SuitabilityFactorId =
-  | "accessibility"
-  | "terrain"
-  | "infrastructure"
-  | "resource"
-  | "environment"
-  | "availability";
+  "accessibility" | "terrain" | "infrastructure" | "resource" | "environment" | "availability";
 
 export const FACTOR_LABEL: Record<SuitabilityFactorId, string> = {
   accessibility: "Accessibility",
@@ -145,7 +130,8 @@ export const FACTOR_BASIS: Record<SuitabilityFactorId, string> = {
   accessibility: "Derived from OpenStreetMap road and settlement density around the parcel.",
   terrain: "Derived from the elevation model: slope and relative relief across the parcel.",
   infrastructure: "Distance to mapped power, water and transport features (OpenStreetMap).",
-  resource: "Indicative only — insolation and water availability are NOT measured in this prototype.",
+  resource:
+    "Indicative only — insolation and water availability are NOT measured in this prototype.",
   environment: "Penalty from intersecting environmental constraint layers.",
   availability:
     "Area, contiguity and ownership status. Ownership is never inferred from appearance.",
@@ -190,7 +176,7 @@ export const POTENTIAL_USES: PotentialUseDef[] = [
       infrastructure: 0.04,
       resource: 0.16,
       environment: 0.42,
-      availability: 0.20,
+      availability: 0.2,
     },
     accent: "#4f9d63",
   },
@@ -201,10 +187,10 @@ export const POTENTIAL_USES: PotentialUseDef[] = [
     weights: {
       accessibility: 0.08,
       terrain: 0.28,
-      infrastructure: 0.10,
+      infrastructure: 0.1,
       resource: 0.24,
-      environment: 0.20,
-      availability: 0.10,
+      environment: 0.2,
+      availability: 0.1,
     },
     accent: "#3b82c4",
   },
@@ -227,9 +213,9 @@ export const POTENTIAL_USES: PotentialUseDef[] = [
     label: "Agricultural restoration",
     framing: "Screening suitability for bringing land back into cultivation",
     weights: {
-      accessibility: 0.10,
+      accessibility: 0.1,
       terrain: 0.16,
-      infrastructure: 0.10,
+      infrastructure: 0.1,
       resource: 0.26,
       environment: 0.14,
       availability: 0.24,
@@ -388,12 +374,7 @@ export interface LandPotentialAssessment {
 
 /** How the globe is currently showing land potential. */
 export type LandPotentialMapMode =
-  | "overall"
-  | "accessibility"
-  | "terrain"
-  | "infrastructure"
-  | "resource"
-  | "environment";
+  "overall" | "accessibility" | "terrain" | "infrastructure" | "resource" | "environment";
 
 export const MAP_MODE_LABEL: Record<LandPotentialMapMode, string> = {
   overall: "Overall suitability",

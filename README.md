@@ -360,6 +360,110 @@ flowchart TB
     Frontend -.->|"compose later"| Gateway
 ```
 
+### End-to-end sequence — one system, seven phases
+
+The full runtime flow, from boot to provenance. Every arrow is a real call in
+this repo: the edge entry is `src/server.ts`, the AI pipeline is
+`src/server/ai-agent.ts`, the federation proxy is `src/server/landstack-proxy.ts`,
+and the statutory model is loaded by `src/server/policies.ts`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as 👤 User
+    participant FE as 🌐 Frontend · React 19 + TanStack Start
+    participant EDGE as ⚡ Edge · nitro src/server.ts
+    participant MAP as 🗺️ MapLibre + Cesium
+    participant LLM as 🤖 OpenRouter
+    participant LS as 🔌 Land Stack API · Render
+    participant EXT as 🛰️ Upstreams
+    participant AUX as ✨ Gemini + ElevenLabs
+
+    rect rgb(27, 94, 32)
+    Note over U,AUX: 1 · Boot — code-split routes, Cesium behind an SSR guard
+    U->>FE: open /gis-explorer-3d
+    FE->>EDGE: GET route
+    EDGE->>EDGE: /api/* short-circuits, else the SSR server entry
+    EDGE-->>FE: HTML shell + lazy route chunk
+    FE->>MAP: dynamic import Cesium, then init the viewer
+    MAP-->>FE: globe ready · layer registry mounted · attribution live
+    end
+
+    rect rgb(13, 107, 69)
+    Note over U,AUX: 2 · Ask Bhumi — plan, ground, explain, act, speak
+    U->>FE: ask a land question — typed or voice, STT auto-submits
+    FE->>EDGE: POST /api/ai with message, history, map context
+    EDGE->>EDGE: detectLanguage — local, no model call
+    EDGE->>LLM: plan_query — forced tool call
+    LLM-->>EDGE: raw intent, place, datasets
+    EDGE->>EDGE: validatePlan — zod plus what the platform can actually answer
+    EDGE->>EDGE: executePlan + evidenceFor — data comes from the server, never the model
+    EDGE->>LLM: explain — grounded in that data and its provenance
+    LLM-->>EDGE: submit_answer — summary, framework, risk, spoken line
+    EDGE-->>FE: plan, data, evidence, chips, map actions, spoken text
+    FE->>MAP: flyTo place and toggle the layers the plan named
+    Note right of EDGE: model down → the reply still returns as data only, flagged degraded
+    FE->>EDGE: POST /api/tts with the spoken line
+    EDGE->>AUX: ElevenLabs text-to-speech
+    AUX-->>FE: audio — falls back to browser speechSynthesis when unconfigured
+    end
+
+    rect rgb(38, 50, 56)
+    Note over U,AUX: 3 · Map data — tiles straight to the browser, records through the edge
+    FE->>EXT: OSM raster, EOX Sentinel-2, MRSAC cadastral, WRIS + NDEM vectors
+    EXT-->>FE: tiles and TileJSON
+    FE->>EDGE: GET /api/parcels?bbox=w,s,e,n
+    EDGE->>EDGE: bbox prefilter over the in-memory cadastral store
+    EDGE-->>FE: normalized GeoJSON
+    FE->>EXT: Overpass landuse polygons, Nominatim geocode
+    FE->>EDGE: GET /api/weather/stations
+    EDGE->>EXT: IMD city weather API
+    EXT-->>EDGE: 43 station readings
+    EDGE-->>FE: station JSON — proxied server-side so no key leaks to the browser
+    end
+
+    rect rgb(231, 184, 75)
+    Note over U,AUX: 4 · Land Stack — open standards over federated sources
+    FE->>EDGE: GET /api/landstack?path=/collections
+    EDGE->>EDGE: GET only, read allowlist, timeout budget, 60s cache
+    EDGE->>LS: forward server-side — gateway CORS stays strict
+    LS->>LS: rate limit, request id, RFC 7807 errors, provenance, role check
+    LS->>EXT: OGC API - Features and STAC API adapters
+    EXT-->>LS: features, items, source health
+    LS-->>EDGE: payload plus provenance envelope
+    EDGE-->>FE: same-origin JSON
+    Note over LS,EXT: RBIH owner details stay behind the government role — one route, never cached
+    end
+
+    rect rgb(74, 59, 181)
+    Note over U,AUX: 5 · Policy Lab — model ships in the bundle, no Python at request time
+    U->>FE: run a statutory search on /policy-lab
+    FE->>EDGE: GET /api/policies/search?q=...
+    EDGE->>EDGE: load model_ts.json and the evidence index from public/data
+    EDGE->>EDGE: vectorize, score, rank, diagnose
+    EDGE-->>FE: ranked provisions plus model diagnostics
+    U->>FE: upload a policy PDF
+    FE->>EDGE: POST /api/policy/extract
+    EDGE->>AUX: Gemini document read
+    AUX-->>EDGE: structured policy parameters with citations
+    EDGE-->>FE: quotes plus provenance
+    end
+
+    rect rgb(0, 105, 92)
+    Note over U,AUX: 6 · Innovation assistant — citations validated against the source pack
+    FE->>EDGE: POST /api/innovation/ai with action, question, source pack
+    EDGE->>LLM: answer grounded only in the supplied sources
+    LLM-->>EDGE: answer plus citation list
+    EDGE->>EDGE: drop any citation not in the pack — reported, never silently kept
+    EDGE-->>FE: answer, verified citations, gaps, cannot-answer list
+    end
+
+    rect rgb(90, 90, 90)
+    Note over U,AUX: 7 · Every payload carries provenance — OBSERVED · DERIVED · MODELLED · SCENARIO · DEMO
+    Note over EDGE,EXT: missing fields read Not publicly available — never invented
+    end
+```
+
 ### Request flow on the edge
 
 ```mermaid
