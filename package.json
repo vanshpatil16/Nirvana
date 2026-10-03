@@ -13,7 +13,11 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "verify:sim": "tsx scripts/sim-check.ts",
-    "verify:geometry": "tsx scripts/geometry-check.ts"
+    "verify:geometry": "tsx scripts/geometry-check.ts",
+    "verify:scenario": "tsx scripts/scenario-check.ts",
+    "verify:scenario-browser": "node scripts/scenario-browser-check.mjs",
+    "verify:land-browser": "node scripts/lp-browser-check.mjs",
+    "verify:land-query": "tsx scripts/lp-query-check.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"
