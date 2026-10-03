@@ -84,7 +84,7 @@ export const CONTEXT_RING_COLOR = "#8fa89b";
  * LEGIBILITY decision and it is disclosed in the inspector, because a user
  * reading the scene could otherwise take the silhouette for a real height.
  */
-export const HEIGHT_EXAGGERATION = 2.2;
+export const HEIGHT_EXAGGERATION = 3;
 
 export function displayHeightM(heightM: number): number {
   return Math.round(heightM * HEIGHT_EXAGGERATION);

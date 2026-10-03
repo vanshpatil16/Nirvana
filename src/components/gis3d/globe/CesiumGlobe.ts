@@ -238,6 +238,8 @@ export class CesiumGlobe {
   private scenarioMeta: LandScenario | null = null;
   private scenarioOpacity = 1;
   private scenarioVisible = false;
+  /** Guards the async ground sample against a scenario switch mid-flight. */
+  private scenarioToken = 0;
   private adminRings: { name: string; rings: number[][][] }[] = [];
   private ringEntities = new Map<string, string[]>();
 
@@ -1545,11 +1547,42 @@ export class CesiumGlobe {
     }
     this.scenarioOpacity = spec.opacity;
     this.scenarioVisible = true;
-    this.drawScenario();
+    // Ground must be sampled BEFORE anything is extruded: with
+    // HeightReference.NONE a polygon needs an absolute `height` to sit on, and
+    // guessing it is exactly the "invent elevation" failure this feature is
+    // required to avoid. The token guards the async gap — a user can switch
+    // scenario while the sample is still in flight.
+    const token = ++this.scenarioToken;
+    const extruded = spec.elements.filter((e) => isExtruded(e.kind, e.heightM));
+    if (extruded.length === 0) {
+      this.drawScenario(new Map());
+      return;
+    }
+    const centres = extruded.map((e) => centroidOf(e.ring));
+    void this.sampleGround(
+      centres.map((c) => c[0]),
+      centres.map((c) => c[1]),
+    ).then((samples) => {
+      if (this.destroyed || token !== this.scenarioToken || !this.scenarioSpec) return;
+      const grounds = new Map<string, number>();
+      extruded.forEach((e, i) => {
+        const v = samples[i];
+        // null means "no real terrain here" — the ellipsoid is at 0, which is
+        // the surface actually being drawn, so this is not an invented height.
+        grounds.set(e.key, typeof v === "number" && Number.isFinite(v) ? v : 0);
+      });
+      this.drawScenario(grounds);
+    });
   }
 
-  /** Rebuild the scenario from the cached spec. Used after a rebuild of state. */
-  private drawScenario(): void {
+  /**
+   * Rebuild the scenario from the cached spec.
+   *
+   * `grounds` maps element key → ground elevation in metres. Extruded elements
+   * use it with HeightReference.NONE so they actually become solids; draped
+   * elements keep CLAMP_TO_GROUND so they follow the terrain surface.
+   */
+  private drawScenario(grounds: Map<string, number>): void {
     const C = this.C;
     const viewer = this.viewer;
     const spec = this.scenarioSpec;
@@ -1635,21 +1668,33 @@ export class CesiumGlobe {
         Math.min(1, this.scenarioOpacity),
       );
       const extruded = isExtruded(e.kind, e.heightM);
-      const height = displayHeightM(e.heightM);
+      const displayH = displayHeightM(e.heightM);
+      const ground = grounds.get(e.key) ?? 0;
       viewer.entities.add({
         id,
         polygon: {
           hierarchy: this.polygonHierarchy(e.ring),
-          // Draped elements clamp to ground so they follow real terrain.
-          // Extruded elements use an absolute height, also clamped at their
-          // base, so a block sits on the surface rather than through it.
-          heightReference: C.HeightReference.CLAMP_TO_GROUND,
-          ...(extruded ? { extrudedHeight: height } : {}),
+          /*
+           * THE EXTRUSION RULE.
+           *
+           * `extrudedHeight` is IGNORED whenever heightReference is
+           * CLAMP_TO_GROUND — Cesium clamps the whole polygon to the surface
+           * and drops the height. Setting both produced boxes that looked
+           * correct in the entity's properties and rendered completely flat on
+           * the globe, which is invisible on real imagery.
+           *
+           * So the two cases are separated:
+           *   draped  → CLAMP_TO_GROUND, no extrudedHeight. Follows terrain.
+           *   extruded → NONE, absolute height sampled from the ground under
+           *             the footprint, extruded up from there. Real solid.
+           */
+          heightReference: extruded ? C.HeightReference.NONE : C.HeightReference.CLAMP_TO_GROUND,
+          ...(extruded ? { height: ground, extrudedHeight: ground + displayH } : {}),
           material: fill,
           outline: true,
           outlineColor: outline,
           outlineWidth: extruded ? 1.6 : 1.1,
-          classificationType: C.ClassificationType.BOTH,
+          classificationType: extruded ? C.ClassificationType.TERRAIN : C.ClassificationType.BOTH,
         },
         properties: elementProperties(
           this.scenarioMeta ??
@@ -1687,6 +1732,27 @@ export class CesiumGlobe {
         },
         properties: { kind: "scenario-element", scenarioElement: "label", status: "SIMULATED" },
       });
+    }
+
+    /*
+     * Re-apply the visibility state to the entities just created.
+     *
+     * drawScenario runs AFTER an async terrain sample, so `setScenarioVisible`
+     * has usually already run — against an empty entity list — before these
+     * entities exist. Without this, choosing CURRENT while a scenario is up
+     * would set the flag and hide nothing, and the geometry would stay on the
+     * globe. Any state that an entity must reflect at BIRTH time has to be
+     * stamped here, not only in the setter.
+     */
+    if (!this.scenarioVisible) {
+      for (const id of [
+        ...this.scenarioEntities,
+        ...this.scenarioStageEntities,
+        ...(this.scenarioLabelId ? [this.scenarioLabelId] : []),
+      ]) {
+        const e = viewer.entities.getById(id);
+        if (e) e.show = false;
+      }
     }
 
     this.requestRender();
@@ -1769,9 +1835,18 @@ export class CesiumGlobe {
   }
 
   /** Frame the scenario site from the parcel ring (spec §11). */
+  /**
+   * Frame the scenario site closely enough that the MASSING reads.
+   *
+   * This deliberately does NOT reuse `frameParcelRange`, which frames the whole
+   * parcel for the assessment panel. That range is right for reading a score
+   * and useless for reading a building: at ~11 km a 50 m block projects to
+   * about 3 screen pixels, which is indistinguishable from no geometry at all.
+   * Scenario mode is an inspection mode, so it frames the site itself.
+   */
   flyToScenario(lon: number, lat: number, areaHa: number): void {
-    const range = Math.min(24_000, Math.max(5_500, 3_800 + Math.sqrt(Math.max(areaHa, 1)) * 700));
-    this.flyTo(lon, lat, range, -52, 1.6);
+    const range = Math.min(2_600, Math.max(620, Math.sqrt(Math.max(areaHa, 1)) * 105));
+    this.flyTo(lon, lat, range, -48, 1.6);
   }
 
   /* -------------------------------------------------------- floor stack */
@@ -2866,6 +2941,18 @@ function ensureWidgetsCss(href: string): void {
 }
 
 /** `[lon, lat]` pairs → the flat degree array Cesium's polyline API wants. */
+/** Mean `[lon, lat]` of a ring — used to sample ground under a footprint. */
+function centroidOf(ring: number[][]): [number, number] {
+  let lon = 0;
+  let lat = 0;
+  const n = Math.max(1, ring.length);
+  for (const pt of ring) {
+    lon += pt[0] ?? 0;
+    lat += pt[1] ?? 0;
+  }
+  return [lon / n, lat / n];
+}
+
 function flatRing(ring: number[][]): number[] {
   const out: number[] = [];
   for (const pt of ring) out.push(pt[0] ?? 0, pt[1] ?? 0);

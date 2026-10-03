@@ -424,14 +424,12 @@ export function GisExplorer3D({ search }: Props) {
       setScElementPick(null);
       setTab("inspect");
       setRightOpen(true);
-      // The camera already frames the parcel; only nudge if the user has since
-      // flown far away, so the transition never yanks the view.
-      const h = viewport?.cameraHeight ?? 0;
-      if (h > frameParcelRange(lpSelected.areaHa) * 2.2) {
-        globeRef.current?.flyToScenario(lpSelected.lon, lpSelected.lat, lpSelected.areaHa);
-      }
+      // Entering scenario mode is an explicit request to SEE the massing, so
+      // the camera always closes in. It only refines the view: parcel, layers,
+      // imagery year and timeline are untouched.
+      globeRef.current?.flyToScenario(lpSelected.lon, lpSelected.lat, lpSelected.areaHa);
     },
-    [lpSelected, viewport],
+    [lpSelected],
   );
 
   /** TRY ANOTHER USE — keeps parcel, camera and layer state; swaps geometry only. */

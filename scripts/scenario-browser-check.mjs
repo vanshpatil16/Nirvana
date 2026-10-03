@@ -99,13 +99,20 @@ try {
    * harness intermittently fail for reasons that have nothing to do with the
    * feature. Every wait below is expressed as "until X is true".
    */
-  const waitFor = async (expression, label, timeoutMs = 45000) => {
+  const waitFor = async (expression, label, timeoutMs = 45000, probe = null) => {
     const deadline = Date.now() + timeoutMs;
+    let last = "<threw>";
     for (;;) {
       const v = await evalJs(expression).catch(() => null);
+      last = v === null ? "<null>" : String(v);
       if (v) return v;
       if (Date.now() > deadline) {
-        throw new Error(`timed out waiting for: ${label}`);
+        const extra = probe ? await evalJs(probe).catch((e) => `probe threw: ${e.message}`) : null;
+        throw new Error(
+          `timed out waiting for: ${label} (last saw: ${last.slice(0, 100)}${
+            extra ? ` | probe: ${JSON.stringify(extra).slice(0, 400)}` : ""
+          })`,
+        );
       }
       await sleep(500);
     }
@@ -160,37 +167,47 @@ try {
   check("candidate parcels drawn", powered.entities > 0, `${powered.entities}`);
 
   // --- STEP 4/5: select a parcel and pick a use ---------------------------
-  // Select through the same path a globe click uses, then choose a use by
-  // clicking the use row in the real inspector.
-  const selected = await evalJs(`(async () => {
+  /*
+   * The layer is redrawn (cleared + repopulated) on every camera settle, so the
+   * entity collection is momentarily empty during a flight even while
+   * `lpEntities.length` reads non-zero. Find-and-select therefore has to be a
+   * single retrying step, not a wait followed by a scan — the scan loses the
+   * race on most runs.
+   */
+  const selected = await waitFor(
+    `(() => {
     const g = window.__g3dGlobe;
     const C = g.C;
-    // lpEntities also holds boundary LINES and cluster markers; only a polygon
-    // entity carries the hierarchy we need to recover the ring.
-    const id = g.lpEntities.find((x) => {
-      const e = g.viewer.entities.getById(x);
-      return e && e.polygon && !x.includes("cluster") && !x.includes("label") && !x.includes("sel:");
-    });
-    if (!id) return { ok: false, reason: "no polygon parcel entity" };
-    const entity = g.viewer.entities.getById(id);
-    const hierarchy = entity.polygon.hierarchy.getValue(C.JulianDate.now());
-    const ring = hierarchy.positions.map((p) => {
-      const c = C.Cartographic.fromCartesian(p);
-      return [C.Math.toDegrees(c.longitude), C.Math.toDegrees(c.latitude)];
-    });
-    const props = entity.properties.getValue(C.JulianDate.now());
-    const parcelId = props.id;
-    const props2 = {
-      kind: "land-parcel",
-      id: parcelId,
-      areaHa: props.areaHa,
-      label: props.label,
-    };
-    // Fire the real hook path: use the globe's own selection API.
-    g.setLandPotentialSelection({ id: parcelId, ring, properties: props2, conceptual: null });
-    return { ok: true, parcelId, areaHa: props.areaHa };
-  })()`);
-  check("parcel geometry readable from the scene", selected.ok, selected.parcelId);
+    for (const e of g.viewer.entities.values) {
+      const eid = e.id ?? "";
+      if (!eid.startsWith("lp:")) continue;
+      if (eid.includes("cluster") || eid.includes("label") || eid.includes("line:")) continue;
+      if (!e.polygon) continue;
+      const props = e.properties.getValue(C.JulianDate.now());
+      if (!props || !props.id) continue;
+      const hierarchy = e.polygon.hierarchy.getValue(C.JulianDate.now());
+      const ring = hierarchy.positions.map((p) => {
+        const c = C.Cartographic.fromCartesian(p);
+        return [C.Math.toDegrees(c.longitude), C.Math.toDegrees(c.latitude)];
+      });
+      if (ring.length < 3) continue;
+      g.setLandPotentialSelection({
+        id: props.id,
+        ring,
+        properties: { kind: "land-parcel", id: props.id, areaHa: props.areaHa, label: props.label },
+        conceptual: null,
+      });
+      return { ok: true, parcelId: props.id, areaHa: props.areaHa };
+    }
+    return false;
+  })()`,
+    "a selectable candidate parcel on the globe",
+  );
+  check(
+    "parcel geometry readable from the scene",
+    selected.ok,
+    selected.ok ? selected.parcelId : (selected.reason ?? "unknown"),
+  );
 
   // Drive the real React selection so the inspector mounts.
   const droveSelection = await waitFor(
@@ -251,15 +268,34 @@ try {
 
   const drawn = await evalJs(`(() => {
     const g = window.__g3dGlobe;
+    const C = g.C;
     const ids = g.scenarioEntities;
     const v = g.viewer;
+    const now = C.JulianDate.now();
     let extruded = 0, draped = 0, badProps = 0;
+    let clampedExtrusions = 0; // the bug: extrudedHeight silently dropped
+    let minSide = Infinity, maxSide = 0;
     for (const id of ids) {
       const e = v.entities.getById(id);
       const p = e.polygon;
-      if (p.extrudedHeight !== undefined && p.extrudedHeight !== null) extruded++;
-      else draped++;
-      const props = e.properties.getValue(window.__g3dGlobe.C.JulianDate.now());
+      const hr = p.heightReference ? p.heightReference.getValue(now) : undefined;
+      const eh = p.extrudedHeight ? p.extrudedHeight.getValue(now) : undefined;
+      const h = p.height ? p.height.getValue(now) : undefined;
+      if (eh !== undefined && eh !== null) {
+        extruded++;
+        // CLAMP_TO_GROUND makes Cesium IGNORE extrudedHeight, so the polygon
+        // renders flat even though the property is set. This is the exact
+        // defect that shipped, so it is asserted directly.
+        if (hr === C.HeightReference.CLAMP_TO_GROUND) clampedExtrusions++;
+        if (typeof h === "number" && typeof eh === "number") {
+          const side = eh - h;
+          if (side > 0) {
+            minSide = Math.min(minSide, side);
+            maxSide = Math.max(maxSide, side);
+          }
+        }
+      } else draped++;
+      const props = e.properties.getValue(now);
       if (props.kind !== "scenario-element" || props.status !== "SIMULATED") badProps++;
     }
     return {
@@ -270,6 +306,9 @@ try {
       extruded,
       draped,
       badProps,
+      clampedExtrusions,
+      minSide: minSide === Infinity ? 0 : minSide,
+      maxSide,
       scenarioType: g.scenarioMeta ? g.scenarioMeta.type : null,
       title: g.scenarioMeta ? g.scenarioMeta.title : null,
       status: g.scenarioMeta ? g.scenarioMeta.status : null,
@@ -281,6 +320,17 @@ try {
   check("conceptual geometry drawn in the scene", drawn.count > 0, `${drawn.count} entities`);
   check("extruded massing present", drawn.extruded > 0, `${drawn.extruded} extruded`);
   check("draped surfaces present", drawn.draped > 0, `${drawn.draped} draped`);
+  // The regression that produced "only a label appears on the parcel".
+  check(
+    "no extruded element is clamped (extrudedHeight would be ignored)",
+    drawn.clampedExtrusions === 0,
+    `${drawn.clampedExtrusions} clamped extrusions`,
+  );
+  check(
+    "extruded massing has real vertical extent",
+    drawn.minSide > 1,
+    `sides ${Math.round(drawn.minSide)}–${Math.round(drawn.maxSide)} m`,
+  );
   check("every entity carries SIMULATED provenance", drawn.badProps === 0, `${drawn.badProps} bad`);
   check("stage outline + hatch drawn", drawn.stage > 0, `${drawn.stage}`);
   check("floating SIMULATED label drawn", drawn.hasLabel);
@@ -292,6 +342,89 @@ try {
     "industrial scenario is the active one",
     drawn.scenarioType === "logistics",
     String(drawn.scenarioType),
+  );
+
+  /*
+   * The decisive test, and the one the original bug could not have passed.
+   *
+   * Rather than counting pixels, this asks whether a conceptual building
+   * actually OCCUPIES VERTICAL SCREEN SPACE: it projects the footprint's base
+   * and the same point at the top of its extrusion, and measures the
+   * separation in pixels. A flat draped polygon — the defect — has zero
+   * separation no matter how many pixels it covers, and a building framed from
+   * 11 km is a few pixels tall and effectively invisible to a user. Both
+   * failures are caught here.
+   */
+  /*
+   * Wait for the camera to ARRIVE before measuring. Entering scenario mode
+   * flies in to inspect the massing, and measuring mid-flight reads a few
+   * pixels of a 70 km-away building and reports a failure that is really just
+   * the camera still moving.
+   */
+  const camHeight = await waitFor(
+    `(() => {
+      const h = window.__g3dGlobe.viewer.camera.positionCartographic.height;
+      return h > 0 && h < 4000 ? { h } : false;
+    })()`,
+    "the camera to close in on the scenario",
+    45000,
+    `(() => ({ height: window.__g3dGlobe.viewer.camera.positionCartographic.height }))()`,
+  );
+  check(
+    "scenario mode flies in close enough to inspect the massing",
+    camHeight.h < 4000,
+    `${Math.round(camHeight.h)} m above ground`,
+  );
+
+  const solidity = await evalJs(`(() => {
+    const g = window.__g3dGlobe;
+    const C = g.C;
+    const S = C.SceneTransforms;
+    const now = C.JulianDate.now();
+    const out = [];
+    for (const id of g.scenarioEntities) {
+      const e = g.viewer.entities.getById(id);
+      if (!e || !e.polygon) continue;
+      const p = e.polygon;
+      const hr = p.heightReference ? p.heightReference.getValue(now) : undefined;
+      if (hr !== C.HeightReference.NONE) continue;
+      const base = p.height ? p.height.getValue(now) : 0;
+      const top = p.extrudedHeight ? p.extrudedHeight.getValue(now) : null;
+      if (top === null || !(top > base)) continue;
+      const hierarchy = p.hierarchy.getValue(now);
+      const positions = hierarchy.positions;
+      let lon = 0, lat = 0;
+      const n = positions.length;
+      for (const q of positions) {
+        const c = C.Cartographic.fromCartesian(q);
+        lon += C.Math.toDegrees(c.longitude);
+        lat += C.Math.toDegrees(c.latitude);
+      }
+      lon /= n; lat /= n;
+      const b = S.worldToWindowCoordinates(g.viewer.scene, C.Cartesian3.fromDegrees(lon, lat, base));
+      const t = S.worldToWindowCoordinates(g.viewer.scene, C.Cartesian3.fromDegrees(lon, lat, top));
+      if (!b || !t) continue;
+      out.push({ dy: Math.abs(t.y - b.y), dx: Math.abs(t.x - b.x), h: top - base });
+    }
+    out.sort((a, z) => z.dy - a.dy);
+    return {
+      count: out.length,
+      maxDy: out.length ? out[0].dy : 0,
+      medianDy: out.length ? out[Math.floor(out.length / 2)].dy : 0,
+      canvasH: g.viewer.scene.canvas.clientHeight,
+      tallest: out.length ? out[0].h : 0,
+    };
+  })()`);
+
+  check(
+    "massing occupies vertical screen space (real 3D, not draped)",
+    solidity.count > 0 && solidity.medianDy > 10,
+    `${solidity.count} solids, median ${solidity.medianDy.toFixed(1)}px / max ${solidity.maxDy.toFixed(1)}px tall for a ${solidity.tallest.toFixed(0)}m block`,
+  );
+  check(
+    "taller blocks occupy more screen space than short ones",
+    solidity.maxDy >= solidity.medianDy,
+    `max ${solidity.maxDy.toFixed(1)}px vs median ${solidity.medianDy.toFixed(1)}px`,
   );
 
   // --- surrounding context must SURVIVE (spec §8 / §47) -------------------
@@ -504,13 +637,27 @@ try {
   const current = await waitFor(
     `(() => {
       const btns = Array.from(document.querySelectorAll(".g3d-sc-seg button"));
-      btns.find((b) => /current/i.test(b.textContent)).click();
+      const btn = btns.find((b) => /current/i.test(b.textContent));
+      if (!btn) return false;
+      btn.click();
       const g = window.__g3dGlobe;
       const shown = g.scenarioEntities.filter((id) => g.viewer.entities.getById(id)?.show !== false).length;
       if (g.isScenarioVisible() || shown !== 0) return false;
       return { visible: false, shown, kept: g.scenarioEntities.length };
     })()`,
     "CURRENT to hide the scenario",
+    45000,
+    `(() => {
+      const g = window.__g3dGlobe;
+      return {
+        isScenarioVisible: g.isScenarioVisible(),
+        scenarioOpacity: g.scenarioOpacity,
+        entityCount: g.scenarioEntities.length,
+        shown: g.scenarioEntities.filter((id) => g.viewer.entities.getById(id)?.show !== false).length,
+        buttons: Array.from(document.querySelectorAll(".g3d-sc-seg button")).map((b) => b.textContent.trim() + ":" + b.getAttribute("aria-pressed")),
+        barPresent: !!document.querySelector(".g3d-sc-bar"),
+      };
+    })()`,
   );
   check("CURRENT hides conceptual geometry", !current.visible && current.shown === 0);
   check("CURRENT keeps the geometry for a cheap return", current.kept > 0, `${current.kept} kept`);
