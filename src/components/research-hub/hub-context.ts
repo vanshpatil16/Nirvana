@@ -13,7 +13,9 @@ export type HubView =
   | "experiments"
   | "network"
   | "gaps"
-  | "manuscript";
+  | "manuscript"
+  | "gap-map"
+  | "capsules";
 
 export type EvidenceKind = "paper" | "dataset" | "policy" | "layer";
 

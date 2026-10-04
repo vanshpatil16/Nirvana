@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Bell, ChevronDown, Command, Menu, Moon, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { navItems } from "@/data/dashboard";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import logo from "@/assets/logo.png";
 import sidenavBottom from "@/assets/sidenav-bottom.png";
 import { ProfileMenu } from "@/components/ProfileMenu";
@@ -44,57 +44,7 @@ export function InnovationShell({
   return (
     <TooltipProvider>
       <div className="dashboard-shell">
-        <aside className={`sidebar ${drawer ? "open" : ""}`}>
-          <div className="sidebar-top">
-            <div className="brand">
-              <span className="brand-mark" aria-hidden="true">
-                <img src={logo} alt="NIRVANA Logo" width={38} height={38} />
-              </span>
-              <div>
-                <strong>NIRVANA</strong>
-                <b>निर्वाण</b>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="sidebar-close"
-              onClick={() => setDrawer(false)}
-              aria-label="Close navigation"
-            >
-              <X />
-            </Button>
-            <p>National Platform for Research &amp; Policy Innovation in Land Governance</p>
-          </div>
-          <nav aria-label="Main navigation">
-            {navItems.map(({ label, icon: Icon, href }) => {
-              const isActive = href ? isNavActive(href, activeHref) : false;
-              if (href) {
-                return (
-                  <a
-                    key={label}
-                    href={href}
-                    className={isActive ? "active" : ""}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <Icon />
-                    <span>{label}</span>
-                  </a>
-                );
-              }
-              return (
-                <button
-                  key={label}
-                  className={isActive ? "active" : ""}
-                  title={`${label} — coming soon`}
-                >
-                  <Icon />
-                  <span>{label}</span>
-                  <i>Soon</i>
-                </button>
-              );
-            })}
-          </nav>
+        <AppSidebar open={drawer} close={() => setDrawer(false)} activeItem="Innovation Portal">
           {subNav && subNav.length > 0 && (
             <nav className="inno-subnav" aria-label="Innovation Portal sections">
               <span className="inno-subnav-label">Innovation Portal</span>
@@ -110,20 +60,7 @@ export function InnovationShell({
               ))}
             </nav>
           )}
-          <div className="sidebar-bottom">
-            <img
-              src={sidenavBottom}
-              alt="Same Land, More Clarity, Better Decisions — Government of India, Ministry of Rural Development, Department of Land Resources"
-            />
-          </div>
-        </aside>
-        {drawer && (
-          <button
-            className="drawer-backdrop"
-            onClick={() => setDrawer(false)}
-            aria-label="Close navigation"
-          />
-        )}
+        </AppSidebar>
 
         <main>
           <header className="top-header">

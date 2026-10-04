@@ -27,7 +27,12 @@ import {
   Sparkles,
   Users,
   X,
+  Grid3X3,
+  PackageCheck,
 } from "lucide-react";
+import { useRole } from "@/context/RoleContext";
+import { LimitedAccessBanner } from "@/components/auth/LimitedAccessBanner";
+import { EvidenceGapMap, EvidenceCapsules } from "./EvidenceGapMapAndCapsules";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { navItems } from "@/data/dashboard";
@@ -80,6 +85,8 @@ const ACTIVE_ITEM = "Research Hub";
 
 const SUBNAV: { view: HubView; label: string }[] = [
   { view: "discover", label: "Discover" },
+  { view: "gap-map", label: "Evidence Gap Map" },
+  { view: "capsules", label: "Evidence Capsules" },
   { view: "my-research", label: "My Research" },
   { view: "workspaces", label: "Workspaces" },
   { view: "datasets", label: "Datasets" },
@@ -99,6 +106,8 @@ const COLLAB_SUBNAV: { view: HubView; label: string }[] = [
 const RAIL: { view: HubView; label: string; icon: typeof Home }[] = [
   { view: "overview", label: "Overview", icon: Home },
   { view: "discover", label: "Discover", icon: Search },
+  { view: "gap-map", label: "Evidence Gap Map", icon: Grid3X3 },
+  { view: "capsules", label: "Evidence Capsules", icon: PackageCheck },
   { view: "my-research", label: "My Research", icon: FolderOpen },
   { view: "workspaces", label: "Workspaces", icon: Users },
   { view: "gis", label: "GIS Explorer", icon: MapIcon },
@@ -132,6 +141,8 @@ function writeStore(key: string, value: unknown) {
 // Shell (same global sidebar + header as the rest of Nirvana)
 // ---------------------------------------------------------------------------
 
+import { AppSidebar } from "@/components/layout/AppSidebar";
+
 function Shell({
   drawer,
   close,
@@ -145,67 +156,7 @@ function Shell({
 }) {
   return (
     <>
-      <aside className={`sidebar ${drawer ? "open" : ""}`}>
-        <div className="sidebar-top">
-          <div className="brand">
-            <span className="brand-mark" aria-hidden="true">
-              <img src={logo} alt="NIRVANA Logo" width={38} height={38} />
-            </span>
-            <div>
-              <strong>NIRVANA</strong>
-              <b>निर्वाण</b>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="sidebar-close"
-            onClick={close}
-            aria-label="Close navigation"
-          >
-            <X />
-          </Button>
-          <p>National Platform for Research & Policy Innovation in Land Governance</p>
-        </div>
-        <nav aria-label="Main navigation">
-          {navItems.map(({ label, icon: Icon, href }) => {
-            const isActive = label === activeItem;
-            if (href) {
-              return (
-                <a
-                  key={label}
-                  href={href}
-                  className={isActive ? "active" : ""}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  <Icon />
-                  <span>{label}</span>
-                </a>
-              );
-            }
-            return (
-              <button
-                key={label}
-                className={isActive ? "active" : ""}
-                title={`${label} — coming soon`}
-              >
-                <Icon />
-                <span>{label}</span>
-                <i>Soon</i>
-              </button>
-            );
-          })}
-        </nav>
-        <div className="sidebar-bottom">
-          <img
-            src={sidenavBottom}
-            alt="Same Land, More Clarity, Better Decisions — Government of India, Ministry of Rural Development, Department of Land Resources"
-          />
-        </div>
-      </aside>
-      {drawer && (
-        <button className="drawer-backdrop" onClick={close} aria-label="Close navigation" />
-      )}
+      <AppSidebar open={drawer} close={close} activeItem={activeItem} />
       {children}
     </>
   );
@@ -414,6 +365,7 @@ export function ResearchHub({
   );
 
   const collab = variant === "collab";
+  const { role, roleId } = useRole();
   const activeWs = openWs ? workspaces.find((w) => w.id === openWs) : undefined;
   const stage = activeWs ? 2 : STAGE_OF_VIEW[view];
   const paperObj = paper ? paperById(paper) : undefined;
@@ -431,6 +383,15 @@ export function ResearchHub({
             <main>
               <PageHeader openMenu={() => setDrawer(true)} onSearch={() => go("discover")} />
               <div className="dashboard-content rh">
+                {roleId === "officer" && (
+                  <LimitedAccessBanner scopeNote="Officer role: Scoped to read-only access for field verification evidence. Workspace authoring is restricted." />
+                )}
+                {roleId === "citizen" && (
+                  <LimitedAccessBanner scopeNote="Citizen role: Scoped to plain-language evidence summaries & policy briefs only." />
+                )}
+                {roleId === "innovator" && (
+                  <LimitedAccessBanner scopeNote="Industry / Startup role: Scoped to open dataset previews & challenge evidence briefs." />
+                )}
                 <div className="rh-subnav">
                   <button
                     className="rh-subnav-title"
@@ -535,15 +496,17 @@ export function ResearchHub({
                   <Plus style={{ width: 16 }} />
                 </button>
               ))}
-              <button
-                className="rh-btn"
-                onClick={() => {
-                  setChooser(null);
-                  setCreating(true);
-                }}
-              >
-                <Plus /> New workspace
-              </button>
+              {roleId !== "officer" && (
+                <button
+                  className="rh-btn"
+                  onClick={() => {
+                    setChooser(null);
+                    setCreating(true);
+                  }}
+                >
+                  <Plus /> New workspace
+                </button>
+              )}
             </div>
           </Modal>
         )}
@@ -665,6 +628,7 @@ function View({
   onPropose: (theme: string, state: string) => void;
 }) {
   const hub = useHub();
+  const { roleId } = useRole();
   const featured = PAPERS.slice()
     .sort((a, b) => b.year - a.year || b.citations - a.citations)
     .slice(0, 6);
@@ -750,9 +714,15 @@ function View({
             icon={FolderOpen}
             title="Your research at a glance"
             action={
-              <button className="rh-btn primary" onClick={onCreate}>
-                <Plus /> New workspace
-              </button>
+              roleId !== "officer" ? (
+                <button className="rh-btn primary" onClick={onCreate}>
+                  <Plus /> New workspace
+                </button>
+              ) : (
+                <span className="text-xs font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-md border">
+                  Read-Only Mode
+                </span>
+              )
             }
           />
           <h3
@@ -1057,6 +1027,12 @@ function View({
           <ResearchNetwork />
         </>
       );
+
+    case "gap-map":
+      return <EvidenceGapMap />;
+
+    case "capsules":
+      return <EvidenceCapsules />;
 
     case "gaps":
       return (

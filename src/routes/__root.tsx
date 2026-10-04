@@ -137,17 +137,26 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { RoleProvider } from "../context/RoleContext";
+import { Toaster } from "../components/ui/sonner";
+import { RouteAccessGuard } from "../components/auth/RouteAccessGuard";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      {/* Every route component is code-split, so this boundary is the one place
-          that catches a chunk still in flight and shows the shared loader. */}
-      <Suspense fallback={<RoutePending />}>
-        <Outlet />
-      </Suspense>
+      <RoleProvider onNavigate={(path) => router.navigate({ href: path })}>
+        <RouteAccessGuard />
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        {/* Every route component is code-split, so this boundary is the one place
+            that catches a chunk still in flight and shows the shared loader. */}
+        <Suspense fallback={<RoutePending />}>
+          <Outlet />
+        </Suspense>
+        <Toaster position="top-right" richColors />
+      </RoleProvider>
     </QueryClientProvider>
   );
 }

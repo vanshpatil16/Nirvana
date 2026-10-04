@@ -10,17 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChooseRoleRouteImport } from './routes/choose-role'
 import { Route as CollaborativehubRouteImport } from './routes/collaborativehub'
+import { Route as ConsultationsRouteImport } from './routes/consultations'
 import { Route as CopilotRouteImport } from './routes/copilot'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DataApisRouteImport } from './routes/data-apis'
+import { Route as FederationConsoleRouteImport } from './routes/federation-console'
 import { Route as GisExplorerRouteImport } from './routes/gis-explorer'
 import { Route as GisExplorer3dRouteImport } from './routes/gis-explorer-3d'
+import { Route as ImpactMonitoringRouteImport } from './routes/impact-monitoring'
 import { Route as InnovationPortalRouteImport } from './routes/innovation-portal'
 import { Route as LanddifferenceRouteImport } from './routes/landdifference'
+import { Route as MyTasksRouteImport } from './routes/my-tasks'
+import { Route as ParcelRouteImport } from './routes/parcel'
 import { Route as PolicyLabRouteImport } from './routes/policy-lab'
 import { Route as RecordVsRealityRouteImport } from './routes/record-vs-reality'
+import { Route as ReportMismatchRouteImport } from './routes/report-mismatch'
+import { Route as ReportStatusRouteImport } from './routes/report-status'
 import { Route as ResearchHubRouteImport } from './routes/research-hub'
+import { Route as VerificationQueueRouteImport } from './routes/verification-queue'
 import { Route as WorkflowRouteImport } from './routes/workflow'
 import { Route as InnovationIndexRouteImport } from './routes/innovation/index'
 import { Route as InnovationImpactRouteImport } from './routes/innovation/impact'
@@ -35,9 +44,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChooseRoleRoute = ChooseRoleRouteImport.update({
+  id: '/choose-role',
+  path: '/choose-role',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CollaborativehubRoute = CollaborativehubRouteImport.update({
   id: '/collaborativehub',
   path: '/collaborativehub',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsultationsRoute = ConsultationsRouteImport.update({
+  id: '/consultations',
+  path: '/consultations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CopilotRoute = CopilotRouteImport.update({
@@ -55,6 +74,11 @@ const DataApisRoute = DataApisRouteImport.update({
   path: '/data-apis',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FederationConsoleRoute = FederationConsoleRouteImport.update({
+  id: '/federation-console',
+  path: '/federation-console',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GisExplorerRoute = GisExplorerRouteImport.update({
   id: '/gis-explorer',
   path: '/gis-explorer',
@@ -63,6 +87,11 @@ const GisExplorerRoute = GisExplorerRouteImport.update({
 const GisExplorer3dRoute = GisExplorer3dRouteImport.update({
   id: '/gis-explorer-3d',
   path: '/gis-explorer-3d',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImpactMonitoringRoute = ImpactMonitoringRouteImport.update({
+  id: '/impact-monitoring',
+  path: '/impact-monitoring',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InnovationPortalRoute = InnovationPortalRouteImport.update({
@@ -75,6 +104,16 @@ const LanddifferenceRoute = LanddifferenceRouteImport.update({
   path: '/landdifference',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyTasksRoute = MyTasksRouteImport.update({
+  id: '/my-tasks',
+  path: '/my-tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParcelRoute = ParcelRouteImport.update({
+  id: '/parcel',
+  path: '/parcel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PolicyLabRoute = PolicyLabRouteImport.update({
   id: '/policy-lab',
   path: '/policy-lab',
@@ -85,9 +124,24 @@ const RecordVsRealityRoute = RecordVsRealityRouteImport.update({
   path: '/record-vs-reality',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportMismatchRoute = ReportMismatchRouteImport.update({
+  id: '/report-mismatch',
+  path: '/report-mismatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportStatusRoute = ReportStatusRouteImport.update({
+  id: '/report-status',
+  path: '/report-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResearchHubRoute = ResearchHubRouteImport.update({
   id: '/research-hub',
   path: '/research-hub',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerificationQueueRoute = VerificationQueueRouteImport.update({
+  id: '/verification-queue',
+  path: '/verification-queue',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkflowRoute = WorkflowRouteImport.update({
@@ -136,17 +190,26 @@ const InnovationWorkspaceProjectIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/choose-role': typeof ChooseRoleRoute
   '/collaborativehub': typeof CollaborativehubRoute
+  '/consultations': typeof ConsultationsRoute
   '/copilot': typeof CopilotRoute
   '/dashboard': typeof DashboardRoute
   '/data-apis': typeof DataApisRoute
+  '/federation-console': typeof FederationConsoleRoute
   '/gis-explorer': typeof GisExplorerRoute
   '/gis-explorer-3d': typeof GisExplorer3dRoute
+  '/impact-monitoring': typeof ImpactMonitoringRoute
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
+  '/my-tasks': typeof MyTasksRoute
+  '/parcel': typeof ParcelRoute
   '/policy-lab': typeof PolicyLabRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
+  '/report-mismatch': typeof ReportMismatchRoute
+  '/report-status': typeof ReportStatusRoute
   '/research-hub': typeof ResearchHubRoute
+  '/verification-queue': typeof VerificationQueueRoute
   '/workflow': typeof WorkflowRoute
   '/innovation/impact': typeof InnovationImpactRoute
   '/innovation/pilots': typeof InnovationPilotsRoute
@@ -158,17 +221,26 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/choose-role': typeof ChooseRoleRoute
   '/collaborativehub': typeof CollaborativehubRoute
+  '/consultations': typeof ConsultationsRoute
   '/copilot': typeof CopilotRoute
   '/dashboard': typeof DashboardRoute
   '/data-apis': typeof DataApisRoute
+  '/federation-console': typeof FederationConsoleRoute
   '/gis-explorer': typeof GisExplorerRoute
   '/gis-explorer-3d': typeof GisExplorer3dRoute
+  '/impact-monitoring': typeof ImpactMonitoringRoute
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
+  '/my-tasks': typeof MyTasksRoute
+  '/parcel': typeof ParcelRoute
   '/policy-lab': typeof PolicyLabRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
+  '/report-mismatch': typeof ReportMismatchRoute
+  '/report-status': typeof ReportStatusRoute
   '/research-hub': typeof ResearchHubRoute
+  '/verification-queue': typeof VerificationQueueRoute
   '/workflow': typeof WorkflowRoute
   '/innovation/impact': typeof InnovationImpactRoute
   '/innovation/pilots': typeof InnovationPilotsRoute
@@ -181,17 +253,26 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/choose-role': typeof ChooseRoleRoute
   '/collaborativehub': typeof CollaborativehubRoute
+  '/consultations': typeof ConsultationsRoute
   '/copilot': typeof CopilotRoute
   '/dashboard': typeof DashboardRoute
   '/data-apis': typeof DataApisRoute
+  '/federation-console': typeof FederationConsoleRoute
   '/gis-explorer': typeof GisExplorerRoute
   '/gis-explorer-3d': typeof GisExplorer3dRoute
+  '/impact-monitoring': typeof ImpactMonitoringRoute
   '/innovation-portal': typeof InnovationPortalRoute
   '/landdifference': typeof LanddifferenceRoute
+  '/my-tasks': typeof MyTasksRoute
+  '/parcel': typeof ParcelRoute
   '/policy-lab': typeof PolicyLabRoute
   '/record-vs-reality': typeof RecordVsRealityRoute
+  '/report-mismatch': typeof ReportMismatchRoute
+  '/report-status': typeof ReportStatusRoute
   '/research-hub': typeof ResearchHubRoute
+  '/verification-queue': typeof VerificationQueueRoute
   '/workflow': typeof WorkflowRoute
   '/innovation/impact': typeof InnovationImpactRoute
   '/innovation/pilots': typeof InnovationPilotsRoute
@@ -205,17 +286,26 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/choose-role'
     | '/collaborativehub'
+    | '/consultations'
     | '/copilot'
     | '/dashboard'
     | '/data-apis'
+    | '/federation-console'
     | '/gis-explorer'
     | '/gis-explorer-3d'
+    | '/impact-monitoring'
     | '/innovation-portal'
     | '/landdifference'
+    | '/my-tasks'
+    | '/parcel'
     | '/policy-lab'
     | '/record-vs-reality'
+    | '/report-mismatch'
+    | '/report-status'
     | '/research-hub'
+    | '/verification-queue'
     | '/workflow'
     | '/innovation/impact'
     | '/innovation/pilots'
@@ -227,17 +317,26 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/choose-role'
     | '/collaborativehub'
+    | '/consultations'
     | '/copilot'
     | '/dashboard'
     | '/data-apis'
+    | '/federation-console'
     | '/gis-explorer'
     | '/gis-explorer-3d'
+    | '/impact-monitoring'
     | '/innovation-portal'
     | '/landdifference'
+    | '/my-tasks'
+    | '/parcel'
     | '/policy-lab'
     | '/record-vs-reality'
+    | '/report-mismatch'
+    | '/report-status'
     | '/research-hub'
+    | '/verification-queue'
     | '/workflow'
     | '/innovation/impact'
     | '/innovation/pilots'
@@ -249,17 +348,26 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/choose-role'
     | '/collaborativehub'
+    | '/consultations'
     | '/copilot'
     | '/dashboard'
     | '/data-apis'
+    | '/federation-console'
     | '/gis-explorer'
     | '/gis-explorer-3d'
+    | '/impact-monitoring'
     | '/innovation-portal'
     | '/landdifference'
+    | '/my-tasks'
+    | '/parcel'
     | '/policy-lab'
     | '/record-vs-reality'
+    | '/report-mismatch'
+    | '/report-status'
     | '/research-hub'
+    | '/verification-queue'
     | '/workflow'
     | '/innovation/impact'
     | '/innovation/pilots'
@@ -272,17 +380,26 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChooseRoleRoute: typeof ChooseRoleRoute
   CollaborativehubRoute: typeof CollaborativehubRoute
+  ConsultationsRoute: typeof ConsultationsRoute
   CopilotRoute: typeof CopilotRoute
   DashboardRoute: typeof DashboardRoute
   DataApisRoute: typeof DataApisRoute
+  FederationConsoleRoute: typeof FederationConsoleRoute
   GisExplorerRoute: typeof GisExplorerRoute
   GisExplorer3dRoute: typeof GisExplorer3dRoute
+  ImpactMonitoringRoute: typeof ImpactMonitoringRoute
   InnovationPortalRoute: typeof InnovationPortalRoute
   LanddifferenceRoute: typeof LanddifferenceRoute
+  MyTasksRoute: typeof MyTasksRoute
+  ParcelRoute: typeof ParcelRoute
   PolicyLabRoute: typeof PolicyLabRoute
   RecordVsRealityRoute: typeof RecordVsRealityRoute
+  ReportMismatchRoute: typeof ReportMismatchRoute
+  ReportStatusRoute: typeof ReportStatusRoute
   ResearchHubRoute: typeof ResearchHubRoute
+  VerificationQueueRoute: typeof VerificationQueueRoute
   WorkflowRoute: typeof WorkflowRoute
   InnovationImpactRoute: typeof InnovationImpactRoute
   InnovationPilotsRoute: typeof InnovationPilotsRoute
@@ -302,11 +419,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/choose-role': {
+      id: '/choose-role'
+      path: '/choose-role'
+      fullPath: '/choose-role'
+      preLoaderRoute: typeof ChooseRoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/collaborativehub': {
       id: '/collaborativehub'
       path: '/collaborativehub'
       fullPath: '/collaborativehub'
       preLoaderRoute: typeof CollaborativehubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consultations': {
+      id: '/consultations'
+      path: '/consultations'
+      fullPath: '/consultations'
+      preLoaderRoute: typeof ConsultationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/copilot': {
@@ -330,6 +461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DataApisRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/federation-console': {
+      id: '/federation-console'
+      path: '/federation-console'
+      fullPath: '/federation-console'
+      preLoaderRoute: typeof FederationConsoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/gis-explorer': {
       id: '/gis-explorer'
       path: '/gis-explorer'
@@ -342,6 +480,13 @@ declare module '@tanstack/react-router' {
       path: '/gis-explorer-3d'
       fullPath: '/gis-explorer-3d'
       preLoaderRoute: typeof GisExplorer3dRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/impact-monitoring': {
+      id: '/impact-monitoring'
+      path: '/impact-monitoring'
+      fullPath: '/impact-monitoring'
+      preLoaderRoute: typeof ImpactMonitoringRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/innovation-portal': {
@@ -358,6 +503,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LanddifferenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-tasks': {
+      id: '/my-tasks'
+      path: '/my-tasks'
+      fullPath: '/my-tasks'
+      preLoaderRoute: typeof MyTasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parcel': {
+      id: '/parcel'
+      path: '/parcel'
+      fullPath: '/parcel'
+      preLoaderRoute: typeof ParcelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/policy-lab': {
       id: '/policy-lab'
       path: '/policy-lab'
@@ -372,11 +531,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecordVsRealityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/report-mismatch': {
+      id: '/report-mismatch'
+      path: '/report-mismatch'
+      fullPath: '/report-mismatch'
+      preLoaderRoute: typeof ReportMismatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report-status': {
+      id: '/report-status'
+      path: '/report-status'
+      fullPath: '/report-status'
+      preLoaderRoute: typeof ReportStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/research-hub': {
       id: '/research-hub'
       path: '/research-hub'
       fullPath: '/research-hub'
       preLoaderRoute: typeof ResearchHubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verification-queue': {
+      id: '/verification-queue'
+      path: '/verification-queue'
+      fullPath: '/verification-queue'
+      preLoaderRoute: typeof VerificationQueueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workflow': {
@@ -440,17 +620,26 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChooseRoleRoute: ChooseRoleRoute,
   CollaborativehubRoute: CollaborativehubRoute,
+  ConsultationsRoute: ConsultationsRoute,
   CopilotRoute: CopilotRoute,
   DashboardRoute: DashboardRoute,
   DataApisRoute: DataApisRoute,
+  FederationConsoleRoute: FederationConsoleRoute,
   GisExplorerRoute: GisExplorerRoute,
   GisExplorer3dRoute: GisExplorer3dRoute,
+  ImpactMonitoringRoute: ImpactMonitoringRoute,
   InnovationPortalRoute: InnovationPortalRoute,
   LanddifferenceRoute: LanddifferenceRoute,
+  MyTasksRoute: MyTasksRoute,
+  ParcelRoute: ParcelRoute,
   PolicyLabRoute: PolicyLabRoute,
   RecordVsRealityRoute: RecordVsRealityRoute,
+  ReportMismatchRoute: ReportMismatchRoute,
+  ReportStatusRoute: ReportStatusRoute,
   ResearchHubRoute: ResearchHubRoute,
+  VerificationQueueRoute: VerificationQueueRoute,
   WorkflowRoute: WorkflowRoute,
   InnovationImpactRoute: InnovationImpactRoute,
   InnovationPilotsRoute: InnovationPilotsRoute,

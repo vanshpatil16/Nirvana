@@ -25,7 +25,19 @@ import {
   ShieldCheck,
   Sparkles,
   XCircle,
+  Copy,
+  Key,
+  Lock,
+  Terminal,
+  Check,
+  Server,
+  Eye,
+  ExternalLink,
 } from "lucide-react";
+import { useRole } from "@/context/RoleContext";
+import { LimitedAccessBanner } from "@/components/auth/LimitedAccessBanner";
+import { toast } from "sonner";
+import { HonestyBadge } from "@/mock/badges";
 
 import {
   LANDSTACK_BASE_URL,
@@ -170,6 +182,11 @@ export function DataApisPage() {
     }));
   };
 
+  const { role, roleId, getAccess } = useRole();
+  const access = getAccess("/data-apis");
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [showKey, setShowKey] = useState(false);
+
   const healthById = (id: string): SourceHealth["status"] =>
     health?.[id]?.status ??
     (sources?.find((s) => s.id === id)?.configured ? "configured" : "unconfigured");
@@ -232,6 +249,198 @@ export function DataApisPage() {
           />
         </div>
       </header>
+
+      {access === "limited" && (
+        <LimitedAccessBanner scopeNote="Read-only view for your role: Developer API keys and direct write pipelines are hidden." />
+      )}
+
+      {/* STATE OWNER VIEW: Data Sources & Enclave Adapters */}
+      {roleId === "state_owner" && (
+        <section className="ds-panel my-4 border border-purple-500/30 bg-purple-500/5 rounded-2xl p-5 space-y-4 shadow-sm" aria-label="State Data Adapters">
+          <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Server className="h-4 w-4 text-purple-700 dark:text-purple-400" />
+                <h2 className="text-sm font-bold text-foreground">
+                  State Node Adapters &amp; Local Enclave Ingestion
+                </h2>
+                <HonestyBadge type="LIVE" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Maintain state-specific adapters that bridge local NIC Bhulekh / RoR instances with the federated zero-knowledge gateway.
+              </p>
+            </div>
+            <span className="text-[10px] font-mono text-purple-700 bg-purple-500/15 px-2 py-0.5 rounded border border-purple-500/25 font-bold uppercase">
+              State Data Owner View
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[
+              { name: "Maharashtra NIC Bhulekh REST Adapter", version: "v2.4.1", status: "Active / Online", latency: "18ms", mode: "Row-Level Differential Privacy Enclave" },
+              { name: "Mahabhumi Cadastral WFS Bridge", version: "v1.9.0", status: "Active / Online", latency: "34ms", mode: "Zero-Knowledge Query Layer" },
+              { name: "Bhuvan Sentinel-2 Mosaic Raster Proxy", version: "v3.1.2", status: "Active / Online", latency: "52ms", mode: "STAC GeoTIFF Streamer" },
+            ].map((ad) => (
+              <div key={ad.name} className="p-3.5 rounded-xl border border-border/70 bg-background space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-foreground">{ad.name}</span>
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                    {ad.status}
+                  </span>
+                </div>
+                <div className="text-[11px] text-muted-foreground">Version: {ad.version} · Latency: {ad.latency}</div>
+                <div className="text-[10px] font-mono text-primary bg-primary/5 p-1 rounded border border-primary/20">
+                  {ad.mode}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* RESEARCHER VIEW: Datasets & Academic API Keys */}
+      {roleId === "researcher" && (
+        <section className="ds-panel my-4 border border-blue-500/30 bg-blue-500/5 rounded-2xl p-5 space-y-4 shadow-sm" aria-label="Researcher Datasets and Keys">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-500/20 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Key className="h-4 w-4 text-blue-700 dark:text-blue-400" />
+                <h2 className="text-sm font-bold text-foreground">
+                  Academic Research API Access &amp; Citation Metadata
+                </h2>
+                <HonestyBadge type="LIVE" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Pre-authenticated academic token with high-throughput OGC / STAC query quota for empirical research.
+              </p>
+            </div>
+            <span className="text-[10px] font-mono text-blue-700 bg-blue-500/15 px-2 py-0.5 rounded border border-blue-500/25 font-bold uppercase">
+              Researcher View
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl border border-border/70 bg-background space-y-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Personal Academic Key</span>
+              <div className="flex items-center gap-2">
+                <code className="text-xs font-mono bg-muted p-2 rounded flex-1 truncate text-foreground">
+                  {showKey ? "nrv_live_res_9f83e2a7b1c4e9d082f6a5b3c2d1e0f9" : "nrv_live_res_••••••••••••••••••••••••••••••••"}
+                </code>
+                <button
+                  onClick={() => setShowKey((s) => !s)}
+                  className="px-2.5 py-2 text-xs border rounded-md hover:bg-muted font-semibold"
+                >
+                  {showKey ? "Hide" : "Reveal"}
+                </button>
+                <button
+                  onClick={() => {
+                    setCopiedKey(true);
+                    toast.success("API Key Copied to Clipboard");
+                    setTimeout(() => setCopiedKey(false), 2000);
+                  }}
+                  className="px-2.5 py-2 text-xs bg-primary text-primary-foreground rounded-md hover:bg-primary/90 font-semibold flex items-center gap-1"
+                >
+                  {copiedKey ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedKey ? "Copied" : "Copy"}
+                </button>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
+                <span>Monthly Quota: <strong>12,450 / 100,000 queries</strong></span>
+                <span className="text-emerald-600 font-semibold">Tier: Accredited Academic</span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-border/70 bg-background space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Python Integration Snippet</span>
+              <pre className="text-[11px] font-mono bg-muted/80 p-2.5 rounded text-foreground/90 overflow-x-auto">
+{`import requests
+res = requests.get(
+  "https://api.nirvana.gov.in/v1/collections",
+  headers={"X-API-Key": "nrv_live_res_..."}
+)`}
+              </pre>
+              <p className="text-[10px] text-muted-foreground">Standardized citation DOI: 10.5281/zenodo.nirvana.2026</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* INNOVATOR VIEW: Production API Keys, Docs & Usage */}
+      {roleId === "innovator" && (
+        <section className="ds-panel my-4 border border-orange-500/30 bg-orange-500/5 rounded-2xl p-5 space-y-4 shadow-sm" aria-label="Innovator API Sandbox">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-orange-500/20 pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Terminal className="h-4 w-4 text-orange-700 dark:text-orange-400" />
+                <h2 className="text-sm font-bold text-foreground">
+                  Developer Sandbox &amp; Production API Gateway
+                </h2>
+                <HonestyBadge type="LIVE" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Access machine-readable STAC, cadastral boundary features, and build agritech or civic tech solutions.
+              </p>
+            </div>
+            <span className="text-[10px] font-mono text-orange-700 bg-orange-500/15 px-2 py-0.5 rounded border border-orange-500/25 font-bold uppercase">
+              Industry / Startup View
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl border border-border/70 bg-background space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Active Production Key</span>
+              <code className="text-xs font-mono bg-muted p-2 rounded block truncate text-foreground">
+                nrv_live_inno_4c71d0e82a9b3f6d5e1c0b8a
+              </code>
+              <div className="text-[11px] text-muted-foreground flex justify-between pt-1">
+                <span>Usage: <strong>8,420 / 25,000</strong></span>
+                <span className="text-primary font-bold">34%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-border overflow-hidden">
+                <div className="h-full bg-orange-500 rounded-full" style={{ width: "34%" }} />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-border/70 bg-background space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Gateway Telemetry</span>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between"><span>P95 Latency:</span> <strong className="font-mono text-emerald-600">42ms</strong></div>
+                <div className="flex justify-between"><span>Uptime (30d):</span> <strong className="font-mono text-emerald-600">99.94%</strong></div>
+                <div className="flex justify-between"><span>Active Webhooks:</span> <strong className="font-mono text-foreground">2 endpoints</strong></div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-border/70 bg-background space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">cURL Quickstart</span>
+              <pre className="text-[10px] font-mono bg-muted p-2 rounded text-foreground overflow-x-auto">
+{`curl -X GET \\
+  "https://api.nirvana.gov.in/v1/stac" \\
+  -H "Authorization: Bearer nrv_inno_..."`}
+              </pre>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* POLICYMAKER VIEW: Read-Only System Audit */}
+      {roleId === "policymaker" && (
+        <section className="ds-panel my-4 border border-emerald-500/30 bg-emerald-500/5 rounded-2xl p-4 space-y-2 shadow-sm" aria-label="Policymaker Read-only System View">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
+              <h2 className="text-sm font-bold text-foreground">
+                National Data Infrastructure Audit (Read-Only)
+              </h2>
+            </div>
+            <span className="text-[10px] font-mono text-emerald-700 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/25 font-bold uppercase">
+              Policymaker Scoped
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            All 36 states and UTs are connected through standardized OGC Feature &amp; STAC endpoints. Developer keys and mutable credentials are restricted from policy governance view.
+          </p>
+        </section>
+      )}
 
       {Object.keys(errors).length > 0 && (
         <div className="ds-banner" role="status">

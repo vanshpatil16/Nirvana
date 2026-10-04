@@ -14,7 +14,17 @@ import {
   Satellite,
   TrendingUp,
   Users,
+  Plus,
+  CheckCircle2,
+  Award,
+  Code2,
+  Target,
 } from "lucide-react";
+import { useRole } from "@/context/RoleContext";
+import { LimitedAccessBanner } from "@/components/auth/LimitedAccessBanner";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { HonestyBadge } from "@/mock/badges";
 import { InnovationShell } from "@/components/innovation/InnovationShell";
 import { InnovationPilotMap, type PilotMapStat } from "@/components/innovation/InnovationPilotMap";
 import { Chip, DemoNote, SectionHead, Stat, StatusPill } from "@/components/innovation/parts";
@@ -123,27 +133,58 @@ function HomeChallengeCard({ challenge }: { challenge: Challenge }) {
   );
 }
 
+const INNO_GRANTS = [
+  { id: "g1", title: "National Land Records Tech Innovation Grant 2026", amount: "₹50 Lakhs", org: "Ministry of Rural Development (DoLR)", deadline: "30 Nov 2026", track: "AI & GeoSpatial", status: "Open" },
+  { id: "g2", title: "Forest Rights Mapping & Tenurial Equity Fellowship", amount: "₹25 Lakhs", org: "Tribal Affairs & UNDP", deadline: "15 Dec 2026", track: "Social Impact", status: "Open" },
+  { id: "g3", title: "High-Resolution Satellite Cadastre Open Source Fund", amount: "₹40 Lakhs", org: "IN-SPACe & Nirvana Consortium", deadline: "10 Jan 2027", track: "Earth Observation", status: "Review" },
+];
+
+const INNO_HACKATHONS = [
+  { id: "h1", title: "Smart India Hackathon 2026 — Land AI Challenge (SIH26019)", prize: "₹10 Lakhs", teamSize: "4-6 Members", org: "DoLR & MoE Innovation Cell", dates: "Oct 2026 – Dec 2026", status: "Active Registrations", tags: ["SIH26019", "AI Anomaly", "Cadastre"] },
+  { id: "h2", title: "National GeoAI & Cadastral Sprint 2026", prize: "₹5 Lakhs", teamSize: "2-4 Members", org: "Bhuvan & Survey of India", dates: "15-18 Nov 2026", status: "Upcoming", tags: ["Bhuvan", "OpenCV", "Drone"] },
+];
+
+const DEMAND_BOARD_PROBLEMS = [
+  { id: "db1", title: "Algorithmic Partition Deed Discrepancy & Share Over-Allocation Detection", issuedBy: "Maharashtra Revenue Dept", bounty: "₹8 Lakhs Pilot", difficulty: "High", claimedBy: null as string | null, tags: ["NLP", "Legal Text", "Deeds"] },
+  { id: "db2", title: "Automated Identification of Clouded Titles via Court Cause Lists Integration", issuedBy: "DoLR Policy Lab", bounty: "₹12 Lakhs Pilot", difficulty: "Medium", claimedBy: "IISc Bangalore" as string | null, tags: ["e-Courts", "KG", "OCR"] },
+  { id: "db3", title: "Edge-Device Offline Verification App for Remote Forest Fringe Revenue Staff", issuedBy: "Odisha Land Records Cell", bounty: "₹6 Lakhs Pilot", difficulty: "Medium", claimedBy: null as string | null, tags: ["Mobile GIS", "Offline-First", "GPS"] },
+];
+
 export function InnovationHome() {
+  const { role, roleId, getAccess } = useRole();
+  const access = getAccess("/innovation");
   const [query, setQuery] = useState("");
   const [layer, setLayer] = useState<string>("All Layers");
   const [mapState, setMapState] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"challenges" | "grants" | "pilots" | "hackathons" | "demand_board">("challenges");
+  const [claimedProblems, setClaimedProblems] = useState<Record<string, string>>({ db2: "IISc Bangalore" });
 
   const stateStats = useStateStats(CHALLENGES, layer);
-  // Scale for the state bars: the busiest state's pilot count, so the longest
-  // bar is always full width.
+  const matches = (challenge: Challenge) =>
+    layer === "All Layers" || TRACK_TO_LAYER[challenge.track] === layer;
   const topPilots = Math.max(1, ...stateStats.map((s) => s.pilots));
   const latest = CHALLENGES.filter((c) => !c.featured).slice(0, 3);
   const openChallenges = CHALLENGES.filter(
     (c) => c.status === "Open" || c.status === "Applications open",
   );
 
-  // The header search narrows the visible challenge strips on this screen.
-  const matches = (challenge: Challenge) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return `${challenge.title} ${challenge.summary} ${challenge.organization} ${challenge.tags.join(" ")}`
-      .toLowerCase()
-      .includes(q);
+  const handleClaim = (id: string) => {
+    setClaimedProblems((prev) => ({ ...prev, [id]: "Claimed into your Workspace" }));
+    toast.success("Problem Claimed on Demand Board", {
+      description: `Task added to your researcher workspace for pre-registered empirical study.`,
+    });
+  };
+
+  const handleApply = (title: string) => {
+    toast.success(`Application Initiated`, {
+      description: `Opening pilot proposal draft for "${title}".`,
+    });
+  };
+
+  const handlePostChallenge = () => {
+    toast.info("Post New Policy Challenge", {
+      description: "DoLR Challenge Creation Wizard: specify problem statement, evaluation criteria, and grant budget.",
+    });
   };
 
   return (
@@ -158,6 +199,10 @@ export function InnovationHome() {
       ]}
     >
       <div className="dashboard-content inno-page">
+        {access === "limited" && (
+          <LimitedAccessBanner scopeNote="Innovation portal access is scoped for your role." />
+        )}
+
         {/* HERO — spec §3 */}
         <section className="inno-hero" style={{ backgroundImage: `url(${innovationLandscape})` }}>
           <div className="inno-hero-copy">
@@ -170,13 +215,22 @@ export function InnovationHome() {
               <a className="portal-btn-primary" href="/innovation/challenges">
                 Explore Challenges <ArrowRight />
               </a>
-              <a className="portal-btn-ghost" href="/innovation/submit">
-                Launch an Innovation Call
-              </a>
+              {roleId === "policymaker" ? (
+                <button
+                  className="portal-btn-ghost flex items-center gap-1.5"
+                  onClick={handlePostChallenge}
+                >
+                  <Plus className="h-4 w-4" /> Post a Challenge
+                </button>
+              ) : (
+                <a className="portal-btn-ghost" href="/innovation/submit">
+                  Launch an Innovation Call
+                </a>
+              )}
             </div>
           </div>
 
-          {/* Lifecycle flow: Challenge → Research → Dataset → Prototype → Pilot → Policy */}
+          {/* Lifecycle flow */}
           <ol className="inno-lifecycle" aria-label="Innovation lifecycle">
             {LIFECYCLE_PIPELINE.map((stage, i) => (
               <li key={stage.stage}>
@@ -188,6 +242,145 @@ export function InnovationHome() {
             ))}
           </ol>
         </section>
+
+        {/* ROLE-AWARE INNOVATION TABS BAR */}
+        <div className="my-6 rounded-2xl border border-border/70 bg-card p-4 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              {[
+                { id: "challenges", label: "Challenges", icon: Beaker },
+                { id: "grants", label: "Grants", icon: Landmark },
+                { id: "pilots", label: "Pilots", icon: FlaskConical },
+                { id: "hackathons", label: "Hackathons", icon: Code2 },
+                { id: "demand_board", label: "Demand Board", icon: Target },
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as any)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    activeTab === id
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {roleId === "policymaker" && (
+              <Button size="sm" onClick={handlePostChallenge} className="text-xs gap-1.5 font-semibold">
+                <Plus className="h-3.5 w-3.5" /> Post a Challenge
+              </Button>
+            )}
+          </div>
+
+          {/* GRANTS TAB CONTENT */}
+          {activeTab === "grants" && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {INNO_GRANTS.map((g) => (
+                <div key={g.id} className="rounded-xl border border-border/60 bg-background p-4 flex flex-col justify-between space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
+                        {g.track}
+                      </span>
+                      <span className="text-xs font-bold text-emerald-600">{g.amount}</span>
+                    </div>
+                    <h3 className="font-bold text-sm text-foreground mt-2">{g.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">{g.org}</p>
+                    <p className="text-[11px] text-muted-foreground mt-2">Deadline: <strong>{g.deadline}</strong></p>
+                  </div>
+                  {roleId === "innovator" && (
+                    <Button size="sm" onClick={() => handleApply(g.title)} className="w-full text-xs font-semibold">
+                      Apply for Grant
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* HACKATHONS TAB CONTENT */}
+          {activeTab === "hackathons" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {INNO_HACKATHONS.map((h) => (
+                <div key={h.id} className="rounded-xl border border-border/60 bg-background p-4 flex flex-col justify-between space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-500/15 px-2 py-0.5 rounded">
+                        {h.status}
+                      </span>
+                      <span className="text-xs font-bold text-primary">Prize: {h.prize}</span>
+                    </div>
+                    <h3 className="font-bold text-sm text-foreground mt-2">{h.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">{h.org} · Teams: {h.teamSize}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {h.tags.map((t) => (
+                        <span key={t} className="text-[10px] font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground">
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  {roleId === "innovator" && (
+                    <Button size="sm" onClick={() => handleApply(h.title)} className="w-full text-xs font-semibold">
+                      Register Team
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* DEMAND BOARD TAB CONTENT */}
+          {activeTab === "demand_board" && (
+            <div className="space-y-3">
+              {DEMAND_BOARD_PROBLEMS.map((db) => {
+                const isClaimed = claimedProblems[db.id];
+                return (
+                  <div key={db.id} className="rounded-xl border border-border/60 bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase text-purple-700 bg-purple-500/10 px-2 py-0.5 rounded">
+                          Bounty: {db.bounty}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">· Issued by: {db.issuedBy}</span>
+                      </div>
+                      <h4 className="font-bold text-sm text-foreground">{db.title}</h4>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {db.tags.map((t) => (
+                          <span key={t} className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      {isClaimed ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Claimed: {isClaimed}
+                        </span>
+                      ) : roleId === "researcher" ? (
+                        <Button size="sm" onClick={() => handleClaim(db.id)} className="text-xs font-semibold gap-1">
+                          <Target className="h-3.5 w-3.5" /> Claim Problem
+                        </Button>
+                      ) : roleId === "innovator" ? (
+                        <Button size="sm" onClick={() => handleApply(db.title)} className="text-xs font-semibold gap-1">
+                          Submit a Pilot
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Open Problem</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* LIVE INNOVATION PULSE — spec §3 */}
         <section aria-label="Live innovation pulse">
