@@ -78,6 +78,7 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     ],
     routeAccess: {
       "/choose-role": "full",
+      "/time-machine": "full",
       "/verification-queue": "full",
       "/my-tasks": "full",
       "/parcel": "full",
@@ -123,6 +124,7 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     ],
     routeAccess: {
       "/choose-role": "full",
+      "/time-machine": "full",
       "/policy-lab": "full",
       "/impact-monitoring": "full",
       "/dashboard": "full",
@@ -168,6 +170,7 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     ],
     routeAccess: {
       "/choose-role": "full",
+      "/time-machine": "full",
       "/research-hub": "full",
       "/collaborativehub": "full",
       "/dashboard": "full",
@@ -209,6 +212,7 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     ],
     routeAccess: {
       "/choose-role": "full",
+      "/time-machine": "full",
       "/federation-console": "full",
       "/my-tasks": "full",
       "/dashboard": "full",
@@ -249,6 +253,7 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     ],
     routeAccess: {
       "/choose-role": "full",
+      "/time-machine": "full",
       "/dashboard": "full",
       "/gis-explorer-3d": "limited",
       "/gis-explorer": "limited",
@@ -288,6 +293,7 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     ],
     routeAccess: {
       "/choose-role": "full",
+      "/time-machine": "full",
       "/innovation": "full",
       "/innovation-portal": "full",
       "/innovation/challenges": "full",

@@ -29,6 +29,7 @@ import { Route as RecordVsRealityRouteImport } from './routes/record-vs-reality'
 import { Route as ReportMismatchRouteImport } from './routes/report-mismatch'
 import { Route as ReportStatusRouteImport } from './routes/report-status'
 import { Route as ResearchHubRouteImport } from './routes/research-hub'
+import { Route as TimeMachineRouteImport } from './routes/time-machine'
 import { Route as VerificationQueueRouteImport } from './routes/verification-queue'
 import { Route as WorkflowRouteImport } from './routes/workflow'
 import { Route as InnovationIndexRouteImport } from './routes/innovation/index'
@@ -139,6 +140,11 @@ const ResearchHubRoute = ResearchHubRouteImport.update({
   path: '/research-hub',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TimeMachineRoute = TimeMachineRouteImport.update({
+  id: '/time-machine',
+  path: '/time-machine',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerificationQueueRoute = VerificationQueueRouteImport.update({
   id: '/verification-queue',
   path: '/verification-queue',
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/report-mismatch': typeof ReportMismatchRoute
   '/report-status': typeof ReportStatusRoute
   '/research-hub': typeof ResearchHubRoute
+  '/time-machine': typeof TimeMachineRoute
   '/verification-queue': typeof VerificationQueueRoute
   '/workflow': typeof WorkflowRoute
   '/innovation/impact': typeof InnovationImpactRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/report-mismatch': typeof ReportMismatchRoute
   '/report-status': typeof ReportStatusRoute
   '/research-hub': typeof ResearchHubRoute
+  '/time-machine': typeof TimeMachineRoute
   '/verification-queue': typeof VerificationQueueRoute
   '/workflow': typeof WorkflowRoute
   '/innovation/impact': typeof InnovationImpactRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/report-mismatch': typeof ReportMismatchRoute
   '/report-status': typeof ReportStatusRoute
   '/research-hub': typeof ResearchHubRoute
+  '/time-machine': typeof TimeMachineRoute
   '/verification-queue': typeof VerificationQueueRoute
   '/workflow': typeof WorkflowRoute
   '/innovation/impact': typeof InnovationImpactRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/report-mismatch'
     | '/report-status'
     | '/research-hub'
+    | '/time-machine'
     | '/verification-queue'
     | '/workflow'
     | '/innovation/impact'
@@ -336,6 +346,7 @@ export interface FileRouteTypes {
     | '/report-mismatch'
     | '/report-status'
     | '/research-hub'
+    | '/time-machine'
     | '/verification-queue'
     | '/workflow'
     | '/innovation/impact'
@@ -367,6 +378,7 @@ export interface FileRouteTypes {
     | '/report-mismatch'
     | '/report-status'
     | '/research-hub'
+    | '/time-machine'
     | '/verification-queue'
     | '/workflow'
     | '/innovation/impact'
@@ -399,6 +411,7 @@ export interface RootRouteChildren {
   ReportMismatchRoute: typeof ReportMismatchRoute
   ReportStatusRoute: typeof ReportStatusRoute
   ResearchHubRoute: typeof ResearchHubRoute
+  TimeMachineRoute: typeof TimeMachineRoute
   VerificationQueueRoute: typeof VerificationQueueRoute
   WorkflowRoute: typeof WorkflowRoute
   InnovationImpactRoute: typeof InnovationImpactRoute
@@ -552,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResearchHubRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/time-machine': {
+      id: '/time-machine'
+      path: '/time-machine'
+      fullPath: '/time-machine'
+      preLoaderRoute: typeof TimeMachineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verification-queue': {
       id: '/verification-queue'
       path: '/verification-queue'
@@ -639,6 +659,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportMismatchRoute: ReportMismatchRoute,
   ReportStatusRoute: ReportStatusRoute,
   ResearchHubRoute: ResearchHubRoute,
+  TimeMachineRoute: TimeMachineRoute,
   VerificationQueueRoute: VerificationQueueRoute,
   WorkflowRoute: WorkflowRoute,
   InnovationImpactRoute: InnovationImpactRoute,
