@@ -3,6 +3,18 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Route-level styles are pulled in here so the SSR'd HTML is styled on first
+   paint, instead of flashing unstyled markup until each lazy route chunk
+   injects its own CSS. The per-component imports of the same files remain
+   (harmless duplicates) to keep route-level code self-contained. */
+@import "./components/landing/landing.css";
+@import "./components/policy-lab/policy-lab.css";
+@import "./components/gis3d/land-potential.css";
+@import "./components/gis3d/scenario.css";
+@import "./components/land-difference/land-difference.css";
+@import "./components/research-hub/research-hub.css";
+@import "./components/workflow/workflow.css";
+
 @custom-variant dark (&:is(.dark *));
 
 /*

@@ -30,6 +30,7 @@ import heroVideo from "@/assets/policy_home.mp4";
 import { compact, listSentence, pluralise } from "../lab-helpers";
 import type { LabMode } from "../PolicyLab";
 import { PrototypeTag } from "../parts/States";
+import { StatutoryBrowse } from "./StatutoryBrowse";
 
 /** Decorative, muted loop feathered into the hero; a still frame under reduced motion. */
 function HeroVideo() {
@@ -162,6 +163,8 @@ export function OverviewView({
         </div>
         <HeroVideo />
       </div>
+
+      <StatutoryBrowse />
 
       <div className="pl-section">
         <div className="pl-section-head">

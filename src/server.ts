@@ -10,6 +10,7 @@ import { handlePolicyExtract } from "./server/policy-extract";
 import { handleWeatherApi } from "./server/weather-india";
 import { handleLandStackProxy } from "./server/landstack-proxy";
 import { handlePoliciesApi } from "./server/policies";
+import { handleSummariesApi } from "./server/summarize";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -89,6 +90,9 @@ export default {
       }
       // Statutory applicability search over real Indian land legislation, scored
       // by the XGBoost model exported from ml/train_model.py. No Python runtime.
+      if (url.pathname === "/api/policies/summaries") {
+        return handleSummariesApi(request);
+      }
       if (url.pathname === "/api/policies" || url.pathname.startsWith("/api/policies/")) {
         return handlePoliciesApi(request);
       }
