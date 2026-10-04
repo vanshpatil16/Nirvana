@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { navItems } from "@/data/dashboard";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import {
   DEFAULT_SURVEY_NO,
   LOCATION_HIERARCHY,
@@ -228,65 +228,7 @@ export function RecordVsReality() {
         )}
 
         {/* Sidebar */}
-        <aside className={`sidebar ${drawer ? "open" : ""}`}>
-          <div className="sidebar-top">
-            <div className="brand">
-              <span className="brand-mark" aria-hidden="true">
-                <img src={logo} alt="NIRVANA Logo" width={38} height={38} />
-              </span>
-              <div>
-                <strong>NIRVANA</strong>
-                <b>निर्वाण</b>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="sidebar-close"
-              onClick={() => setDrawer(false)}
-              aria-label="Close navigation"
-            >
-              <X />
-            </Button>
-            <p>National Platform for Research & Policy Innovation in Land Governance</p>
-          </div>
-          <nav aria-label="Main navigation">
-            {navItems.map(({ label, icon: Icon, href }) => {
-              const isActive = label === "Record vs Reality";
-              if (href) {
-                return (
-                  <a
-                    key={label}
-                    href={href}
-                    className={isActive ? "active" : ""}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <Icon />
-                    <span>{label}</span>
-                  </a>
-                );
-              }
-              return (
-                <button
-                  key={label}
-                  className={isActive ? "active" : ""}
-                  aria-current={isActive ? "page" : undefined}
-                  title={`${label} — coming soon`}
-                >
-                  <Icon />
-                  <span>{label}</span>
-                  <i>Soon</i>
-                </button>
-              );
-            })}
-          </nav>
-          <div className="sidebar-bottom">
-            <img
-              src={sidenavBottom}
-              alt="Same Land, More Clarity, Better Decisions — Government of India, Ministry of Rural Development, Department of Land Resources"
-            />
-          </div>
-        </aside>
+        <AppSidebar open={drawer} close={() => setDrawer(false)} activeItem="Record vs Reality" />
 
         {drawer && (
           <button

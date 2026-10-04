@@ -12,6 +12,8 @@ export const STAGE_OF_VIEW: Record<HubView, number> = {
   gis: 3,
   datasets: 3,
   gaps: 3,
+  "gap-map": 3,
+  capsules: 3,
   experiments: 4,
   publications: 5,
   "policy-evidence": 6,

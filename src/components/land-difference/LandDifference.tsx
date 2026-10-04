@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { navItems } from "@/data/dashboard";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import logo from "@/assets/logo.png";
 import sidenavBottom from "@/assets/sidenav-bottom.png";
 import * as maplibregl from "maplibre-gl";
@@ -520,52 +520,7 @@ export function LandDifference() {
     <TooltipProvider>
       <div className="dashboard-shell h-screen flex overflow-hidden bg-background">
         {/* Sidebar */}
-        <aside className={`sidebar ${drawer ? "open" : ""} shrink-0 z-50`}>
-          <div className="sidebar-top">
-            <div className="brand">
-              <span className="brand-mark" aria-hidden="true">
-                <img src={logo} alt="NIRVANA Logo" width={38} height={38} />
-              </span>
-              <div>
-                <strong>NIRVANA</strong>
-                <b>निर्वाण</b>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="sidebar-close"
-              onClick={() => setDrawer(false)}
-            >
-              <X />
-            </Button>
-            <p>National Platform for Research & Policy Innovation</p>
-          </div>
-          <nav aria-label="Main navigation">
-            {navItems.map(({ label, icon: Icon, href }) => {
-              const isActive = label === "Land Difference";
-              if (href)
-                return (
-                  <a key={label} href={href} className={isActive ? "active" : ""}>
-                    <Icon />
-                    <span>{label}</span>
-                  </a>
-                );
-              return (
-                <button key={label} title={`${label} — coming soon`}>
-                  <Icon />
-                  <span>{label}</span>
-                  <i>Soon</i>
-                </button>
-              );
-            })}
-          </nav>
-          <div className="sidebar-bottom">
-            <img src={sidenavBottom} alt="Government of India" />
-          </div>
-        </aside>
-
-        {drawer && <button className="drawer-backdrop" onClick={() => setDrawer(false)} />}
+        <AppSidebar open={drawer} close={() => setDrawer(false)} activeItem="Land Difference" />
 
         <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           {/* Top Header */}

@@ -650,7 +650,7 @@ export function Landing() {
       {/* Small screens lose the nav links at 1100px and the dashboard CTA at
           560px, which reduced the header to a bare logo. This is a compact
           scroll rail so the page stays navigable on a phone. */}
-      
+
 
       {/* ============================ THE DIVE ============================ */}
       <section className="ld-dive" id="top">

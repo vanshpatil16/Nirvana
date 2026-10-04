@@ -41,6 +41,8 @@ function Brand() {
   );
 }
 
+import { AppSidebar } from "@/components/layout/AppSidebar";
+
 function Sidebar({
   open,
   close,
@@ -50,59 +52,7 @@ function Sidebar({
   close: () => void;
   activeItem?: string;
 }) {
-  return (
-    <aside className={`sidebar ${open ? "open" : ""}`}>
-      <div className="sidebar-top">
-        <Brand />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="sidebar-close"
-          onClick={close}
-          aria-label="Close navigation"
-        >
-          <X />
-        </Button>
-        <p>National Platform for Research & Policy Innovation in Land Governance</p>
-      </div>
-      <nav aria-label="Main navigation">
-        {navItems.map(({ label, icon: Icon, href }) => {
-          const isActive = label === activeItem;
-          if (href) {
-            return (
-              <a
-                key={label}
-                href={href}
-                className={isActive ? "active" : ""}
-                aria-current={isActive ? "page" : undefined}
-              >
-                <Icon />
-                <span>{label}</span>
-              </a>
-            );
-          }
-          return (
-            <button
-              key={label}
-              className={isActive ? "active" : ""}
-              aria-current={isActive ? "page" : undefined}
-              title={`${label} — coming soon`}
-            >
-              <Icon />
-              <span>{label}</span>
-              <i>Soon</i>
-            </button>
-          );
-        })}
-      </nav>
-      <div className="sidebar-bottom">
-        <img
-          src={sidenavBottom}
-          alt="Same Land, More Clarity, Better Decisions — Government of India, Ministry of Rural Development, Department of Land Resources"
-        />
-      </div>
-    </aside>
-  );
+  return <AppSidebar open={open} close={close} activeItem={activeItem} />;
 }
 
 function TopHeader({ openMenu }: { openMenu: () => void }) {
@@ -344,8 +294,15 @@ function ImpactSection() {
   );
 }
 
-export function Dashboard() {
-  const [drawer, setDrawer] = useState(false);
+import { useRole } from "@/context/RoleContext";
+import { OfficerDashboard } from "./portals/OfficerDashboard";
+import { PolicymakerDashboard } from "./portals/PolicymakerDashboard";
+import { ResearcherDashboard } from "./portals/ResearcherDashboard";
+import { StateOwnerDashboard } from "./portals/StateOwnerDashboard";
+import { CitizenDashboard } from "./portals/CitizenDashboard";
+import { InnovatorDashboard } from "./portals/InnovatorDashboard";
+
+function NationalDefaultDashboard() {
   const [tab, setTab] = useState<ThemeId>("land-use-change");
   const [year, setYear] = useState<string>("2024");
   const [selection, setSelection] = useState<SelectionSnapshot | null>(null);
@@ -368,6 +325,101 @@ export function Dashboard() {
     );
     return () => window.clearTimeout(timer);
   }, [playing, speed, year]);
+
+  return (
+    <>
+      <HeroBanner />
+      <KPIGrid />
+      <section className="perspective">
+        <header className="perspective-head">
+          <div>
+            <h2>India’s Land in Perspective</h2>
+            <p>Explore land, policy, risk and evidence across India.</p>
+          </div>
+          <a className="fullscreen" href={`/gis-explorer?layer=${tab}`}>
+            View Full GIS <ArrowRight />
+          </a>
+        </header>
+        <div role="tablist" aria-label="Intelligence theme" className="theme-tabs">
+          {THEME_ORDER.map((id) => (
+            <button
+              role="tab"
+              aria-selected={tab === id}
+              className={tab === id ? "active" : ""}
+              onClick={() => setTab(id)}
+              key={id}
+            >
+              {THEMES[id].label}
+            </button>
+          ))}
+        </div>
+        <div className="map-stack">
+          <Suspense
+            fallback={
+              <div className="map-loading">
+                <LoadingScreen
+                  className="min-h-0"
+                  label="Loading national land intelligence"
+                  hint="Fetching the map and theme layers…"
+                />
+              </div>
+            }
+          >
+            <IndiaMap
+              theme={tab}
+              year={year}
+              onThemeChange={setTab}
+              onYearChange={(y) => {
+                setPlaying(false);
+                setYear(y);
+              }}
+              onSelection={setSelection}
+              onSimSnapshot={setSim}
+              actionRequest={actionRequest}
+              onActionHandled={() => setActionRequest(null)}
+              panelOpen={!!selection}
+              panel={
+                selection ? (
+                  <LandInsightPanel
+                    selection={selection}
+                    sim={sim}
+                    theme={tab}
+                    year={year}
+                    onAction={requestAction}
+                    onTheme={setTab}
+                  />
+                ) : (
+                  <div className="insight-hint" aria-hidden="true">
+                    <MousePointerClick /> Click any state or parcel for details
+                  </div>
+                )
+              }
+            />
+          </Suspense>
+          <TemporalSide
+            tab={tab}
+            year={year}
+            playing={playing}
+            speed={speed}
+            onTogglePlay={() => setPlaying((p) => !p)}
+            onSpeed={setSpeed}
+            onYear={(y) => {
+              setPlaying(false);
+              setYear(y);
+            }}
+          />
+        </div>
+      </section>
+      <ImpactSection />
+    </>
+  );
+}
+
+export function Dashboard() {
+  const [drawer, setDrawer] = useState(false);
+  const [viewMode, setViewMode] = useState<"role" | "national">("role");
+  const { roleId, role } = useRole();
+
   return (
     <TooltipProvider>
       <div className="dashboard-shell">
@@ -382,89 +434,34 @@ export function Dashboard() {
         <main>
           <TopHeader openMenu={() => setDrawer(true)} />
           <div className="dashboard-content">
-            <HeroBanner />
-            <KPIGrid />
-            <section className="perspective">
-              <header className="perspective-head">
-                <div>
-                  <h2>India’s Land in Perspective</h2>
-                  <p>Explore land, policy, risk and evidence across India.</p>
-                </div>
-                <a className="fullscreen" href={`/gis-explorer?layer=${tab}`}>
-                  View Full GIS <ArrowRight />
-                </a>
-              </header>
-              <div role="tablist" aria-label="Intelligence theme" className="theme-tabs">
-                {THEME_ORDER.map((id) => (
-                  <button
-                    role="tab"
-                    aria-selected={tab === id}
-                    className={tab === id ? "active" : ""}
-                    onClick={() => setTab(id)}
-                    key={id}
-                  >
-                    {THEMES[id].label}
-                  </button>
-                ))}
-              </div>
-              <div className="map-stack">
-                <Suspense
-                  fallback={
-                    <div className="map-loading">
-                      <LoadingScreen
-                        className="min-h-0"
-                        label="Loading national land intelligence"
-                        hint="Fetching the map and theme layers…"
-                      />
-                    </div>
-                  }
+            {/* View Switcher Strip */}
+            <div className="flex items-center justify-between py-2 px-1 text-xs border-b border-border/40 mb-4">
+              <span className="text-muted-foreground">
+                Active Portal View: <strong>{role.label}</strong> ({role.persona})
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setViewMode(viewMode === "role" ? "national" : "role")}
+                  className="text-primary hover:underline font-semibold flex items-center gap-1"
                 >
-                  <IndiaMap
-                    theme={tab}
-                    year={year}
-                    onThemeChange={setTab}
-                    onYearChange={(y) => {
-                      setPlaying(false);
-                      setYear(y);
-                    }}
-                    onSelection={setSelection}
-                    onSimSnapshot={setSim}
-                    actionRequest={actionRequest}
-                    onActionHandled={() => setActionRequest(null)}
-                    panelOpen={!!selection}
-                    panel={
-                      selection ? (
-                        <LandInsightPanel
-                          selection={selection}
-                          sim={sim}
-                          theme={tab}
-                          year={year}
-                          onAction={requestAction}
-                          onTheme={setTab}
-                        />
-                      ) : (
-                        <div className="insight-hint" aria-hidden="true">
-                          <MousePointerClick /> Click any state or parcel for details
-                        </div>
-                      )
-                    }
-                  />
-                </Suspense>
-                <TemporalSide
-                  tab={tab}
-                  year={year}
-                  playing={playing}
-                  speed={speed}
-                  onTogglePlay={() => setPlaying((p) => !p)}
-                  onSpeed={setSpeed}
-                  onYear={(y) => {
-                    setPlaying(false);
-                    setYear(y);
-                  }}
-                />
+                  {viewMode === "role" ? "Switch to National 2D Map" : `Back to ${role.label} View`}
+                </button>
               </div>
-            </section>
-            <ImpactSection />
+            </div>
+
+            {viewMode === "national" ? (
+              <NationalDefaultDashboard />
+            ) : (
+              <>
+                {roleId === "officer" && <OfficerDashboard />}
+                {roleId === "policymaker" && <PolicymakerDashboard />}
+                {roleId === "researcher" && <ResearcherDashboard />}
+                {roleId === "state_owner" && <StateOwnerDashboard />}
+                {roleId === "citizen" && <CitizenDashboard />}
+                {roleId === "innovator" && <InnovatorDashboard />}
+              </>
+            )}
+
             <footer className="dashboard-footer">
               <span>🇮🇳</span> Built for a Viksit Bharat{" "}
               <small>Prototype data shown for demonstration</small>

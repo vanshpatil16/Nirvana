@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { ArrowRight, Check, ChevronDown, Info } from "lucide-react";
 import {
   DropdownMenu,
@@ -8,32 +7,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  DEFAULT_ROLE,
-  ROLES,
-  onRoleChange,
-  readRole,
-  roleById,
-  writeRole,
-  type RoleId,
-} from "@/data/roles";
+import { useRole } from "@/context/RoleContext";
 
 const USER = { name: "Omkar Kudalkar", initials: "OK" };
 
-/** Header profile button with a demo role switcher, shared by every page. */
+/** Header profile button with the 6-role switcher, driving the active portal. */
 export function ProfileMenu() {
-  // Start from the default so server and client render the same markup, then load the saved role
-  const [roleId, setRoleId] = useState<RoleId>(DEFAULT_ROLE);
-  useEffect(() => {
-    setRoleId(readRole());
-    return onRoleChange(setRoleId);
-  }, []);
-  const role = roleById(roleId);
+  const { roleId, role, roles, switchRole } = useRole();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="profile" aria-label={`${USER.name}, ${role.title}. Switch role`}>
+        <button className="profile" aria-label={`${USER.name}, ${role.label}. Switch role`}>
           <span
             style={{
               background: `color-mix(in oklab, ${role.color} 16%, white)`,
@@ -44,7 +29,7 @@ export function ProfileMenu() {
           </span>
           <div>
             <strong>{USER.name}</strong>
-            <small>{role.title}</small>
+            <small>{role.label}</small>
           </div>
           <ChevronDown />
         </button>
@@ -55,14 +40,14 @@ export function ProfileMenu() {
           <div>
             <strong>{USER.name}</strong>
             <small>
-              {role.title} · {role.org}
+              {role.label} · {role.persona}
             </small>
           </div>
         </div>
         <DropdownMenuSeparator className="m-0" />
         <DropdownMenuLabel className="profile-menu-label">View platform as</DropdownMenuLabel>
         <div className="profile-menu-list">
-          {ROLES.map((r) => {
+          {roles.map((r) => {
             const Icon = r.icon;
             const active = r.id === roleId;
             return (
@@ -70,8 +55,7 @@ export function ProfileMenu() {
                 key={r.id}
                 className={`profile-role${active ? " active" : ""}`}
                 onSelect={() => {
-                  writeRole(r.id);
-                  setRoleId(r.id);
+                  switchRole(r.id);
                 }}
               >
                 <i
@@ -83,8 +67,8 @@ export function ProfileMenu() {
                   <Icon />
                 </i>
                 <span>
-                  <b>{r.title}</b>
-                  <small>{r.description}</small>
+                  <b>{r.label}</b>
+                  <small>{r.persona}</small>
                 </span>
                 {active && <Check className="tick" />}
               </DropdownMenuItem>
@@ -93,12 +77,17 @@ export function ProfileMenu() {
         </div>
         <DropdownMenuSeparator className="m-0" />
         <DropdownMenuItem asChild className="profile-menu-go">
-          <a href={role.home.href}>
-            Open {role.home.label} <ArrowRight />
+          <a href={role.landingRoute}>
+            Open {role.label} Workspace <ArrowRight />
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="profile-menu-go">
+          <a href="/choose-role">
+            Choose a role <ArrowRight />
           </a>
         </DropdownMenuItem>
         <p className="profile-menu-note">
-          <Info /> Demo roles — switching changes your view, not your access.
+          <Info /> Demo roles — switching sets your active view, landing route & scoped access.
         </p>
       </DropdownMenuContent>
     </DropdownMenu>

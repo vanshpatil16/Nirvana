@@ -72,6 +72,9 @@ const SUBNAV: { mode: LabMode; label: string; icon: typeof Home }[] = [
 // Shell — same global sidebar + header as the rest of the product
 // ---------------------------------------------------------------------------
 
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import { ProfileMenu } from "@/components/ProfileMenu";
+
 function Shell({
   drawer,
   close,
@@ -83,67 +86,7 @@ function Shell({
 }) {
   return (
     <>
-      <aside className={`sidebar ${drawer ? "open" : ""}`}>
-        <div className="sidebar-top">
-          <div className="brand">
-            <span className="brand-mark" aria-hidden="true">
-              <img src={logo} alt="NIRVANA Logo" width={38} height={38} />
-            </span>
-            <div>
-              <strong>NIRVANA</strong>
-              <b>निर्वाण</b>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="sidebar-close"
-            onClick={close}
-            aria-label="Close navigation"
-          >
-            <X />
-          </Button>
-          <p>National Platform for Research & Policy Innovation in Land Governance</p>
-        </div>
-        <nav aria-label="Main navigation">
-          {navItems.map(({ label, icon: Icon, href }) => {
-            const isActive = label === ACTIVE_ITEM;
-            if (href) {
-              return (
-                <a
-                  key={label}
-                  href={href}
-                  className={isActive ? "active" : ""}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  <Icon />
-                  <span>{label}</span>
-                </a>
-              );
-            }
-            return (
-              <button
-                key={label}
-                className={isActive ? "active" : ""}
-                title={`${label} — coming soon`}
-              >
-                <Icon />
-                <span>{label}</span>
-                <i>Soon</i>
-              </button>
-            );
-          })}
-        </nav>
-        <div className="sidebar-bottom">
-          <img
-            src={sidenavBottom}
-            alt="Same Land, More Clarity, Better Decisions — Government of India, Ministry of Rural Development, Department of Land Resources"
-          />
-        </div>
-      </aside>
-      {drawer && (
-        <button className="drawer-backdrop" onClick={close} aria-label="Close navigation" />
-      )}
+      <AppSidebar open={drawer} close={close} activeItem={ACTIVE_ITEM} />
       {children}
     </>
   );
@@ -189,14 +132,7 @@ function PageHeader({ openMenu, onSearch }: { openMenu: () => void; onSearch: ()
           <Bell />
           <i />
         </Button>
-        <button className="profile">
-          <span>OK</span>
-          <div>
-            <strong>Omkar Kudalkar</strong>
-            <small>Researcher</small>
-          </div>
-          <ChevronDown />
-        </button>
+        <ProfileMenu />
       </div>
     </header>
   );
