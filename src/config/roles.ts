@@ -26,12 +26,7 @@ import {
 } from "lucide-react";
 
 export type RoleId =
-  | "officer"
-  | "policymaker"
-  | "researcher"
-  | "state_owner"
-  | "citizen"
-  | "innovator";
+  "officer" | "policymaker" | "researcher" | "state_owner" | "citizen" | "innovator";
 
 export type AccessLevel = "full" | "limited" | "hidden";
 
@@ -107,7 +102,8 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     label: "Policymaker",
     persona: "DoLR / State",
     org: "Ministry of Rural Development · DoLR",
-    description: "Formulate land policies, evaluate counterfactuals, and track pre-registered KPI ledgers",
+    description:
+      "Formulate land policies, evaluate counterfactuals, and track pre-registered KPI ledgers",
     icon: Landmark,
     color: "#059669", // emerald green
     landingRoute: "/policy-lab",
@@ -152,7 +148,8 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     label: "Researcher",
     persona: "University / Institution",
     org: "Academic & Research Institutions",
-    description: "Produce graded evidence, reproducible research capsules, and empirical land studies",
+    description:
+      "Produce graded evidence, reproducible research capsules, and empirical land studies",
     icon: GraduationCap,
     color: "#2563EB", // royal blue
     landingRoute: "/research-hub",
@@ -198,7 +195,8 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     label: "State Data Owner",
     persona: "State IT / NIC state unit",
     org: "State Land Records & Information Technology",
-    description: "Maintain state data nodes, configure privacy budgets, and approve access requests",
+    description:
+      "Maintain state data nodes, configure privacy budgets, and approve access requests",
     icon: Server,
     color: "#7C3AED", // purple / violet
     landingRoute: "/federation-console",
@@ -240,7 +238,8 @@ export const ROLES: Record<RoleId, RoleConfig> = {
     label: "Citizen",
     persona: "Farmer / Citizen",
     org: "Public Community & Landowners",
-    description: "Look up public parcels, report ground reality mismatches, and participate in consultations",
+    description:
+      "Look up public parcels, report ground reality mismatches, and participate in consultations",
     icon: UserRound,
     color: "#16A34A", // vibrant green
     landingRoute: "/dashboard",
@@ -317,6 +316,9 @@ export const ROLES: Record<RoleId, RoleConfig> = {
   },
 };
 
+/** Routes open to every role, bypassing each role's routeAccess map. */
+export const PUBLIC_ROUTES = ["/secret"];
+
 export const ROLE_LIST: RoleConfig[] = [
   ROLES.officer,
   ROLES.policymaker,
@@ -337,6 +339,10 @@ export function getRoleConfig(id: string | null | undefined): RoleConfig {
 
 export function getRouteAccessLevel(roleId: RoleId, pathname: string): AccessLevel {
   const role = ROLES[roleId] ?? ROLES[DEFAULT_ROLE_ID];
+  // Routes every role can open regardless of routeAccess (owner-only extras).
+  if (PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+    return "full";
+  }
   // Direct match
   if (role.routeAccess[pathname]) {
     return role.routeAccess[pathname];

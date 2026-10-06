@@ -29,6 +29,7 @@ import { Route as RecordVsRealityRouteImport } from './routes/record-vs-reality'
 import { Route as ReportMismatchRouteImport } from './routes/report-mismatch'
 import { Route as ReportStatusRouteImport } from './routes/report-status'
 import { Route as ResearchHubRouteImport } from './routes/research-hub'
+import { Route as SecretRouteImport } from './routes/secret'
 import { Route as TimeMachineRouteImport } from './routes/time-machine'
 import { Route as VerificationQueueRouteImport } from './routes/verification-queue'
 import { Route as WorkflowRouteImport } from './routes/workflow'
@@ -140,6 +141,11 @@ const ResearchHubRoute = ResearchHubRouteImport.update({
   path: '/research-hub',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SecretRoute = SecretRouteImport.update({
+  id: '/secret',
+  path: '/secret',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TimeMachineRoute = TimeMachineRouteImport.update({
   id: '/time-machine',
   path: '/time-machine',
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/report-mismatch': typeof ReportMismatchRoute
   '/report-status': typeof ReportStatusRoute
   '/research-hub': typeof ResearchHubRoute
+  '/secret': typeof SecretRoute
   '/time-machine': typeof TimeMachineRoute
   '/verification-queue': typeof VerificationQueueRoute
   '/workflow': typeof WorkflowRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/report-mismatch': typeof ReportMismatchRoute
   '/report-status': typeof ReportStatusRoute
   '/research-hub': typeof ResearchHubRoute
+  '/secret': typeof SecretRoute
   '/time-machine': typeof TimeMachineRoute
   '/verification-queue': typeof VerificationQueueRoute
   '/workflow': typeof WorkflowRoute
@@ -280,6 +288,7 @@ export interface FileRoutesById {
   '/report-mismatch': typeof ReportMismatchRoute
   '/report-status': typeof ReportStatusRoute
   '/research-hub': typeof ResearchHubRoute
+  '/secret': typeof SecretRoute
   '/time-machine': typeof TimeMachineRoute
   '/verification-queue': typeof VerificationQueueRoute
   '/workflow': typeof WorkflowRoute
@@ -314,6 +323,7 @@ export interface FileRouteTypes {
     | '/report-mismatch'
     | '/report-status'
     | '/research-hub'
+    | '/secret'
     | '/time-machine'
     | '/verification-queue'
     | '/workflow'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/report-mismatch'
     | '/report-status'
     | '/research-hub'
+    | '/secret'
     | '/time-machine'
     | '/verification-queue'
     | '/workflow'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
     | '/report-mismatch'
     | '/report-status'
     | '/research-hub'
+    | '/secret'
     | '/time-machine'
     | '/verification-queue'
     | '/workflow'
@@ -411,6 +423,7 @@ export interface RootRouteChildren {
   ReportMismatchRoute: typeof ReportMismatchRoute
   ReportStatusRoute: typeof ReportStatusRoute
   ResearchHubRoute: typeof ResearchHubRoute
+  SecretRoute: typeof SecretRoute
   TimeMachineRoute: typeof TimeMachineRoute
   VerificationQueueRoute: typeof VerificationQueueRoute
   WorkflowRoute: typeof WorkflowRoute
@@ -565,6 +578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResearchHubRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/secret': {
+      id: '/secret'
+      path: '/secret'
+      fullPath: '/secret'
+      preLoaderRoute: typeof SecretRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/time-machine': {
       id: '/time-machine'
       path: '/time-machine'
@@ -659,6 +679,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportMismatchRoute: ReportMismatchRoute,
   ReportStatusRoute: ReportStatusRoute,
   ResearchHubRoute: ResearchHubRoute,
+  SecretRoute: SecretRoute,
   TimeMachineRoute: TimeMachineRoute,
   VerificationQueueRoute: VerificationQueueRoute,
   WorkflowRoute: WorkflowRoute,

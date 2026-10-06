@@ -1840,7 +1840,7 @@ export function MapFirstHome() {
           Top-left, and hidden while the location card occupies that corner. */}
       {!(cardOpen && selectedLocation) &&
         (cadastreNote || overlays.floods || overlays.rivers || overlays.waterbodies) && (
-          <div className="absolute top-24 left-4 z-20 flex flex-col gap-1.5 max-w-[min(300px,60vw)]">
+          <div className="absolute top-24 left-4 min-[821px]:left-[92px] min-[1181px]:left-[262px] z-20 flex flex-col gap-1.5 max-w-[min(300px,60vw)]">
             {cadastreNote && <span className="overlay-status">{cadastreNote}</span>}
             {(overlays.rivers || overlays.waterbodies) && (
               <span className="overlay-status">WRIS water features · Datameet · CC0</span>
@@ -2043,7 +2043,7 @@ export function MapFirstHome() {
       {/* CONTEXTUAL LOCATION / PARCEL POPUP CARD (Matching User Reference Image 1)  */}
       {/* ========================================================================= */}
       {cardOpen && selectedLocation && (
-        <div className="absolute top-20 left-4 sm:left-8 z-30 w-[90vw] max-w-sm bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200/90 p-4 animate-in fade-in slide-in-from-top-4 duration-200">
+        <div className="absolute top-20 left-4 sm:left-8 min-[821px]:left-[92px] min-[1181px]:left-[262px] z-30 w-[90vw] max-w-sm bg-white/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200/90 p-4 animate-in fade-in slide-in-from-top-4 duration-200">
           {/* Top Pill Badge & Close Button */}
           <div className="flex items-center justify-between pb-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-600 font-semibold text-xs border border-green-200/80">
@@ -2301,8 +2301,8 @@ export function MapFirstHome() {
       <div
         className={`absolute bottom-6 z-30 px-4 flex flex-col items-center gap-3 transition-all duration-300 ${
           aiPanelOpen
-            ? "left-4 right-4 md:left-6 md:right-[444px] md:items-stretch"
-            : "left-1/2 -translate-x-1/2 w-full max-w-3xl"
+            ? "left-4 right-4 min-[821px]:left-[92px] min-[1181px]:left-[262px] md:right-[444px] md:items-stretch"
+            : "left-1/2 min-[821px]:left-[calc(50%+38px)] min-[1181px]:left-[calc(50%+124px)] -translate-x-1/2 w-full max-w-3xl"
         }`}
       >
         {/* Rectangular AI Composer Box with Animated Moving Border */}

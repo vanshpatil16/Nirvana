@@ -140,6 +140,7 @@ function RootShell({ children }: { children: ReactNode }) {
 import { RoleProvider } from "../context/RoleContext";
 import { Toaster } from "../components/ui/sonner";
 import { RouteAccessGuard } from "../components/auth/RouteAccessGuard";
+import { ViewTracker } from "../components/ViewTracker";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -149,6 +150,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <RoleProvider onNavigate={(path) => router.navigate({ href: path })}>
         <RouteAccessGuard />
+        <ViewTracker />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         {/* Every route component is code-split, so this boundary is the one place
             that catches a chunk still in flight and shows the shared loader. */}

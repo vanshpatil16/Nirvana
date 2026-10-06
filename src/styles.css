@@ -11228,13 +11228,18 @@ button.parcel-note:hover {
 }
 .g3d-actions button {
   flex: 1;
-  height: 33px;
+  min-height: 33px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 1px solid rgba(23, 35, 29, 0.16);
   border-radius: 9px;
   background: var(--surface);
   color: var(--foreground);
   font-size: 10px;
   font-weight: 800;
+  white-space: nowrap;
   cursor: pointer;
 }
 .g3d-actions button.primary {

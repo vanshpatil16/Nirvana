@@ -11,6 +11,7 @@ import { handleWeatherApi } from "./server/weather-india";
 import { handleLandStackProxy } from "./server/landstack-proxy";
 import { handlePoliciesApi } from "./server/policies";
 import { handleSummariesApi } from "./server/summarize";
+import { handleViewsApi } from "./server/visitor-counter";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -60,6 +61,14 @@ export default {
       const url = new URL(request.url);
       if (url.pathname === "/api/parcels" && request.method === "GET") {
         return handleParcelsApi(request);
+      }
+      // Profile-view tally for /secret: GET reads it, POST bumps it once per
+      // visitor per day (see src/components/ViewTracker.tsx).
+      if (
+        url.pathname === "/api/views" &&
+        (request.method === "GET" || request.method === "POST")
+      ) {
+        return handleViewsApi(request);
       }
       // Live IMD weather proxy (station list / per-station / national summary).
       if (url.pathname.startsWith("/api/weather")) {
