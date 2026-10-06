@@ -34,7 +34,7 @@ climate risk, applied research and a **voice-first AI land analyst**._
 <br />
 
 **[Mission](#mission)** · **[Coverage](#requirement-coverage)** · **[Features](#features)** ·
-**[3D GIS](#3d-gis-explorer--gis-explorer-3d)** · **[Land Stack API](#-land-stack-api)** ·
+**[3D GIS](#3d-gis-explorer--gis-explorer-3d)** · **[Land Potential & Time Machine](#land-potential--time-machine)** · **[Land Stack API](#-land-stack-api)** ·
 **[Architecture](#architecture)** · **[Data](#data-honesty)** · **[Quick Start](#quick-start)** ·
 **[API](#api-reference)** · **[Deploy](#deployment)** · **[Roadmap](#roadmap)**
 
@@ -298,6 +298,36 @@ flowchart LR
 > properties, so per-building colour banding is impossible. The globe therefore uses
 > a deliberate colour per mode and puts per-building detail in the hover readout and
 > evidence card, where it is real.
+
+---
+
+<a id="land-potential--time-machine"></a>
+
+## 🧪 Land Potential & Time Machine
+
+### Land Potential — screening, not verdict
+
+A deterministic suitability score per parcel per use, surfaced in the 3D GIS
+Explorer. It is **prototype v1.0, modelled, unvalidated** — never a probability
+of success, never legal advice, and the UI forbids the word "recommended".
+
+| Rule | Value |
+| --- | --- |
+| Score | Six weighted soft factors in one of four potential uses → 0–100, then penalties → yes/no hard constraint |
+| Bands | High ≥ 75 · Moderate ≥ 55 · Low < 55 · Suppressed = "Restricted" |
+| Hard constraints | Protected-area / flood / forest overlap suppresses the score outright and the WHY panel says why |
+| Evidence | Every candidate carries a provenance envelope; `SUITABILITY_DISCLAIMER` is attached at render |
+| Visible state | 124 candidates in the current view in the screening panel (map-derived, no filters) |
+
+### Time Machine (`/time-machine`)
+
+An isolated Cesium 3D viewer with one generation-guarded temporal clock
+(2018–2024). Satellite swaps by year (real EOX Sentinel-2 mosaics), parcels are
+labelled CURRENT / STATIC, weather is CURRENT ONLY, synthetic events are labelled
+SIMULATED/ILLUSTRATIVE, and the before/after view is a second 3D scene camera-locked
+to the main one. The clock owns seek/step/speed/preview-vs-committed; user gesture
+cancels any camera flight. The route destroys its viewer, clock and subscriptions
+on unmount.
 
 ---
 
