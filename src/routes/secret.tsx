@@ -104,8 +104,7 @@ function SecretRoute() {
             </div>
 
             <p className="mt-8 max-w-md text-sm leading-relaxed text-white/45">
-              people have opened this site since the counter went live — tallied once per browser,
-              per day.
+              people have opened this site — counted once per browser, ever.
             </p>
 
             <button

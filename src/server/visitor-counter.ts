@@ -14,7 +14,7 @@
 
 const COUNTER_BASE = "https://abacus.jasoncameron.dev";
 // Pick something unlikely to collide with another Abacus user's namespace.
-const NAMESPACE = "bhuniti-nirvana-c4a9";
+const NAMESPACE = "bhuniti-nirvana-3f6b";
 const COUNTER_KEY = "profile-views";
 const FETCH_TIMEOUT_MS = 5_000;
 

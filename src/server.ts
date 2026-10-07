@@ -63,7 +63,7 @@ export default {
         return handleParcelsApi(request);
       }
       // Profile-view tally for /secret: GET reads it, POST bumps it once per
-      // visitor per day (see src/components/ViewTracker.tsx).
+      // browser, ever (see src/components/ViewTracker.tsx).
       if (
         url.pathname === "/api/views" &&
         (request.method === "GET" || request.method === "POST")
